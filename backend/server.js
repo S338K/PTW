@@ -10,6 +10,11 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get("/", (req, res) => {
+  res.send("Backend is running successfully 🚀");
+});
+
+
 // ===== CORS Setup =====
 const allowedOrigins = process.env.ALLOWED_ORIGIN 
   ? process.env.ALLOWED_ORIGIN.split(',')
@@ -26,6 +31,7 @@ app.use(cors({
   },
   credentials: true // important for cookies/session
 }));
+
 
 // ===== Session Setup =====
 app.use(session({
