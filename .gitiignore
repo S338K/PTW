@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Node modules
+node_modules/
+
+# Backup files
+package-backup.json

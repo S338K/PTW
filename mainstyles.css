@@ -1,0 +1,629 @@
+/* Header Styles */
+.header-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 200;
+  min-height: 120px;
+  height: auto;
+  padding: 24px 0 20px 0;
+  margin: 0;
+  border-radius: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(to right, #fceabb, #f8b500);
+  transform: translateY(0);
+  opacity: 1;
+  transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.4,0,0.2,1), background 1s ease;
+  box-shadow: 0 6px 24px -8px rgba(39,49,112,0.18), 0 1.5px 0 #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+/* ----------------------------------------
+   1. Reset & Base Styles
+---------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #fff;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding-top: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin-top: 75px; /* remove gap, control with form-container only */
+}
+
+/* ----------------------------------------
+   2. Define CSS Variables (Light mode only)
+---------------------------------------- */
+:root {
+  /* Light mode colors */
+  --text-primary: #273172;  
+  --text-secondary: #666666; 
+  --text-muted: #999999;    
+  --checkbox-border: #888;
+  --checkbox-bg: #fff;
+  --calendar-bg: #fff;
+  --calendar-text: #273172;
+  --calendar-accent: #f8b500;
+  --bg-surface: #fafafa;
+  --button-bg: #273172;
+  --button-hover-bg: #e60000;
+  --button-border: black;
+  --input-border: #ccc;
+  --input-focus-border: black;
+  --error-color: #d9534f;
+}
+
+/* ----------------------------------------
+   3. Header
+---------------------------------------- */
+.header-container {
+  position: fixed; /* sticky header */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 200;
+  min-height: 120px;
+  height: auto;
+  padding: 15px 0 20px 0; /* more padding for better visibility */
+  margin: 0;
+  border-radius: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(to right, #fceabb, #f8b500);
+  transform: translateY(0);
+  opacity: 1;
+  transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.4,0,0.2,1), background 1s ease;
+  box-shadow: 0 6px 24px -8px rgba(39,49,112,0.18), 0 1.5px 0 #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+/* Hidden state when scrolling down */
+.header-hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+/* Weather backgrounds using CSS variables */
+.header-container.sunny,
+.header-container.clear {
+  background: linear-gradient(to right, #fceabb, #f8b500);
+}
+
+.header-container.cloudy {
+  background: linear-gradient(to right, #bdc3c7, #2c3e50);
+}
+
+.header-container.rainy {
+  background: linear-gradient(to right, #4b79a1, #283e51);
+}
+
+.header-container.snowy {
+  background: linear-gradient(to right, #e0eafc, #cfdef3);
+}
+
+.header-container.hide {
+  transform: scale(0.005);
+  box-shadow: none;
+}
+
+.header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.header-datetime {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+
+.header-weather {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-shadow: 0 1px 4px rgba(255,255,255,0.18);
+}
+
+.header-message {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #273172;
+  order: 3;
+  width: 100%;
+  margin-top: 10px;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(255,255,255,0.18);
+}
+
+#dateTimeDisplay,
+#tempDisplay {
+  visibility: visible;
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+
+/* ----------------------------------------
+   4. Form Container
+---------------------------------------- */
+.form-container {
+  padding: 40px;
+  background: var(--button-bg);
+  border-radius: 25px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: relative;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Responsive adjustments for header and form */
+@media (max-width: 1200px) {
+  .form-container {
+    max-width: 98vw;
+    padding-left: 2vw;
+    padding-right: 2vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .form-container {
+    padding-left: 1vw;
+    padding-right: 1vw;
+  }
+  .header-content-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .header-user-actions {
+    margin-right: 0;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-container {
+    max-width: 100vw;
+    padding: 10px 0 10px 0;
+    border-radius: 10px;
+  }
+  .header-content-flex {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .header-center {
+    gap: 6px;
+  }
+  .header-user-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-right: 0;
+  }
+  .header-btn {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.98rem;
+    padding: 7px 0;
+  }
+}
+
+/* ----------------------------------------
+   5. Card Sections
+---------------------------------------- */
+.card {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 2px solid var(--input-border);
+  border-radius: 7.5px;
+  background-color: var(--bg-surface);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  color: var(--text-primary);
+}
+
+.card:hover {
+  transform: scale(1.025);
+  border-color: var(--button-hover-bg);
+}
+
+.card legend h3 {
+  margin: 0 0 15px;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+/* ----------------------------------------
+   6. Form Groups
+---------------------------------------- */
+.form-group {
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ----------------------------------------
+   7. Inputs
+---------------------------------------- */
+.md-input {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+.md-input input,
+.md-input textarea {
+  width: 100%;
+  padding: 1rem 0.75rem 0.5rem;
+  font-size: 1rem;
+  border: 2px solid var(--input-border, #ccc);
+  border-radius: 4px;
+  background-color: white;
+  color: var(--text-primary, #000);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.md-input input:focus,
+.md-input textarea:focus {
+  border-color: var(--input-focus-border, #007BFF);
+  outline: none;
+  box-shadow: 0 0 5px var(--input-focus-border, #007BFF);
+}
+
+.md-input input + label,
+.md-input textarea + label {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.50rem;
+  font-size: 1rem;
+  color: var(--text-secondary, #888);
+  padding: 0 2px;
+  pointer-events: none;
+  transition: 0.2s ease all;
+  user-select: none;
+}
+
+.md-input input:focus + label,
+.md-input input:not(:placeholder-shown) + label,
+.md-input textarea:focus + label,
+.md-input textarea:not(:placeholder-shown) + label {
+  top: -0.15rem;
+  left: 0.3rem;
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: var(--input-focus-border, #007BFF);
+  z-index: 1;
+}
+
+.md-input input::placeholder,
+.md-input textarea::placeholder {
+  color: transparent;
+}
+
+.md-input select {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid var(--input-border, #ccc);
+  border-radius: 4px;
+  background-color: white;
+  color: var(--text-primary, #000);
+  appearance: none;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.md-input select:focus {
+  border-color: var(--input-focus-border, #007BFF);
+  outline: none;
+  box-shadow: 0 0 5px var(--input-focus-border, #007BFF);
+}
+
+.md-input select + label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+  color: var(--text-primary, #000);
+}
+
+/* ----------------------------------------
+   9. Address Grid
+---------------------------------------- */
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px 20px;
+}
+
+/* ----------------------------------------
+   10. Buttons
+---------------------------------------- */
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: clamp(10px, 5vw, 50px);
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.md-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 44px;
+  background-color: var(--button-bg);
+  color: white;
+  border: 3px solid var(--button-border);
+  border-radius: 5px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  position: relative;
+  user-select: none;
+}
+
+.md-button::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 6px;
+  border: 3px solid transparent;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: -1;
+}
+
+.md-button:hover:not(:disabled) {
+  background-color: var(--button-hover-bg);
+  box-shadow: 0 0 15px rgba(230, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+.md-button:disabled {
+  background-color: #ccc;
+  border-color: #999;
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.md-button:focus-visible {
+  outline: 3px solid var(--button-hover-bg);
+  outline-offset: 3px;
+}
+
+/* ----------------------------------------
+   11. Conditions
+---------------------------------------- */
+.condition-text p {
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.condition-text ul {
+  list-style: disc inside;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  color: var(--text-secondary);
+}
+
+/* ----------------------------------------
+   12. Responsive
+---------------------------------------- */
+@media (max-width: 1200px) {
+  .button-container {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .button-container {
+    gap: 10px;
+  }
+}
+
+/* ----------------------------------------
+   13. File Upload
+---------------------------------------- */
+.file-upload-container {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.custom-file-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.custom-file-label {
+  padding: 0.5rem 1rem;
+  background-color: #007BFF;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.3s ease;
+}
+
+.custom-file-label:hover {
+  background-color: #273172;
+  border: 2px solid;
+}
+
+.file-name-display {
+  font-size: 0.95rem;
+  color: #333;
+  font-style: italic;
+}
+
+.file-type-message {
+  color: red;
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.uploaded-files-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.uploaded-files-list li::before {
+  content: "📄 ";
+}
+
+.invalid {
+  border: 3px solid red !important;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.error-message {
+  font-size: 0.875rem;
+  margin-top: 5px;
+  color: darkred;
+}
+
+.input-error {
+    border: 2px solid #e74c3c;
+    background: #fff0f0;
+}
+
+/* ----------------------------------------
+   14. Secondary Header
+---------------------------------------- */
+.secondary-header {
+  position: fixed;
+  top: 180px; /* always below main header */
+  left: 0;
+  width: 100%;
+  background: #fff;
+  z-index: 180;
+  box-shadow: 0 2px 8px rgba(39,49,112,0.08);
+  border-bottom: 1.5px solid #e0e0e0;
+  transition: top 0.3s cubic-bezier(0.4,0,0.2,1), transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+}
+
+.secondary-header.sticky-hide {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.secondary-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem;
+}
+.secondary-header-left {
+  font-weight: 600;
+  color: #273172;
+  font-size: 1.08rem;
+}
+
+/* Mainpage Navigation Bar (profile-navbar style) */
+.profile-navbar {
+	background-color: #273172;
+	color: white;
+	padding: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: 1000;
+  border-radius: 5px #1d2c91;
+}
+
+.profile-navbar.sticky {
+  top: 0;
+  box-shadow: 0 2px 8px rgba(39,49,112,0.18);
+}
+.profile-navbar.hide {
+  transform: translateY(-120%);
+  opacity: 1;
+  pointer-events: auto;
+}
+.profile-navbar.show {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.profile-signout-btn {
+  background: #e60000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-btn {
+  background: #fff;
+  color: #273172;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 8px;
+  transition: background 0.3s, color 0.3s;
+}
+
+@media (max-width: 900px) {
+  .secondary-header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 0.5rem 0.5rem;
+  }
+  .secondary-header-center {
+    justify-content: flex-start;
+    gap: 10px;
+  }
+}

@@ -1,0 +1,38 @@
+/* Profile Page Specific Styles */
+.profile-navbar {
+	background-color: #333;
+	color: white;
+	padding: 15px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: 1000;
+    border-radius: 2px #1d2c91;
+}
+
+.profile-signout-btn {
+	background: #e60000;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 8px 18px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.profile-sbmtptw-btn {
+	background: #e60000;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 8px 18px;
+	font-weight: 600;
+}
+
+.profile-form-container {
+	margin-top: 90px;
+}

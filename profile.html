@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Profile</title>
+  <link rel="stylesheet" href="mainstyles.css">
+  <link rel="stylesheet" href="profile.css">
+</head>
+<body style="margin:0; padding:0;">
+
+  <nav class="profile-navbar">
+    <div id="profileWelcome">Welcome : </div>
+    <div id="profileLastLogin">Last login: -</div>
+    <button class="profile-sbmtptw-btn" id="sbmtptw">Submit a PTW request</button>
+    <button class="profile-signout-btn" id="logoutBtn">Sign Out</button>
+  </nav>
+
+  <div class="form-container profile-form-container">
+    <div class="card" id="userProfileCard">
+      <h3>User Profile Details</h3>
+      <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
+      <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+      <p><strong>Company:</strong> <span id="profileCompany"></span></p>
+    </div>
+    <div class="card" id="permitCard">
+      <h3>Closed Permits</h3>
+      <ul id="closedPermitsList"></ul>
+    </div>
+  </div>
+
+  <script src="profile.js"></script>
+
+</body>
+</html>
