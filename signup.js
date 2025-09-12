@@ -1,8 +1,10 @@
 // signup.js: Handles signup form logic for signup.html
-
 document.addEventListener('DOMContentLoaded', function() {
   const signupForm = document.getElementById('signupForm');
   if (!signupForm) return;
+
+  // ✅ Backend ka base URL ek jagah define
+  const API_BASE = "https://ptw-yu8u.onrender.com";
 
   signupForm.addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -13,36 +15,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const password = document.getElementById('signupPassword').value;
     const confirmPassword = document.getElementById('signupConfirmPassword').value;
 
-    // Basic empty field check
     if (!name || !company || !email || !password || !confirmPassword) {
       alert('Please fill in all fields');
       return;
     }
 
-    // ✅ Password validation (same as backend)
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
     if (!passwordRegex.test(password)) {
       alert('Password must be at least 10 characters long and include at least one letter, one number, and one special character.');
       return;
     }
 
-    // Confirm password match
     if (password !== confirmPassword) {
       alert('Passwords do not match');
       return;
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/register', {
+      const res = await fetch(`${API_BASE}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // important for session cookies
+        credentials: 'include',
         body: JSON.stringify({
           username: name,
-          company: company,   // backend expects 'company'
+          company: company,
           email: email,
-          password: password,
-      
+          password: password
         })
       });
 

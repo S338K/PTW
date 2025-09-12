@@ -11,7 +11,7 @@ router.get('/weather', async (req, res) => {
   if (!city) return res.status(400).json({ message: "City is required" });
 
   try {
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.WEATHER_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ message: "API key not configured" });
     }

@@ -23,23 +23,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ====== HEADER: Weather Fetch ======
   async function fetchWeather() {
-    try {
-      const city = 'Doha';
-      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (res.ok && data.formatted) {
-        if (weatherEl) weatherEl.textContent = data.formatted;
-      } else {
-        if (weatherEl) weatherEl.textContent = 'Weather data unavailable';
-      }
-    } catch (err) {
-      console.error('Weather fetch error:', err);
-      if (weatherEl) weatherEl.textContent = 'Weather fetch failed';
+  const weatherEl = document.getElementById('tempDisplay');
+  const city = 'Doha';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      console.error(`Weather API error: ${res.status} ${res.statusText}`);
+      if (weatherEl) weatherEl.textContent = 'Weather data unavailable';
+      return;
     }
+
+    const data = await res.json();
+    if (data.formatted) {
+      if (weatherEl) weatherEl.textContent = data.formatted;
+    } else {
+      if (weatherEl) weatherEl.textContent = 'Weather data unavailable';
+    }
+  } catch (err) {
+    console.error('Weather fetch error:', err);
+    if (weatherEl) weatherEl.textContent = 'Weather fetch failed';
   }
-  fetchWeather();
+}
+
+fetchWeather();
 
   // ====== LOGIN FORM HANDLING ======
   const loginForm = document.getElementById('loginForm');

@@ -1,8 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
 
@@ -14,14 +14,11 @@ app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
 
-
 // ===== CORS Setup =====
-const allowedOrigins = process.env.ALLOWED_ORIGIN 
-  ? process.env.ALLOWED_ORIGIN.split(',')
-  : ['http://127.0.0.1:5500']; // frontend ka origin yahan daalein
+const allowedOrigins = process.env.ALLOWED_ORIGIN.split(',');
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -29,9 +26,8 @@ app.use(cors({
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
-  credentials: true // important for cookies/session
+  credentials: true
 }));
-
 
 // ===== Session Setup =====
 app.use(session({
@@ -40,16 +36,16 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // HTTPS use kar rahe ho to true karein
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+    maxAge: 1000 * 60 * 60 * 24
   }
 }));
 
+// ===== Routes =====
 const mainPageRoutes = require('./routes/mainpageroute');
 app.use('/mainpage', mainPageRoutes);
 
-
-// ===== Routes =====
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
 
