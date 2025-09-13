@@ -1,37 +1,38 @@
 document.addEventListener('DOMContentLoaded', function () {
 
   // =========================
-  // Session guard on restricted pages
+  // Session guard + idle timer
   // =========================
   const currentPage = window.location.pathname.split('/').pop();
+
+  // Guard: skip login page
   if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
     window.location.href = 'index.html';
     return;
   }
 
-  // =========================
-  // Idle timeout (5 minutes) — only if logged in
-  // =========================
-  function logoutUser() {
-    sessionStorage.clear();
-    window.location.href = 'index.html';
-  }
-
-  function resetIdleTimer() {
-    sessionStorage.setItem('lastActivity', Date.now().toString());
-  }
-
-  function checkIdleTime() {
-    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 5 * 60 * 1000) {
-      logoutUser();
-    }
-  }
-
+  // Idle timeout only if logged in
   if (sessionStorage.getItem('isLoggedIn')) {
+    function logoutUser() {
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    function resetIdleTimer() {
+      sessionStorage.setItem('lastActivity', Date.now().toString());
+    }
+
+    function checkIdleTime() {
+      const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
+      if (!last || Date.now() - last > 5 * 60 * 1000) {
+        logoutUser();
+      }
+    }
+
     ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
       document.addEventListener(evt, resetIdleTimer, { passive: true })
     );
+
     setInterval(checkIdleTime, 30000);
     resetIdleTimer();
   }
@@ -43,9 +44,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const profileBtn = document.getElementById('profileBtn');
   const submitNewBtn = document.getElementById('submitNewBtn');
 
-  if (logoutBtn) logoutBtn.addEventListener('click', logoutUser);
-  if (profileBtn) profileBtn.addEventListener('click', () => { window.location.href = 'profile.html'; });
-  if (submitNewBtn) submitNewBtn.addEventListener('click', () => { window.location.href = 'mainpage.html'; });
+  if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  });
+
+  if (profileBtn) profileBtn.addEventListener('click', () => {
+    window.location.href = 'profile.html';
+  });
+
+  if (submitNewBtn) submitNewBtn.addEventListener('click', () => {
+    window.location.href = 'mainpage.html';
+  });
 
   // =========================
   // Utilities for validation
@@ -190,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
           fpEnd.set('minDate', selectedDates[0]);
         }
       }
-});
+    });
 
     fpEnd = flatpickr('#endDateTime', {
       enableTime: true,
