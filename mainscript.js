@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function () {
 
   // =========================
@@ -183,7 +184,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
-// =========================
+
+  // =========================
   // Date & time validation
   // =========================
   let fpStart = null;
