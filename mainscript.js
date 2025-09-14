@@ -182,29 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  
-// ====== Impact on Operation Conditional Fields ======
-const impactSelect = document.getElementById('impact');
-const equipmentTypeSection = document.getElementById('equipmentType');
-const impactDetailsSection = document.getElementById('impactDetails');
-
-if (impactSelect) {
-  impactSelect.addEventListener('change', function () {
-    if (this.value === 'Yes') {
-      equipmentTypeSection.classList.remove('hidden');
-      impactDetailsSection.classList.remove('hidden');
-    } else {
-      equipmentTypeSection.classList.add('hidden');
-      impactDetailsSection.classList.add('hidden');
-      // Clear fields
-      document.querySelectorAll('#equipmentType input, #equipmentType select, #equipmentType textarea, #impactDetails input, #impactDetails select, #impactDetails textarea')
-        .forEach(el => el.value = '');
-    }
-  });
-}
-
-// ====== Requested Documents Conditional Fields ======
-function setupRadioToggle(radioYesId, radioNoId, targetSectionId) {
+  function setupRadioToggle(radioYesId, radioNoId, targetSectionId) {
   const yesRadio = document.getElementById(radioYesId);
   const noRadio = document.getElementById(radioNoId);
   const targetSection = document.getElementById(targetSectionId);
@@ -218,22 +196,15 @@ function setupRadioToggle(radioYesId, radioNoId, targetSectionId) {
       targetSection.classList.remove('hidden');
     };
 
-    yesRadio.addEventListener('change', function () {
-      if (this.checked) hideSection();
-    });
-    noRadio.addEventListener('change', function () {
-      if (this.checked) showSection();
-    });
+    yesRadio.addEventListener('change', () => { if (yesRadio.checked) hideSection(); });
+    noRadio.addEventListener('change', () => { if (noRadio.checked) showSection(); });
   }
 }
 
-// ePermit
+// Apply to all 4 document sections
 setupRadioToggle('ePermitYes', 'ePermitNo', 'ePermitDetails');
-// FMM Workorder
 setupRadioToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr');
-// HSE Risk Assessment
 setupRadioToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt');
-// Operations Risk Assessment
 setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt');
 
   // =========================
