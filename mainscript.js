@@ -185,6 +185,32 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ====== Impact on Operation Conditional Fields ======
+const impactSelect = document.getElementById('impact');
+const equipmentTypeSection = document.getElementById('equipmentType');
+const impactDetailsSection = document.getElementById('impactDetails');
+
+if (impactSelect) {
+  impactSelect.addEventListener('change', function () {
+    if (this.value === 'Yes') {
+      equipmentTypeSection?.classList.remove('hidden');
+      impactDetailsSection?.classList.remove('hidden');
+    } else {
+      equipmentTypeSection?.classList.add('hidden');
+      impactDetailsSection?.classList.add('hidden');
+
+      // Clear values when hiding
+      const eqSelect = document.getElementById('equipmentDetails');
+      const impactLevel = document.getElementById('impactLevel');
+      const affectedEquip = document.getElementById('affectedEquipment');
+      if (eqSelect) eqSelect.value = '';
+      if (impactLevel) impactLevel.value = '';
+      if (affectedEquip) affectedEquip.value = '';
+    }
+  });
+}
+
+
   // =========================
   // Date & time validation
   // =========================
