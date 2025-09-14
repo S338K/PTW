@@ -182,27 +182,62 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // =========================
-  // Impact on Operation Conditional Fields
-  // =========================
-  const impactSelect = document.getElementById('impact');
-  const equipmentTypeSection = document.getElementById('equipmentType');
-  const impactDetailsSection = document.getElementById('impactDetails');
+// ====== Impact on Operation Conditional Fields ======
+const impactSelect = document.getElementById('impact');
+const equipmentTypeSection = document.getElementById('equipmentType');
+const impactDetailsSection = document.getElementById('impactDetails');
 
-  if (impactSelect) {
-    impactSelect.addEventListener('change', function () {
-      if (this.value === 'Yes') {
-        equipmentTypeSection?.classList.remove('hidden');
-        impactDetailsSection?.classList.remove('hidden');
-      } else {
-        equipmentTypeSection?.classList.add('hidden');
-        impactDetailsSection?.classList.add('hidden');
+if (impactSelect) {
+  impactSelect.addEventListener('change', function () {
+    if (this.value === 'Yes') {
+      equipmentTypeSection?.classList.remove('hidden');
+      impactDetailsSection?.classList.remove('hidden');
+    } else {
+      equipmentTypeSection?.classList.add('hidden');
+      impactDetailsSection?.classList.add('hidden');
 
-        // Clear values when hiding
-        document.querySelectorAll('#equipmentType input, #impactDetails textarea').forEach(el => el.value = '');
+      // Clear values when hiding
+      document.querySelectorAll('#equipmentType input, #impactDetails textarea').forEach(el => el.value = '');
+    }
+  });
+}
+
+// ====== Requested Documents Conditional Fields ======
+function setupRadioToggle(radioYesId, radioNoId, targetSectionId, inputSelector) {
+  const yesRadio = document.getElementById(radioYesId);
+  const noRadio = document.getElementById(radioNoId);
+  const targetSection = document.getElementById(targetSectionId);
+
+  if (yesRadio && noRadio && targetSection) {
+    yesRadio.addEventListener('change', function () {
+      if (this.checked) {
+        targetSection.classList.add('hidden');
+        if (inputSelector) {
+          targetSection.querySelectorAll(inputSelector).forEach(el => el.value = '');
+        }
+      }
+    });
+
+    noRadio.addEventListener('change', function () {
+      if (this.checked) {
+        targetSection.classList.remove('hidden');
       }
     });
   }
+}
+
+// ePermit
+setupRadioToggle('ePermitYes', 'ePermitNo', 'ePermitDetails', 'input');
+
+// FMM Workorder
+setupRadioToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr', 'input');
+
+// HSE Risk Assessment
+setupRadioToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'input');
+
+// Operations Risk Assessment
+setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'input');
+
 
   // =========================
   // Date & time validation
