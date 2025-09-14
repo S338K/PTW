@@ -196,8 +196,8 @@ if (impactSelect) {
       equipmentTypeSection?.classList.add('hidden');
       impactDetailsSection?.classList.add('hidden');
 
-      // Clear all inputs/selects/textareas inside these sections
-      document.querySelectorAll('#equipmentType input, #equipmentType select, #impactDetails input, #impactDetails select, #impactDetails textarea')
+      // Clear all fields inside these sections
+      document.querySelectorAll('#equipmentType input, #equipmentType select, #equipmentType textarea, #impactDetails input, #impactDetails select, #impactDetails textarea')
         .forEach(el => el.value = '');
     }
   });
@@ -235,7 +235,6 @@ setupRadioToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr');
 setupRadioToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt');
 // Operations Risk Assessment
 setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt');
-
 
   // =========================
   // Date & time validation
