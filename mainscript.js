@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function () {
 
   // =========================
@@ -6,13 +5,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // =========================
   const currentPage = window.location.pathname.split('/').pop();
 
-  // Guard: skip login page
   if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
     window.location.href = 'index.html';
     return;
   }
 
-  // Idle timeout only if logged in
   if (sessionStorage.getItem('isLoggedIn')) {
     function logoutUser() {
       sessionStorage.clear();
@@ -185,31 +182,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ====== Impact on Operation Conditional Fields ======
-const impactSelect = document.getElementById('impact');
-const equipmentTypeSection = document.getElementById('equipmentType');
-const impactDetailsSection = document.getElementById('impactDetails');
+  // =========================
+  // Impact on Operation Conditional Fields
+  // =========================
+  const impactSelect = document.getElementById('impact');
+  const equipmentTypeSection = document.getElementById('equipmentType');
+  const impactDetailsSection = document.getElementById('impactDetails');
 
-if (impactSelect) {
-  impactSelect.addEventListener('change', function () {
-    if (this.value === 'Yes') {
-      equipmentTypeSection?.classList.remove('hidden');
-      impactDetailsSection?.classList.remove('hidden');
-    } else {
-      equipmentTypeSection?.classList.add('hidden');
-      impactDetailsSection?.classList.add('hidden');
+  if (impactSelect) {
+    impactSelect.addEventListener('change', function () {
+      if (this.value === 'Yes') {
+        equipmentTypeSection?.classList.remove('hidden');
+        impactDetailsSection?.classList.remove('hidden');
+      } else {
+        equipmentTypeSection?.classList.add('hidden');
+        impactDetailsSection?.classList.add('hidden');
 
-      // Clear values when hiding
-      const eqSelect = document.getElementById('equipmentDetails');
-      const impactLevel = document.getElementById('impactLevel');
-      const affectedEquip = document.getElementById('affectedEquipment');
-      if (eqSelect) eqSelect.value = '';
-      if (impactLevel) impactLevel.value = '';
-      if (affectedEquip) affectedEquip.value = '';
-    }
-  });
-}
-
+        // Clear values when hiding
+        document.querySelectorAll('#equipmentType input, #impactDetails textarea').forEach(el => el.value = '');
+      }
+    });
+  }
 
   // =========================
   // Date & time validation
@@ -402,8 +395,8 @@ if (impactSelect) {
 
       const ok =
         validateRequesterDetails() &&
-        validateWorkDetails() &&
-        validateRequiredDocuments() &&
+        validateWorkDetails &&
+        validateRequiredDocuments &&
         validateDateTime() &&
         validateFileUpload() &&
         validateSignature() &&
@@ -443,8 +436,8 @@ if (impactSelect) {
         if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
         if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
 
-        equipmentType?.classList.add('hidden');
-        impactDetails?.classList.add('hidden');
+        equipmentTypeSection?.classList.add('hidden');
+        impactDetailsSection?.classList.add('hidden');
 
         document.querySelectorAll('.error-message').forEach(n => n.remove());
         document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
