@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  
 // ====== Impact on Operation Conditional Fields ======
 const impactSelect = document.getElementById('impact');
 const equipmentTypeSection = document.getElementById('equipmentType');
@@ -190,13 +191,12 @@ const impactDetailsSection = document.getElementById('impactDetails');
 if (impactSelect) {
   impactSelect.addEventListener('change', function () {
     if (this.value === 'Yes') {
-      equipmentTypeSection?.classList.remove('hidden');
-      impactDetailsSection?.classList.remove('hidden');
+      equipmentTypeSection.classList.remove('hidden');
+      impactDetailsSection.classList.remove('hidden');
     } else {
-      equipmentTypeSection?.classList.add('hidden');
-      impactDetailsSection?.classList.add('hidden');
-
-      // Clear all fields inside these sections
+      equipmentTypeSection.classList.add('hidden');
+      impactDetailsSection.classList.add('hidden');
+      // Clear fields
       document.querySelectorAll('#equipmentType input, #equipmentType select, #equipmentType textarea, #impactDetails input, #impactDetails select, #impactDetails textarea')
         .forEach(el => el.value = '');
     }
