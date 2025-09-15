@@ -1,11 +1,9 @@
 // signup.js: Handles signup form logic for signup.html
 document.addEventListener('DOMContentLoaded', function () {
+  
   const signupForm = document.getElementById('signupForm');
-  if (!signupForm) return;
-
-  // ✅ Backend ka base URL ek jagah define
   const API_BASE = 'https://ptw-yu8u.onrender.com'; // change if needed
-
+  if (!signupForm) return;
   signupForm.addEventListener('submit', async function (e) {
     e.preventDefault();
 
@@ -16,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmPassword = document.getElementById('signupConfirmPassword').value;
 
     // ====== Basic Validation ======
-    if (!name || !company || !email || !password || !confirmPassword) {
+    if (!username || !company || !email || !password || !confirmPassword) {
       alert('Please fill in all fields');
       return;
     }
@@ -62,12 +60,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      console.log('Signup successful:', data);
+      console.log('Signup successful. Redirecting to Login page...', data);
       alert(data.message || 'Account created successfully!');
       window.location.href = 'index.html';
     } catch (err) {
       console.error('Network error during signup:', err);
-      alert('Network error. Please try again.');
+      alert('Please verify all the fields and try again.');
     }
   });
 });
