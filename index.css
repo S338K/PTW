@@ -49,7 +49,7 @@ body {
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
   background: #f8f8f8;
-  max-width:100%;
+  max-width: auto;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   text-align: center;
  justify-content: space-between;
