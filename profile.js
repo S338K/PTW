@@ -1,4 +1,40 @@
 document.addEventListener('DOMContentLoaded', async function () {
+    // ====== SESSION PRESERVE ======
+    // Agar login ke baad profile pe aaye ho to sessionStorage me flag set karo
+    if (!sessionStorage.getItem('isLoggedIn')) {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('lastActivity', Date.now());
+    }
+
+    // ====== IDLE TIMEOUT (5 MINUTES) ======
+    function logoutUser() {
+        localStorage.clear();
+        sessionStorage.clear();
+        fetch('http://localhost:5000/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        }).finally(() => {
+            window.location.href = 'index.html';
+        });
+    }
+
+    function resetIdleTimer() {
+        sessionStorage.setItem('lastActivity', Date.now());
+    }
+
+    function checkIdleTime() {
+        const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
+        if (!last || Date.now() - last > 5 * 60 * 1000) {
+            logoutUser();
+        }
+    }
+
+    ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
+        document.addEventListener(evt, resetIdleTimer, { passive: true })
+    );
+    setInterval(checkIdleTime, 30000);
+    resetIdleTimer();
+
     // ====== SHOW WELCOME MESSAGE & PROFILE DETAILS ======
     const fullName = localStorage.getItem('fullName');
     const email = localStorage.getItem('email');
@@ -9,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         profileWelcomeEl.textContent = `Welcome : ${fullName}`;
     } else {
         // Agar naam nahi mila to login page pe redirect
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -31,11 +67,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (res.ok) {
             const data = await res.json();
             if (data.user?.lastLogin) {
-                // Backend se aaya hua lastLogin (pichla login time ya first-time ka current time)
+                // Backend se aaya hua lastLogin
                 lastLogin = new Date(data.user.lastLogin).toLocaleString();
                 localStorage.setItem('lastLogin', lastLogin);
             }
-            // Agar backend null bheje to kuch mat karo — localStorage ka fallback use hoga
         }
     } catch (err) {
         console.warn('Backend se lastLogin fetch nahi ho paya:', err);
@@ -54,16 +89,5 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // ====== LOGOUT HANDLING ======
-    document.getElementById('logoutBtn')?.addEventListener('click', function () {
-        // Local storage clear
-        localStorage.clear();
-
-        // Backend logout call
-        fetch('http://localhost:5000/api/logout', {
-            method: 'POST',
-            credentials: 'include'
-        }).finally(() => {
-            window.location.href = 'login.html';
-        });
-    });
+    document.getElementById('logoutBtn')?.addEventListener('click', logoutUser);
 });

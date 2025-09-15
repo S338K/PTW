@@ -3,19 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HIA Baggage Handling System - Permit to Work, A gateway to acess the BHS</title>
-
-  <!-- Stylesheets -->
+  <title>HIA Baggage Handling System - Permit to Work</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" /><!-- Font Awesome CDN (add this to your HTML if not already included) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   <link rel="stylesheet" href="mainstyles.css">
-
-  <!-- Optional Favicon -->
-  <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
 </head>
-
 <body>
-
 
   <!-- Navigation Bar -->
   <nav class="profile-navbar" id="navigationBar">
@@ -28,417 +21,310 @@
 
   <!-- Form Container -->
   <div class="form-container">
-  <form id="permitForm" method="post" novalidate>
+    <form id="permitForm" method="post" novalidate>
 
-
-  <!-- Combined Requester & Office Address Container -->
+      <!-- Requester Details -->
       <section class="card">
         <fieldset>
           <legend><h3>Requester Details</h3></legend>
-
-          <!-- Full Name -->
-<div class="form-group">
-  <div class="md-input">
-    <input type="text" name="fullName" id="fullNameMD" required placeholder=" " maxlength="25" pattern="^[A-Za-z\s]{1,25}$"/>
-    <label for="fullNameMD">Name</label>
-  </div>
-</div>
-
-<div class="form-group">
-  <div class="md-input">
-    <input type="text" name="lastName" id="lastName" required placeholder=" " maxlength="25" pattern="^[A-Za-z\s]{1,25}$" />
-    <label for="lastName">Last Name</label>
-  </div>
-</div>
-
-<div class="form-group">
-  <div class="md-input">
-    <input type="text" name="contactDetails" id="contactdetails" required placeholder=" " pattern="^\+974\d{8}$" />
-    <label for="contactdetails">Mobile Number</label>
-  </div>
-</div>
-
-<div class="form-group">
-  <div class="md-input">
-    <input type="text" name="altContactDetails" id="altcontactdetails" required placeholder=" " pattern="^\+974\d{8}$" />
-    <label for="altcontactdetails">Alternate Mobile Number</label>
-  </div>
-</div>
-          <!-- Corporate Email ID -->
           <div class="form-group">
             <div class="md-input">
-              <input type="text" name="corpEmailId" id="corpemailid" required placeholder=" " pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"/>
+              <input type="text" name="fullName" id="fullNameMD" required placeholder=" " maxlength="25" pattern="^[A-Za-z\s]{1,25}$"/>
+              <label for="fullNameMD">Name</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="md-input">
+              <input type="text" name="lastName" id="lastName" required placeholder=" " maxlength="25" pattern="^[A-Za-z\s]{1,25}$"/>
+              <label for="lastName">Last Name</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="md-input">
+              <input type="text" name="contactDetails" id="contactdetails" required placeholder=" " pattern="^\+974\d{8}$"/>
+              <label for="contactdetails">Mobile Number</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="md-input">
+              <input type="text" name="altContactDetails" id="altcontactdetails" placeholder=" " pattern="^\+974\d{8}$"/>
+              <label for="altcontactdetails">Alternate Mobile Number</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="md-input">
+              <input type="email" name="corpEmailId" id="corpemailid" required placeholder=" " />
               <label for="corpemailid">Corporate Email ID</label>
             </div>
           </div>
 
-          <!-- Office Address Section -->
           <fieldset>
             <legend><h4>Office Address</h4></legend>
             <div id="officeAddressSection" class="address-grid">
-
               <div class="form-group">
                 <div class="md-input">
                   <input type="text" id="buildingNo" name="buildingNo" required placeholder=" " maxlength="2" pattern="^\d{1,2}$"/>
                   <label for="buildingNo">Building No.</label>
                 </div>
               </div>
-
               <div class="form-group">
                 <div class="md-input">
                   <input type="text" id="floorNo" name="floorNo" required placeholder=" " maxlength="2" pattern="^\d{1,2}$"/>
                   <label for="floorNo">Floor No.</label>
                 </div>
               </div>
-
-			<div class="form-group">
+              <div class="form-group">
                 <div class="md-input">
                   <input type="text" id="streetNo" name="streetNo" required placeholder=" " maxlength="3" pattern="^\d{1,3}$"/>
                   <label for="streetNo">Street No.</label>
                 </div>
               </div>
-
               <div class="form-group">
                 <div class="md-input">
                   <input type="text" id="zone" name="zone" required placeholder=" " maxlength="2" pattern="^\d{1,2}$"/>
                   <label for="zone">Zone</label>
                 </div>
               </div>
-
-
               <div class="form-group">
                 <div class="md-input">
                   <input type="text" id="city" name="city" required placeholder=" " pattern="^[A-Za-z\s]+$"/>
                   <label for="city">City</label>
                 </div>
               </div>
-
               <div class="form-group">
                 <div class="md-input">
-                  <input type="text" id="country" name="country" required placeholder=" "   pattern="^[A-Za-z\s]+$"/>
+                  <input type="text" id="country" name="country" required placeholder=" " pattern="^[A-Za-z\s]+$"/>
                   <label for="country">Country</label>
                 </div>
               </div>
-
               <div class="form-group">
                 <div class="md-input">
                   <input type="text" id="poBox" name="poBox" required placeholder=" " maxlength="6" pattern="^\d{1,6}$"/>
                   <label for="poBox">P.O. Box</label>
                 </div>
               </div>
-
             </div>
           </fieldset>
         </fieldset>
       </section>
-
-  <!-- 🛠️ Work Details -->
-<section class="card">
-  <fieldset>
-    <legend><h3>Work Details</h3></legend>
-
-    <!-- Terminal Dropdown -->
-    <div class="form-group">
-      <div class="md-input">
-        <label for="terminal">Terminal</label>
-        <select id="terminal" name="terminal" required title="Terminal">
-          <option value="" disabled selected>Select the Terminal</option>
-          <option value="PTC">PTC</option>
-          <option value="RTBF">RTBF</option>
-          <option value="QROC">QROC</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Facility (Shown only for PTC/RTBF/QROC) -->
-    <div class="form-group hidden" id="facilityContainer">
-      <label for="facility">Facility</label>
-      <div class="md-input">
-        <select id="facility" name="facility" required title="Facility">
-          <option value="" disabled selected>Select the Facility</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Specify Terminal (Only for 'Other') -->
-    <div class="form-group hidden" id="specifyTerminalContainer">
-      <div class="md-input">
-        <input type="text" id="specifyTerminal" name="specifyTerminal" required placeholder=" " />
-        <label for="specifyTerminal">Specify Terminal</label>
-      </div>
-    </div>
-
-    <!-- Specify Facility (Only for 'Other') -->
-    <div class="form-group hidden" id="specifyFacilityContainer">
-      <div class="md-input">
-        <input type="text" id="specifyFacility" name="specifyFacility" required placeholder=" " />
-        <label for="specifyFacility">Specify Facility</label>
-      </div>
-    </div>
-
-    <!-- Impact on Operation Dropdown -->
-    <div class="form-group">
-      <div class="md-input">
-        <label for="impact">Impact on Operation</label>
-        <select id="impact" name="impact" required title="Impact on Operation">
-          <option value="" selected disabled>Select Impact</option>
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- ✅ Always Visible Fields -->
-    <!-- Nature of Work Dropdown -->
-    <div class="form-group">
-      <div class="md-input">
-        <label for="category">Nature of Work</label>
-        <select id="category" name="category" required title="Nature of Work">
-          <option value="" selected disabled>Select Category</option>
-          <option>Project</option>
-          <option>Preventive Maintenance</option>
-          <option>Corrective Maintenance</option>
-          <option>Fault</option>
-          <option>Breakdown</option>
-          <option>Others</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Description of Work -->
-    <div class="form-group">
-      <div class="md-input">
-        <textarea id="workDescription" name="workDescription" rows="2" required placeholder=" "></textarea>
-        <label for="workDescription">Description of Work:</label>
-      </div>
-    </div>
-
-    <!-- Conditional Fields (Visible only if Impact = Yes) -->
-    <div id="equipmentType" class="form-group hidden">
-      <div class="form-group">
-        <div class="md-input">
-          <label for="equipmentDetails">Select the Equipment</label>
-          <select id="equipmentDetails" name="equipmentDetails" title="Equipment Details">
-            <option value="" selected disabled>Select the equipment</option>
-            <option value="Low">BHS (Baggage Handling System)</option>
-            <option value="High">Non BHS (High Speed Shutter Door, PLB - Passenger Loading Bridge, VDGS - Visual Docking Guidance System)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div id="impactDetails" class="form-group hidden">
-      <div class="form-group">
-        <div class="md-input">
-          <label for="impactLevel">Select the Impact Level</label>
-          <select id="impactLevel" name="impactLevel" title="Impact Level">
-            <option value="" selected disabled>Select Level</option>
-            <option value="Low">Low</option>
-            <option value="Moderate">Moderate</option>
-            <option value="High">High</option>
-            <option value="Critical">Critical</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group" id="affectedEquipmentContainer">
-        <div class="md-input">
-          <textarea id="affectedEquipment" name="affectedEquipment" rows="2" required placeholder=" "></textarea>
-          <label for="affectedEquipment">Please mention the affected equipment for isolation</label>
-        </div>
-      </div>
-    </div>
-  </fieldset>
-</section>
-
-<section class="card">
-  <fieldset>
-    <legend><h3>Required Documents</h3></legend>
-
-   <!-- Approved E-Permit -->
-        <div class="form-group">
-            <div class="statement">Approved E-Permit:</div>
-            <div class="options">
-                <label for="ePermitYes"><input type="radio" id="ePermitYes" name="ePermit" value="Yes" class="yes-option"> Yes</label>
-                <label for="ePermitNo"><input type="radio" id="ePermitNo" name="ePermit" value="No" class="no-option"> No</label>
+<!-- Work Details -->
+      <section class="card">
+        <fieldset>
+          <legend><h3>Work Details</h3></legend>
+          <div class="form-group">
+            <div class="md-input">
+              <select id="terminal" name="terminal" required>
+                <option value="" disabled selected>Select the Terminal</option>
+                <option value="PTC">PTC</option>
+                <option value="RTBF">RTBF</option>
+                <option value="QROC">QROC</option>
+                <option value="Other">Other</option>
+              </select>
+              <label for="terminal">Terminal</label>
             </div>
-            
-            <!-- Reason for No E-Permit -->
+          </div>
+
+          <div id="facilityContainer" class="form-group hidden">
+            <div class="md-input">
+              <select id="facility" name="facility">
+                <option value="" disabled selected>Select the Facility</option>
+              </select>
+              <label for="facility">Facility</label>
+            </div>
+          </div>
+
+          <div id="specifyTerminalContainer" class="form-group hidden">
+            <div class="md-input">
+              <input type="text" id="specifyTerminal" name="specifyTerminal" placeholder=" " />
+              <label for="specifyTerminal">Specify Terminal</label>
+            </div>
+          </div>
+
+          <div id="specifyFacilityContainer" class="form-group hidden">
+            <div class="md-input">
+              <input type="text" id="specifyFacility" name="specifyFacility" placeholder=" " />
+              <label for="specifyFacility">Specify Facility</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="md-input">
+              <textarea id="workDescription" name="workDescription" placeholder=" "></textarea>
+              <label for="workDescription">Work Description</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="md-input">
+              <select id="impact" name="impact" required>
+                <option value="" disabled selected>Will the work impact any equipment?</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+              <label for="impact">Impact on Equipment</label>
+            </div>
+          </div>
+
+          <div id="equipmentType" class="form-group hidden">
+            <div class="md-input">
+              <input type="text" id="equipmentTypeInput" name="equipmentTypeInput" placeholder=" " />
+              <label for="equipmentTypeInput">Equipment Type</label>
+            </div>
+          </div>
+
+          <div id="impactDetails" class="form-group hidden">
+            <div class="md-input">
+              <textarea id="impactDetailsInput" name="impactDetailsInput" placeholder=" "></textarea>
+              <label for="impactDetailsInput">Impact Details</label>
+            </div>
+          </div>
+        </fieldset>
+      </section>
+
+      <!-- Required Documents -->
+      <section class="card">
+        <fieldset>
+          <legend><h3>Required Documents</h3></legend>
+
+          <div class="form-group">
+            <label>ePermit Available?</label>
+            <input type="radio" id="ePermitYes" name="ePermit" value="Yes"> Yes
+            <input type="radio" id="ePermitNo" name="ePermit" value="No"> No
             <div id="ePermitDetails" class="hidden">
-                <div class="md-input">
-                    <input type="text" id="ePermitReason" name="ePermitReason" required placeholder=" " />
-                    <label for="ePermitReason">Please specify the reason:</label>
-                </div>
+              <div class="md-input">
+                <input type="text" id="ePermitReason" name="ePermitReason" placeholder=" " />
+                <label for="ePermitReason">Reason for No ePermit</label>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- HIA FMM Workorder -->
-        <div class="form-group">
-            <div class="statement">HIA FMM Workorder:</div>
-            <div class="options">
-                <label for="fmmWorkorderYes"><input type="radio" id="fmmWorkorderYes" name="fmmWorkorder" value="Yes" class="yes-option"> Yes</label>
-                <label for="fmmWorkorderNo"><input type="radio" id="fmmWorkorderNo" name="fmmWorkorder" value="No" class="no-option"> No</label>
-            </div>
-            
-            <!-- Reason for No FMM Workorder -->
+          <div class="form-group">
+            <label>FMM Workorder Available?</label>
+            <input type="radio" id="fmmWorkorderYes" name="fmmWorkorder" value="Yes"> Yes
+            <input type="radio" id="fmmWorkorderNo" name="fmmWorkorder" value="No"> No
             <div id="fmmwrkordr" class="hidden">
-                <div class="md-input">
-                    <input type="text" id="noFmmWorkorder" name="noFmmWorkorder" required placeholder=" " />
-                    <label for="noFmmWorkorder">Please specify the reason:</label>
-                </div>
+              <div class="md-input">
+                <input type="text" id="noFmmWorkorder" name="noFmmWorkorder" placeholder=" " />
+                <label for="noFmmWorkorder">Reason for No FMM Workorder</label>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- HSE Risk Assessment -->
-        <div class="form-group">
-            <div class="statement">HSE Risk Assessment:</div>
-            <div class="options">
-                <label for="hseRiskYes"><input type="radio" id="hseRiskYes" name="hseRisk" value="Yes" class="yes-option"> Yes</label>
-                <label for="hseRiskNo"><input type="radio" id="hseRiskNo" name="hseRisk" value="No" class="no-option"> No</label>
-            </div>
-            
-            <!-- Reason for No HSE Risk Assessment -->
+          <div class="form-group">
+            <label>HSE Risk Assessment Available?</label>
+            <input type="radio" id="hseRiskYes" name="hseRisk" value="Yes"> Yes
+            <input type="radio" id="hseRiskNo" name="hseRisk" value="No"> No
             <div id="hseassmnt" class="hidden">
-                <div class="md-input">
-                    <input type="text" id="noHseRiskAssessmentReason" name="noHseRiskAssessmentReason" required placeholder=" " />
-                    <label for="noHseRiskAssessmentReason">Please specify the reason:</label>
-                </div>
+              <div class="md-input">
+                <input type="text" id="noHseRiskAssessmentReason" name="noHseRiskAssessmentReason" placeholder=" " />
+                <label for="noHseRiskAssessmentReason">Reason for No HSE Risk Assessment</label>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <!-- Operational Risk Assessment -->
-        <div class="form-group">
-            <div class="statement">Operational Risk Assessment:</div>
-            <div class="options">
-                <label for="opRiskYes"><input type="radio" id="opRiskYes" name="opRisk" value="Yes" class="yes-option"> Yes</label>
-                <label for="opRiskNo"><input type="radio" id="opRiskNo" name="opRisk" value="No" class="no-option"> No</label>
-            </div>
-            
-            <!-- Reason for No Operational Risk Assessment -->
+          <div class="form-group">
+            <label>Operations Risk Assessment Available?</label>
+            <input type="radio" id="opRiskYes" name="opRisk" value="Yes"> Yes
+            <input type="radio" id="opRiskNo" name="opRisk" value="No"> No
             <div id="opsassmnt" class="hidden">
-                <div class="md-input">
-                    <input type="text" id="noOpsRiskAssessmentReason" name="noOpsRiskAssessmentReason" required placeholder=" " />
-                    <label for="noOpsRiskAssessmentReason">Please specify the reason:</label>
-                </div>
+              <div class="md-input">
+                <input type="text" id="noOpsRiskAssessmentReason" name="noOpsRiskAssessmentReason" placeholder=" " />
+                <label for="noOpsRiskAssessmentReason">Reason for No Operations Risk Assessment</label>
+              </div>
             </div>
-        </div>
+          </div>
+        </fieldset>
+      </section>
+<!-- Date & Time -->
+      <section class="card">
+        <fieldset>
+          <legend><h3>Date & Time</h3></legend>
+          <div class="form-group">
+            <div class="md-input">
+              <input type="text" id="startDateTime" name="startDateTime" placeholder=" " required />
+              <label for="startDateTime">Start Date & Time</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="md-input">
+              <input type="text" id="endDateTime" name="endDateTime" placeholder=" " required />
+              <label for="endDateTime">End Date & Time</label>
+            </div>
+          </div>
+        </fieldset>
+      </section>
 
-    <!-- 🗂️ Custom File Upload Section -->
-<div class="file-upload-container">
-  <label for="fileUpload">Please upload the above selected documents:</label>
+      <!-- File Upload -->
+      <section class="card">
+        <fieldset>
+          <legend><h3>File Upload</h3></legend>
+          <div class="form-group">
+            <input type="file" id="fileUpload" name="fileUpload" multiple />
+            <p id="fileTypeMessage" style="color:red;"></p>
+            <ul id="uploadedFiles"></ul>
+          </div>
+        </fieldset>
+      </section>
 
-  <div class="custom-file-input-wrapper">
-    <input type="file" id="fileUpload" name="fileUpload" accept=".pdf,.jpeg,.jpg" multiple/>
-    <label for="fileUpload" class="custom-file-label">
-      <i class="fas fa-upload"></i> Upload Required Documents</label>
-  </div>
-
-  <div id="fileTypeMessage" class="file-type-message"></div>
-  <ul id="uploadedFiles" class="uploaded-files-list"></ul>
-</div>
-  </fieldset>
-</section>
-
-  <!-- Requested Timings Section -->
-<section class="card">
-  <fieldset>
-    <legend><h3>Requested Timings</h3></legend>
-
-    <!-- Start Date and Time -->
-    <div class="form-group">
-      <div class="md-input">
-        <input type="text" id="startDateTime" name="startDateTime" class="datetime-picker"  placeholder=" " required autocomplete="off" aria-label="Select start date and time"/>
-        <label for="startDateTime">Start Date and Time</label>
-      </div>
-    </div>
-
-    <!-- End Date and Time -->
-    <div class="form-group">
-      <div class="md-input">
-        <input type="text" id="endDateTime" name="endDateTime" class="datetime-picker" placeholder=" " required autocomplete="off" aria-label="Select end date and time"/>
-        <label for="endDateTime">End Date and Time</label>
-      </div>
-    </div>
-  </fieldset>
-</section>
-
-
-  <!-- ✍️ Signature -->
+      <!-- Signature -->
       <section class="card">
         <fieldset>
           <legend><h3>Signature</h3></legend>
-
           <div class="form-group">
             <div class="md-input">
-              <input type="text" id="signName" name="signName" required placeholder=" " readonly />
+              <input type="text" id="signName" name="signName" placeholder=" " required />
               <label for="signName">Name</label>
             </div>
           </div>
-
-          <!-- Date of Submission -->
           <div class="form-group">
             <div class="md-input">
-              <input type="text" id="signDate" name="signDate" required placeholder=" " readonly />
-              <label for="signDate">Date of Submission</label>
+              <input type="date" id="signDate" name="signDate" placeholder=" " required />
+              <label for="signDate">Date</label>
             </div>
           </div>
-
-          <!-- Time -->
           <div class="form-group">
             <div class="md-input">
-              <input type="text" id="signTime" name="signTime" required placeholder=" " readonly />
+              <input type="time" id="signTime" name="signTime" placeholder=" " required />
               <label for="signTime">Time</label>
             </div>
           </div>
-
-		  <div class="form-group">
+          <div class="form-group">
             <div class="md-input">
-              <input type="text" id="designation" name="designation" required placeholder=" " maxlength="25" pattern="^[A-Za-z\s]{1,25}$" />
+              <input type="text" id="designation" name="designation" placeholder=" " required />
               <label for="designation">Designation</label>
             </div>
           </div>
         </fieldset>
       </section>
 
-  <!-- 📜 Conditions -->
+      <!-- Conditions -->
       <section class="card">
         <fieldset>
           <legend><h3>Conditions</h3></legend>
-
-          <div class="condition-text">
-            <p>I confirm that:</p>
-            <ul>
-              <li>I have read this Permit to Work and fully understand on which equipment I am permitted to work and the work to be carried out.</li>
-              <li>No attempt will be made by me or anyone under my charge to carry out any other work or work on other equipment.</li>
-              <li>Should the requirements change, I will inform voluntarily to the permit issuer to advise of any changes necessary.</li>
-			  <li>I agree to the working window and will ensure that all staff and equipment vacate the area prior to this time.</li>
-			  <li>I have been made aware of the risks involved with working on this equipment.</li>
-            </ul>
+          <div class="form-group">
+            <input type="checkbox" id="confirmConditions" name="confirmConditions" required />
+            <label for="confirmConditions">I confirm that I have read and agree to the conditions.</label>
           </div>
         </fieldset>
       </section>
 
-  <!-- 💾 Action Buttons -->
-      <div class="action-buttons">
-        <button type="submit" class="md-button neon-btn-3d green-neon">
-          <i class="fas fa-paper-plane"></i> <span>Submit for Approval</span>
-        </button>
-
-        <button type="button" class="md-button neon-btn-3d blue-neon" id="savePdfBtn">
-          <i class="fas fa-save"></i> <span>Save as PDF</span>
-        </button>
-
-        <button type="button" class="md-button neon-btn-3d red-neon" id="clearBtn">
-          <i class="fas fa-trash-alt"></i> <span>Clear the Data</span>
-        </button>
+      <!-- Submit Button -->
+      <div class="form-group">
+        <button type="submit" id="submitBtn">Submit</button>
       </div>
 
     </form>
   </div>
 
+<<<<<<< HEAD
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"> </script>
    <script src="mainscript.js"></script>
    <script src="=profile.js"></script>
+=======
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <!-- Shared session guard + idle timer + navbar logic + validation -->
+  <script src="mainscript.js"></script>
+>>>>>>> 793a815afe6afa4e50569fa1bd892b3609e164f7
 </body>
 </html>
