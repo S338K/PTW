@@ -4,64 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HIA Baggage Handling System - Login Page</title>
-  <link rel="stylesheet" href="mainstyles.css" />
   <link rel="stylesheet" href="index.css" />
 </head>
 
 <body>
 
-  <!-- 🔷 Header Section (with weather inside) -->
-  <header class="header-container">
+  <!-- 🔷 Header Section -->
+  <header class="profile-navbar header-container">
     <div class="header-center">
       <div id="dateTimeDisplay" class="header-datetime"></div>
       <div id="tempDisplay" class="header-weather"></div>
     </div>
   </header>
 
-  <!-- Authentication Container -->
+  <!-- Title -->
   <div class="app-title">
     <h1>Welcome to HIA Baggage Handling System</h1>
-    <h4>Permit to Work - A gateway to access the BHS</h4>
+    <h3>Permit to Work - A gateway to access the BHS</h3>
   </div>
 
+  <!-- Login Card with Fieldset -->
   <div class="form-container auth-container" id="authContainer">
-    <form id="loginForm" method="POST" action="/api/login" novalidate>
-      <div class="form-group">
-        <label for="email">Email id</label>
-        <input type="email" id="email" name="email" required autocomplete="username" />
+    <fieldset>
+      <legend>Login</legend>
+      <form id="loginForm" method="POST" action="/api/login" novalidate>
+        <div class="form-group">
+          <label for="email">Email id</label>
+          <input type="email" id="email" name="email" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" id="loginBtn">Login</button>
+      </form>
+      <div class="form-footer">
+        <p>Don't have an account? <a href="signup.html" id="goToSignup">Sign up here</a></p>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="current-password" />
-      </div>
-      <button type="submit" id="loginBtn">Login</button>
-    </form>
-
-    <div class="form-footer">
-      <p>Don't have an account? <a href="signup.html" id="goToSignup">Sign up here</a></p>
-    </div>
+    </fieldset>
   </div>
 
-  <!-- Scripts -->
-  <script src="config.js"></script>
-  <script>
-    // ✅ Agar user login page pe aaya hai aur session active hai → logout
-    if (sessionStorage.getItem('isLoggedIn') === 'true') {
-      sessionStorage.clear();
-      console.log('User came back to login page, session cleared.');
-    }
-
-    // ✅ Back button detection (bfcache se load hone par bhi logout)
-    window.addEventListener('pageshow', function (event) {
-      if (event.persisted || performance.getEntriesByType("navigation")[0].type === 'back_forward') {
-        if (sessionStorage.getItem('isLoggedIn') === 'true') {
-          sessionStorage.clear();
-          window.location.reload();
-        }
-      }
-    });
-  </script>
   <script src="index.js"></script>
-  <!-- ❌ Removed profile.js: Reason - profile.js is for protected pages, should not run on login page -->
 </body>
 </html>

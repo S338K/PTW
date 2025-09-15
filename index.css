@@ -8,20 +8,15 @@
 }
 
 body {
-  /* 🔹 Background image with 50% transparency overlay */
-  background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
-              url('images/background.jpg') no-repeat center center fixed;
-  background-size: cover;
-
+  background-color: #fff; /* White background */
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
+  color: #273172;
   line-height: 1.5;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 20px;
 }
 
@@ -32,53 +27,125 @@ body {
   --text-primary: #273172;
   --text-secondary: #666666;
   --text-muted: #999999;
-  --checkbox-border: #888;
-  --checkbox-bg: #fff;
-  --calendar-bg: #fff;
-  --calendar-text: #273172;
-  --calendar-accent: #f8b500;
-  --bg-surface: #fafafa;
+  --bg-surface: #ffffff;
   --button-bg: #273172;
-  --button-hover-bg: #e60000;
-  --button-border: black;
+  --button-hover-bg: #1a245a;
+  --button-border: transparent;
   --input-border: #ccc;
-  --input-focus-border: black;
+  --input-focus-border: #273172;
   --error-color: #d9534f;
 }
 
-/* ... baaki tumhara original CSS same rakha gaya hai ... */
+/* ----------------------------------------
+   Profile Navbar
+---------------------------------------- */
+.profile-navbar {
+  color: #222;
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  box-shadow: 0 3px 3px rgb(59, 4, 102);
+  margin-bottom: 1.2rem;
+  background: #f8f8f8;
+  width: 100%;
+  font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
 /* ----------------------------------------
-   Header Container + Weather Conditions
+   Form Card Layout
 ---------------------------------------- */
-.header-container {
-  color: #222;
-  padding: 1.2rem 0 0.7rem 0;
-  border-radius: 0 0 1.5rem 1.5rem;
-  box-shadow: 0 3px 8px rgba(30, 2, 52, 0.07);
-  margin-bottom: 1.2rem;
-  transition: background 0.8s cubic-bezier(0.4,0,0.2,1);
+.form-container {
+  max-width: 400px;
+  width: 100%;
+  background: var(--bg-surface);
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* Sunny */
-.header-container.sunny {
-  background: linear-gradient(to right, #fceabb, #f8b500);
+fieldset {
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
 }
 
-/* Cloudy */
-.header-container.cloudy {
-  background: linear-gradient(to right, #bdc3c7, #2c3e50);
-  background-size: cover;
+legend {
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 0 10px;
+  color: var(--text-primary);
 }
 
-/* Rainy */
-.header-container.rainy {
-  background: linear-gradient(to right, #4b79a1, #283e51);
-  background-size: cover;
+
+.form-group {
+  margin-bottom: 20px;
 }
 
-/* Snowy */
-.header-container.snowy {
-  background: linear-gradient(to right, #e0eafc, #cfdef3);
-  background-size: cover;
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: regular;
+}
+
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid var(--input-border);
+  border-radius: 25px;
+  font-size: 15px;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: var(--input-focus-border);
+  outline: none;
+}
+
+/* ----------------------------------------
+   Button Styling
+---------------------------------------- */
+#loginBtn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--button-bg);
+  color: #fff;
+  border-radius: 4px;
+  border-color:red;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#loginBtn:hover {
+  background-color: var(--button-hover-bg);
+  border-radius: 25px;
+  border-style: groove;
+  background-color: goldenrod;
+  transition: cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+/* ----------------------------------------
+   Footer Link
+---------------------------------------- */
+.form-footer {
+  text-align: center;
+  margin-top: 15px;
+  font-weight: 600;
+}
+
+.form-footer a {
+  color: #273172;;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
+  text-decoration-color: #273172;
+  color: var(--error-color);
+}
+
+
+.app-title{
+  text-align: center;
+  margin-bottom: 20px;
+  margin-top: auto;
 }

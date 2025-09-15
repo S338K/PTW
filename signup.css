@@ -1,105 +1,95 @@
-/* signup.css: Styles for the signup page */
+/* signup.css: Same layout as login page */
 
 body {
-  background: #f7fafc;
-  font-family: 'Segoe UI', Arial, sans-serif;
-}
-
-.header-container {
-  /* Inherit dynamic background from JS */
-  color: #222;
-  padding: 1.2rem 0 0.7rem 0;
-  border-radius: 0 0 1.5rem 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  margin-bottom: 1.2rem;
-  transition: background 0.8s cubic-bezier(0.4,0,0.2,1);
+  background-color: #fff;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 .app-title {
   text-align: center;
-  margin-bottom: 1.5rem;
+  color: #273172;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-top: 20px;
 }
 
 .form-container {
-  background: #fff;
-  border-radius: 1.2rem;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
   max-width: 400px;
-  margin: 0 auto;
-  padding: 2.2rem 2rem 1.5rem 2rem;
+  margin: 40px auto;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+fieldset {
+  border: 2px solid #273172;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+legend {
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 0 10px;
+  color: #273172;
 }
 
 .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: 20px;
+  width: 90%;
 }
 
-.md-input {
-  position: relative;
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: regular;
 }
 
-.md-input input {
+input[type="text"],
+input[type="email"],
+input[type="password"] {
   width: 100%;
-  padding: 0.8rem 0.7rem 0.8rem 0.7rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  padding: 15px;
+  border: 2px solid #ccc;
+  border-radius: 25px;
+  font-size: 15px;
+}
+
+input:focus {
+  border-color: #273172;
   outline: none;
-  font-size: 1rem;
-  background: #f9fafb;
-  transition: border 0.2s;
 }
 
-.md-input input:focus {
-  border-color: #4f8cff;
-}
-
-.md-input label {
-  position: absolute;
-  left: 0.8rem;
-  top: 0.8rem;
-  color: #888;
-  font-size: 0.98rem;
-  pointer-events: none;
-  transition: 0.2s;
-  background: #fff;
-  padding: 0 0.2rem;
-}
-
-.md-input input:focus + label,
-.md-input input:not(:placeholder-shown) + label {
-  top: -0.7rem;
-  left: 0.6rem;
-  font-size: 0.85rem;
-  color: #4f8cff;
-  background: #fff;
-}
-
-.md-button {
+#signupBtn {
   width: 100%;
-  padding: 0.9rem 0;
-  background: linear-gradient(90deg, #4f8cff 0%, #38b6ff 100%);
-  color: #fff;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+  padding: 12px;
+  background-color: #273172;
+  border-radius: 4px;
+  font-size: 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  color: #fff;
+  border-color: red;
+  transition: background-color 0.3s ease;
 }
 
-.md-button:hover {
-  background: linear-gradient(90deg, #38b6ff 0%, #4f8cff 100%);
+#signupBtn:hover {
+  background-color: var(--button-hover-bg);
+  border-radius: 25px;
+  border-style: groove;
+  background-color: goldenrod;
+  transition: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 .form-footer {
   text-align: center;
-  margin-top: 1.2rem;
-  color: #555;
+  margin-top: 15px;
 }
 
 .form-footer a {
-  color: #4f8cff;
+  color: #273172;
   text-decoration: none;
-  font-weight: 500;
 }
 
 .form-footer a:hover {
