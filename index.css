@@ -54,13 +54,13 @@ text-align: center;
 /* ----------------------------------------
    Form Card Layout
 ---------------------------------------- */
-.form-container {
+..form-container {
   max-width: 100%;
-  width: 400px;
-  background: var(--bg-surface);
+  margin: auto;
+  background: #ffffff;
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 8px 15px rgb(97, 66, 66);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 fieldset {
