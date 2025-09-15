@@ -55,7 +55,7 @@ text-align: center;
    Form Card Layout
 ---------------------------------------- */
 ..form-container {
-  max-width: 100%;
+  max-width: responsive;
   margin: auto;
   background: #ffffff;
   padding: 30px;
