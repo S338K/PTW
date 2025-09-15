@@ -24,7 +24,7 @@ body {
    2. Define CSS Variables (Light mode only)
 ---------------------------------------- */
 :root {
-  --text-primary: #273172;
+  --text-primary: #1E245E;
   --text-secondary: #666666;
   --text-muted: #999999;
   --bg-surface: #ffffff;
@@ -40,7 +40,7 @@ body {
    Header Container
 ---------------------------------------- */
 .header-container {
-  color: #273172;
+  color: #1E245E;
   padding: 1.2rem 1.5rem;
   display: flex;
   box-shadow: 0 3px 3px rgb(59, 4, 102);
@@ -48,6 +48,7 @@ body {
   background: #f8f8f8;
   width: 100%;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+text-align: center;
 }
 
 /* ----------------------------------------
@@ -66,7 +67,7 @@ fieldset {
   border: 2px solid #ccc;
   border-radius: 8px;
   padding: 20px;
-  color : #273172
+  color : #1E235E;
 }
 
 legend {
@@ -107,7 +108,7 @@ input[type="password"]:focus {
 #loginBtn {
   width: 100%;
   padding: 12px;
-  background-color: #273172;
+  background-color: #1E245E;
   border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
