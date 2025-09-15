@@ -3,20 +3,25 @@ document.addEventListener('DOMContentLoaded', function () {
   const weatherEl = document.getElementById('tempDisplay');
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-  // ===== Live Date/Time =====
+  /* ===== HEADER: Live Date/Time ===== */
   function updateDateTime() {
     const now = new Date();
     const month = now.toLocaleString('en-US', { month: 'long' });
     const day = String(now.getDate()).padStart(2, '0');
     const year = now.getFullYear();
     const time = now.toLocaleTimeString('en-US', { hour12: true });
-    dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
+    if (dateTimeEl) {
+      dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
+    }
   }
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
+  if (dateTimeEl) {
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+  }
 
-  // ===== Weather Fetch =====
+  /* ===== HEADER: Weather Fetch ===== */
   async function fetchWeather() {
+    if (!weatherEl) return;
     const city = 'Doha';
     try {
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
@@ -36,8 +41,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   fetchWeather();
 
-  // ===== Dynamic Background =====
+  /* ===== HEADER: Dynamic Background ===== */
   function setDynamicBackground(weatherString) {
+    if (!weatherString) return;
     const lower = weatherString.toLowerCase();
     let bgUrl = '';
 
@@ -57,9 +63,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.body.style.backgroundImage = bgUrl;
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.transition = 'background-image 1s ease-in-out';
   }
 
-  // ===== LOGIN FORM HANDLING =====
+  /* ===== EXISTING LOGIN FUNCTIONALITY (UNCHANGED) ===== */
   const form = document.getElementById('loginForm');
   if (form) {
     form.addEventListener('submit', async (e) => {
