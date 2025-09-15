@@ -75,44 +75,49 @@ function requireAuth(req, res, next) {
 }
 
 router.post('/register', async (req, res) => {
-  const { username, email, password, company } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'All fields required' });
-  }
-
-  // ✅ Password validation
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
-  if (!passwordRegex.test(password)) {
-    return res.status(400).json({
-      message: 'Password must be at least 10 characters long and include at least one letter, one number, and one special character.'
-    });
-  }
-
-  const exists = await User.findOne({ email });
-  if (exists) return res.status(409).json({ message: 'Email already in use' });
-
-  const hash = await bcrypt.hash(password, 10);
-
-  // ✅ company aur lastLogin field save karna
-  const user = await User.create({
-    username,
-    email,
-    password: hash,
-    company: company || '',
-    lastLogin: null
-  });
-
-  req.session.userId = user._id;
-  res.status(201).json({
-    message: 'Registered successfully',
-    user: {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      company: user.company,
-      lastLogin: user.lastLogin
+  try {
+    const { username, email, password, company } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
-  });
+
+    // ✅ Password validation
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long and include at least one letter, one number, and one special character.'
+      });
+    }
+
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(409).json({ message: 'Email is already in use' });
+
+    const hash = await bcrypt.hash(password, 10);
+
+    // ✅ company aur lastLogin field save karna
+    const user = await User.create({
+      username,
+      email,
+      password: hash,
+      company: company || '',
+      lastLogin: null
+    });
+
+    req.session.userId = user._id;
+    res.status(201).json({
+      message: 'Registration successful, Redirecting to Login page...',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        company: user.company,
+        lastLogin: user.lastLogin
+      }
+    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ message: 'Something went wrong, please try again later.' });
+  }
 });
 
 router.post('/login', async (req, res) => {
