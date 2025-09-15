@@ -53,43 +53,42 @@ document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('loginForm');
   if (form) {
     form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  e.preventDefault();
 
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
 
-      if (!email || !password) {
-        alert('Please enter email and password.');
-        return;
-      }
+  if (!email || !password) {
+    alert('Please enter email and password.');
+    return;
+  }
 
-      try {
-        console.log('Sending payload:', { username, company, email, password });
+  try {
+    console.log('Sending payload:', { email, password });
 
-        const res = await fetch(`${API_BASE}/api/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          alert(data.message || 'Login failed');
-          return;
-        }
-
-        // Save session info in browser
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('fullName', data.user?.username || '');
-
-        // Redirect to profile page
-        window.location.href = 'profile.html';
-      } catch (err) {
-        console.error('Network error during login:', err);
-        alert('Network error. Please try again.');
-      }
+    const res = await fetch(`${API_BASE}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password })
     });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || 'Login failed');
+      return;
+    }
+
+    sessionStorage.setItem('isLoggedIn', 'true');
+    sessionStorage.setItem('fullName', data.user?.username || '');
+
+    window.location.href = 'profile.html';
+  } catch (err) {
+    console.error('Network error during login:', err);
+    alert('Network error. Please try again.');
+  }
+});
+
   }
 });
