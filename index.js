@@ -2,8 +2,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
 
-  // Set API base (empty = same origin; change if backend is on another domain)
-  const API_BASE = 'https://ptw-yu8u.onrender.com'; // e.g. 'https://ptw-yu8u.onrender.com'
+  // API base URL: local vs deploy
+  const API_BASE = location.hostname.includes('localhost')
+    ? 'http://localhost:5000'
+    : 'https://ptw-yu8u.onrender.com';
 
   // ====== HEADER: Live Date/Time ======
   function updateDateTime() {
@@ -31,29 +33,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!weatherEl) return;
     const city = 'Doha';
     try {
-      console.log('Fetching weather...');
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
         credentials: 'include'
       });
       if (!res.ok) {
-        console.warn('Weather API returned error:', res.status);
         weatherEl.textContent = 'Weather data unavailable';
         return;
       }
       const data = await res.json();
       weatherEl.textContent = data.formatted || 'Weather data unavailable';
-
-      if (data.condition) {
-        const header = document.querySelector('.header-container');
-        if (header) {
-          header.classList.remove('sunny', 'cloudy', 'rainy', 'snowy');
-          const cond = String(data.condition).toLowerCase();
-          if (cond.includes('cloud')) header.classList.add('cloudy');
-          else if (cond.includes('rain')) header.classList.add('rainy');
-          else if (cond.includes('snow')) header.classList.add('snowy');
-          else header.classList.add('sunny');
-        }
-      }
     } catch (err) {
       console.error('Weather fetch failed:', err);
       weatherEl.textContent = 'Weather fetch failed';
@@ -76,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       try {
-        console.log('Sending login request to:', `${API_BASE}/api/login`);
         const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -84,23 +71,19 @@ document.addEventListener('DOMContentLoaded', function () {
           body: JSON.stringify({ email, password })
         });
 
-        let data;
-        try {
-          data = await res.json();
-        } catch {
-          data = {};
-        }
+        const data = await res.json();
 
         if (!res.ok) {
-          console.warn('Login failed:', res.status, data);
           alert(data.message || 'Login failed');
           return;
         }
 
-        console.log('Login successful:', data);
+        // Save session info in browser
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('fullName', data.user?.username || '');
-        window.location.href = '/profile.html';
+
+        // Redirect to profile page
+        window.location.href = 'profile.html';
       } catch (err) {
         console.error('Network error during login:', err);
         alert('Network error. Please try again.');
