@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const multer = require('multer');
 const Permit = require('../models/permit');
-const upload = multer({ dest: 'uploads/' }); // basic storage, customize if needed
+const upload = multer({ dest: 'uploads/' });
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
@@ -20,7 +20,6 @@ router.get('/weather', async (req, res) => {
       return res.status(500).json({ message: "API key not configured" });
     }
 
-    // Weather API call
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
     const weatherResp = await axios.get(weatherUrl);
     const weatherData = weatherResp.data;
@@ -36,7 +35,6 @@ router.get('/weather', async (req, res) => {
     const windGust = Math.round(weatherData.wind?.gust || weatherData.wind?.speed || 0);
     const weatherStatus = weatherData.weather[0]?.main ?? '-';
 
-    // AQI API call
     const { lat, lon } = weatherData.coord || {};
     let aqiIndex = null, aqiStatus = null, poValue = null;
     if (lat && lon) {
@@ -66,28 +64,38 @@ router.get('/weather', async (req, res) => {
   }
 });
 
-// ================= AUTH ROUTES =================
+// ================= AUTH MIDDLEWARE =================
 function requireAuth(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ message: 'Unauthorized' });
-  next();
+  if (!req.session.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const now = Date.now();
+  const idleLimit = 1000 * 60 * 5; // 5 minutes
+
+  if (now - (req.session.lastActivity || 0) > idleLimit) {
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      return res.status(440).json({ message: 'Session expired due to inactivity' });
+    });
+  } else {
+    req.session.lastActivity = now;
+    next();
+  }
 }
 
+// ================= REGISTER =================
 router.post('/register', async (req, res) => {
   console.log('--- SIGNUP REQUEST RECEIVED ---');
-  console.log('Incoming body:', req.body);
 
   try {
     const { username, company, email, password } = req.body;
-    console.log('Parsed fields:', { username, company, email, passwordLength: password?.length });
-
     if (!username || !email || !password) {
-      console.log('❌ Missing required fields');
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
-      console.log('❌ Password regex failed');
       return res.status(400).json({
         message: 'Password must be at least 8 characters long and include at least one letter, one number, and one special character.'
       });
@@ -95,13 +103,10 @@ router.post('/register', async (req, res) => {
 
     const exists = await User.findOne({ email });
     if (exists) {
-      console.log('❌ Email already in use');
       return res.status(409).json({ message: 'Email is already in use' });
     }
 
     const hash = await bcrypt.hash(password, 10);
-    console.log('✅ Password hashed');
-
     const user = await User.create({
       username,
       email,
@@ -110,49 +115,48 @@ router.post('/register', async (req, res) => {
       lastLogin: null
     });
 
-    console.log('✅ User created with ID:', user._id);
+    // Start session only after successful registration
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ message: 'Session error' });
 
-    req.session.userId = user._id;
-    res.status(201).json({
-      message: 'Registration successful',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        company: user.company,
-        lastLogin: user.lastLogin
-      }
+      req.session.userId = user._id;
+      req.session.username = user.username;
+      req.session.lastActivity = Date.now();
+
+      res.status(201).json({
+        message: 'Registration successful',
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          company: user.company,
+          lastLogin: user.lastLogin
+        }
+      });
     });
   } catch (err) {
     console.error('❌ Registration error details:', err);
-    res.status(500).json({
-      message: 'Something went wrong',
-      error: err.message,
-      stack: err.stack
-    });
+    res.status(500).json({ message: 'Something went wrong', error: err.message });
   }
 });
 
+// ================= LOGIN =================
 router.post('/login', async (req, res) => {
   console.log('--- LOGIN REQUEST RECEIVED ---');
-  console.log('Incoming body:', req.body);
 
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      console.log('❌ Missing email or password');
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      console.log('❌ No user found for email:', email);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) {
-      console.log('❌ Password mismatch for email:', email);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -160,30 +164,32 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    req.session.userId = user._id;
-    console.log('✅ Login successful for user ID:', user._id);
+    // Regenerate session after successful login
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ message: 'Session error' });
 
-    res.json({
-      message: 'Login successful',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        company: user.company,
-        lastLogin: previousLogin || new Date()
-      }
+      req.session.userId = user._id;
+      req.session.username = user.username;
+      req.session.lastActivity = Date.now();
+
+      res.json({
+        message: 'Login successful',
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          company: user.company,
+          lastLogin: previousLogin || new Date()
+        }
+      });
     });
   } catch (err) {
     console.error('❌ Login error details:', err);
-    res.status(500).json({
-      message: 'Something went wrong during login',
-      error: err.message,
-      stack: err.stack
-    });
+    res.status(500).json({ message: 'Something went wrong during login', error: err.message });
   }
 });
 
-
+// ================= PROFILE =================
 router.get('/profile', requireAuth, async (req, res) => {
   const user = await User.findById(req.session.userId).select('-password');
   if (!user) return res.status(404).json({ message: 'User not found' });
@@ -199,6 +205,7 @@ router.get('/profile', requireAuth, async (req, res) => {
   });
 });
 
+// ================= LOGOUT =================
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
@@ -206,14 +213,14 @@ router.post('/logout', (req, res) => {
   });
 });
 
+// ================= DB CHECK =================
 router.get('/db-check', (req, res) => {
   try {
-    const dbName = mongoose.connection.name; // current DB ka naam
+    const dbName = mongoose.connection.name;
     res.json({ connectedTo: dbName });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 module.exports = router;
