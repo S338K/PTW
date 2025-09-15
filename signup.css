@@ -82,16 +82,15 @@ input:focus {
   transition: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-.form-footer {
-  text-align: center;
-  margin-top: 15px;
-}
-
-.form-footer {
+./* Sign-out link same as sign-in page link */
+.signout-link {
   color: #273172;
   text-decoration: none;
+  font-weight: 600;
 }
 
-.form-footer a:hover {
+.signout-link:hover {
   text-decoration: underline;
+  text-decoration-color: #273172;
+  color: var(--error-color);
 }
