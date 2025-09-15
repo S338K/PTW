@@ -15,8 +15,8 @@ body {
 }
 
 .form-container {
-  max-width: 400px;
-  margin: 40px auto;
+  max-width: 100%;
+  margin: auto;
   background: #ffffff;
   padding: 30px;
   border-radius: 8px;
@@ -94,3 +94,17 @@ input:focus {
   text-decoration-color: #273172;
   color: var(--error-color);
 }
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+@media (max-width: 480px) {
+  input[type="email"],
+  input[type="password"] {
+    padding: 12px;
+    font-size: 14px;
+  }
