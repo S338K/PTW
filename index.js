@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const weatherEl = document.getElementById('tempDisplay');
 
   // Set API base (empty = same origin; change if backend is on another domain)
-  const API_BASE = ''; // e.g. 'https://ptw-yu8u.onrender.com'
+  const API_BASE = 'https://ptw-yu8u.onrender.com'; // e.g. 'https://ptw-yu8u.onrender.com'
 
   // ====== HEADER: Live Date/Time ======
   function updateDateTime() {
