@@ -46,7 +46,6 @@ body {
   display: flex;
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
-  background: #f8f8f8;
   width: 100%;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
