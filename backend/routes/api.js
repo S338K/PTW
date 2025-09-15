@@ -74,7 +74,7 @@ function requireAuth(req, res, next) {
 
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, company } = req.body;
+    const { usernamename, email, password, company } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
