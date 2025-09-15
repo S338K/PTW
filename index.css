@@ -54,8 +54,8 @@ body {
    Form Card Layout
 ---------------------------------------- */
 .form-container {
-  max-width: 400px;
-  width: 100%;
+  max-width: 100%;
+  width: 75%;
   background: var(--bg-surface);
   padding: 30px;
   border-radius: 8px;
