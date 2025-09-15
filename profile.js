@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', async function () {
-    // ====== SESSION PRESERVE ======
-    // Agar login ke baad profile pe aaye ho to sessionStorage me flag set karo
+    // ====== SESSION GUARD ======
+    // Agar session nahi hai to logout/redirect
     if (!sessionStorage.getItem('isLoggedIn')) {
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('lastActivity', Date.now());
+        window.location.href = 'index.html';
+        return;
     }
 
     // ====== IDLE TIMEOUT (5 MINUTES) ======
@@ -56,10 +56,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // ====== LAST LOGIN ======
     const lastLoginEl = document.getElementById('profileLastLogin');
-    let lastLogin = localStorage.getItem('lastLogin'); // fallback from login.js
+    let lastLogin = localStorage.getItem('lastLogin');
 
     try {
-        // Backend se profile fetch karo (lastLogin ke liye)
         const res = await fetch('http://localhost:5000/api/profile', {
             method: 'GET',
             credentials: 'include'
@@ -67,7 +66,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (res.ok) {
             const data = await res.json();
             if (data.user?.lastLogin) {
-                // Backend se aaya hua lastLogin
                 lastLogin = new Date(data.user.lastLogin).toLocaleString();
                 localStorage.setItem('lastLogin', lastLogin);
             }
@@ -76,7 +74,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.warn('Backend se lastLogin fetch nahi ho paya:', err);
     }
 
-    // UI update
     if (lastLogin && lastLoginEl) {
         lastLoginEl.textContent = `Last login: ${lastLogin}`;
     } else if (lastLoginEl) {
