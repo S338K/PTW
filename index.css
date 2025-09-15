@@ -155,7 +155,7 @@ loginBtn:hover {
 /* Responsive adjustments */
  
     .header-container {
-      width: 100%;
+      width: responsive;
       padding: 1rem;
       display: flex;
       justify-content: space-between;
