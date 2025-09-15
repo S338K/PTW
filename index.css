@@ -1,151 +1,47 @@
-/* ----------------------------------------
-   1. Reset & Base Styles
----------------------------------------- */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - HIA Baggage Handling System</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <!-- ===== HEADER START ===== -->
+  <header class="header-container">
+    <div class="app-title">
+      <h1>Welcome to HIA Baggage Handling System</h1>
+      <h3>Permit to Work - A gateway to access the BHS</h3>
+    </div>
+    <div class="header-info">
+      <span id="dateTimeDisplay"></span>
+      <span id="tempDisplay"></span>
+    </div>
+  </header>
+  <!-- ===== HEADER END ===== -->
 
-body {
-  background-color: #fff; /* White background */
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #273172;
-  line-height: 1.5;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-}
+  <main>
+    <div class="form-container auth-container">
+      <fieldset>
+        <legend>Login</legend>
+        <form id="loginForm" method="POST" action="" novalidate>
+          <div class="form-group">
+            <label for="email">Email id</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required />
+          </div>
+          <button id="loginBtn" type="submit">Login</button>
+        </form>
+        <div class="form-footer">
+          <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+        </div>
+      </fieldset>
+    </div>
+  </main>
 
-/* ----------------------------------------
-   2. Define CSS Variables (Light mode only)
----------------------------------------- */
-:root {
-  --text-primary: #273172;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --bg-surface: #ffffff;
-  --button-bg: #273172;
-  --button-hover-bg: #1a245a;
-  --button-border: transparent;
-  --input-border: #ccc;
-  --input-focus-border: #273172;
-  --error-color: #d9534f;
-}
-
-/* ----------------------------------------
-   Header Container
----------------------------------------- */
-.header-container {
-  color: #222;
-  padding: 1.2rem 1.5rem;
-  display: flex;
-  box-shadow: 0 3px 3px rgb(59, 4, 102);
-  margin-bottom: 1.2rem;
-  background: #f8f8f8;
-  width: 100%;
-  font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* ----------------------------------------
-   Form Card Layout
----------------------------------------- */
-.form-container {
-  max-width: 400px;
-  width: 100%;
-  background: var(--bg-surface);
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgb(97, 66, 66);
-}
-
-fieldset {
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-legend {
-  font-size: 1.2em;
-  font-weight: bold;
-  padding: 0 10px;
-  color: var(--text-primary);
-}
-
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: regular;
-}
-
-input[type="email"],
-input[type="password"] {
-  width: 100%;
-  padding: 15px;
-  border: 2px solid var(--input-border);
-  border-radius: 25px;
-  font-size: 15px;
-}
-
-input[type="email"]:focus,
-input[type="password"]:focus {
-  border-color: var(--input-focus-border);
-  outline: none;
-}
-
-/* ----------------------------------------
-   Button Styling
----------------------------------------- */
-#loginBtn {
-  width: 100%;
-  padding: 12px;
-  background-color: var(--button-bg);
-  color: #fff;
-  border-radius: 4px;
-  border-color:red;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#loginBtn:hover {
-  background-color: var(--button-hover-bg);
-  border-radius: 25px;
-  border-style: groove;
-  background-color: goldenrod;
-  transition: cubic-bezier(0.075, 0.82, 0.165, 1);
-}
-
-/* ----------------------------------------
-   Footer Link
----------------------------------------- */
-.form-footer {
-  text-align: center;
-  margin-top: 15px;
-  font-weight: 600;
-}
-
-.form-footer a {
-  color: #273172;;
-}
-
-.form-footer:hover {
-  text-decoration: underline;
-  text-decoration-color: #273172;
-  color: var(--error-color);
-}
-
-
-.app-title{
-  text-align: center;
-  margin-bottom: 20px;
-  margin-top: auto;
-}
+  <script src="index.js"></script>
+</body>
+</html>
