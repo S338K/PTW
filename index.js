@@ -64,6 +64,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       try {
+        console.log('Sending payload:', { username, company, email, password });
+
         const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

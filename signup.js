@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     try {
+      console.log('Sending payload:', { username, company, email, password });
+
       console.log('Sending signup request to:', `${API_BASE}/api/register`);
       const res = await fetch(`${API_BASE}/api/register`, {
         method: 'POST',

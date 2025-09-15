@@ -73,26 +73,35 @@ function requireAuth(req, res, next) {
 }
 
 router.post('/register', async (req, res) => {
+  console.log('--- SIGNUP REQUEST RECEIVED ---');
+  console.log('Incoming body:', req.body);
+
   try {
-    const { usernamename, email, password, company } = req.body;
+    const { username, company, email, password } = req.body;
+    console.log('Parsed fields:', { username, company, email, passwordLength: password?.length });
+
     if (!username || !email || !password) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // ✅ Password validation
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
+      console.log('❌ Password regex failed');
       return res.status(400).json({
         message: 'Password must be at least 8 characters long and include at least one letter, one number, and one special character.'
       });
     }
 
     const exists = await User.findOne({ email });
-    if (exists) return res.status(409).json({ message: 'Email is already in use' });
+    if (exists) {
+      console.log('❌ Email already in use');
+      return res.status(409).json({ message: 'Email is already in use' });
+    }
 
     const hash = await bcrypt.hash(password, 10);
+    console.log('✅ Password hashed');
 
-    // ✅ company aur lastLogin field save karna
     const user = await User.create({
       username,
       email,
@@ -101,9 +110,11 @@ router.post('/register', async (req, res) => {
       lastLogin: null
     });
 
+    console.log('✅ User created with ID:', user._id);
+
     req.session.userId = user._id;
     res.status(201).json({
-      message: 'Registration successful, Redirecting to Login page...',
+      message: 'Registration successful',
       user: {
         id: user._id,
         username: user.username,
@@ -113,38 +124,65 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ message: 'Something went wrong, please try again later.' });
+    console.error('❌ Registration error details:', err);
+    res.status(500).json({
+      message: 'Something went wrong',
+      error: err.message,
+      stack: err.stack
+    });
   }
 });
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+  console.log('--- LOGIN REQUEST RECEIVED ---');
+  console.log('Incoming body:', req.body);
 
-  const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
-
-  // ✅ Purana lastLogin store karo
-  const previousLogin = user.lastLogin;
-
-  // ✅ Abhi ka time set karo
-  user.lastLogin = new Date();
-  await user.save();
-
-  req.session.userId = user._id;
-  res.json({
-    message: 'Login successful',
-    user: {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      company: user.company,
-      lastLogin: previousLogin ? previousLogin : new Date() // First time → current time
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      console.log('❌ Missing email or password');
+      return res.status(400).json({ message: 'Email and password are required' });
     }
-  });
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log('❌ No user found for email:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      console.log('❌ Password mismatch for email:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const previousLogin = user.lastLogin;
+    user.lastLogin = new Date();
+    await user.save();
+
+    req.session.userId = user._id;
+    console.log('✅ Login successful for user ID:', user._id);
+
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        company: user.company,
+        lastLogin: previousLogin || new Date()
+      }
+    });
+  } catch (err) {
+    console.error('❌ Login error details:', err);
+    res.status(500).json({
+      message: 'Something went wrong during login',
+      error: err.message,
+      stack: err.stack
+    });
+  }
 });
+
 
 router.get('/profile', requireAuth, async (req, res) => {
   const user = await User.findById(req.session.userId).select('-password');
