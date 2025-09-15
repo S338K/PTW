@@ -299,7 +299,98 @@ body {
   transition: 0.2s ease all;
   user-select: none;
 }
+/* ----------------------------------------
+   1. Reset & Base Styles
+---------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
+body {
+  background-color: #fff;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding-top: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin-top: 75px; /* remove gap, control with form-container only */
+}
+
+/* ----------------------------------------
+   2. Define CSS Variables (Light mode only)
+---------------------------------------- */
+:root {
+  --text-primary: #273172;  
+  --text-secondary: #666666; 
+  --text-muted: #999999;    
+  --checkbox-border: #888;
+  --checkbox-bg: #fff;
+  --calendar-bg: #fff;
+  --calendar-text: #273172;
+  --calendar-accent: #f8b500;
+  --bg-surface: #fafafa;
+  --button-bg: #273172;
+  --button-hover-bg: #e60000;
+  --button-border: black;
+  --input-border: #ccc;
+  --input-focus-border: black;
+  --error-color: #d9534f;
+}
+
+/* ----------------------------------------
+   3. Navigation Bar (New)
+---------------------------------------- */
+.profile-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #273172;
+  color: white;
+}
+
+#secondaryHeaderWelcome {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-btn {
+  background-color: red;
+  color: white;
+  border: 2px solid black;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  background-color: white;
+  color: black;
+}
+
+/* ----------------------------------------
+   4. Form Container
+---------------------------------------- */
+.form-container {
+  padding: 40px;
+  background: var(--button-bg);
+  border-radius: 25px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 .md-input input:focus + label,
 .md-input input:not(:placeholder-shown) + label,
 .md-input textarea:focus + label,
@@ -343,18 +434,14 @@ body {
   color: var(--text-primary, #000);
 }
 
-/* ----------------------------------------
-   9. Address Grid
----------------------------------------- */
+/* Address Grid */
 .address-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 15px 20px;
 }
 
-/* ----------------------------------------
-   10. Buttons
----------------------------------------- */
+/* Buttons */
 .button-container {
   display: flex;
   justify-content: center;
@@ -415,9 +502,7 @@ body {
   outline-offset: 3px;
 }
 
-/* ----------------------------------------
-   11. Conditions
----------------------------------------- */
+/* Conditions */
 .condition-text p {
   margin-bottom: 10px;
   font-weight: 600;
@@ -431,9 +516,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* ----------------------------------------
-   12. Responsive
----------------------------------------- */
+/* Responsive */
 @media (max-width: 1200px) {
   .button-container {
     gap: 15px;
@@ -446,9 +529,7 @@ body {
   }
 }
 
-/* ----------------------------------------
-   13. File Upload
----------------------------------------- */
+/* File Upload */
 .file-upload-container {
   margin-top: 1rem;
   margin-bottom: 1.5rem;
@@ -523,107 +604,42 @@ input[type="file"] {
 }
 
 .input-error {
-    border: 2px solid #e74c3c;
-    background: #fff0f0;
+  border: 2px solid #e74c3c;
+  background: #fff0f0;
 }
 
-/* ----------------------------------------
-   14. Secondary Header
----------------------------------------- */
-.secondary-header {
+/* Navigation Bar */
+.profile-navbar {
+  background-color: #273172;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   position: fixed;
-  top: 180px; /* always below main header */
+  top: 0;
   left: 0;
   width: 100%;
-  background: #fff;
-  z-index: 180;
-  box-shadow: 0 2px 8px rgba(39,49,112,0.08);
-  border-bottom: 1.5px solid #e0e0e0;
-  transition: top 0.3s cubic-bezier(0.4,0,0.2,1), transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  z-index: 1000;
 }
 
-.secondary-header.sticky-hide {
-  transform: translateY(-100%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.secondary-header-content {
+.nav-buttons {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0.5rem 1.5rem;
-}
-.secondary-header-left {
-  font-weight: 600;
-  color: #273172;
-  font-size: 1.08rem;
+  gap: 10px;
 }
 
-/* Mainpage Navigation Bar (profile-navbar style) */
-.profile-navbar {
-	background-color: #273172;
-	color: white;
-	padding: 10px;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	z-index: 1000;
-  border-radius: 5px #1d2c91;
-}
-
-.profile-navbar.sticky {
-  top: 0;
-  box-shadow: 0 2px 8px rgba(39,49,112,0.18);
-}
-.profile-navbar.hide {
-  transform: translateY(-120%);
-  opacity: 1;
-  pointer-events: auto;
-}
-.profile-navbar.show {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.profile-signout-btn {
-  background: #e60000;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 18px;
-  font-weight: 600;
+.nav-btn {
+  background-color: red;
+  color: white;
+  border: 2px solid black;
+  padding: 6px 12px;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
 }
 
-.profile-btn {
-  background: #fff;
-  color: #273172;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 18px;
-  font-weight: 600;
-  cursor: pointer;
-  margin: 0 8px;
-  transition: background 0.3s, color 0.3s;
-}
-
-@media (max-width: 900px) {
-  .secondary-header-content {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 0.5rem 0.5rem;
-  }
-  .secondary-header-center {
-    justify-content: flex-start;
-    gap: 10px;
-  }
+.nav-btn:hover {
+  background-color: white;
+  color: black;
 }

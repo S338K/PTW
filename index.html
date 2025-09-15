@@ -21,7 +21,7 @@
   <!-- Authentication Container -->
   <div class="app-title">
     <h1>Welcome to HIA Baggage Handling System</h1>
-    <p><h4>Permit to Work - A gateway to access the BHS</h4></p>
+    <h4>Permit to Work - A gateway to access the BHS</h4>
   </div>
 
   <div class="form-container auth-container" id="authContainer">
@@ -49,6 +49,23 @@
 
   <!-- Scripts -->
   <script src="config.js"></script>
+  <script>
+    // ✅ Agar user login page pe aaya hai aur session active hai → logout
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+      sessionStorage.clear();
+      console.log('User came back to login page, session cleared.');
+    }
+
+    // ✅ Back button detection (bfcache se load hone par bhi logout)
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted || performance.getEntriesByType("navigation")[0].type === 'back_forward') {
+        if (sessionStorage.getItem('isLoggedIn') === 'true') {
+          sessionStorage.clear();
+          window.location.reload();
+        }
+      }
+    });
+  </script>
   <script src="index.js"></script>
   <script src="profile.js"></script>
 </body>

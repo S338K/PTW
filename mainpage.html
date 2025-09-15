@@ -12,11 +12,11 @@
 
   <!-- Navigation Bar -->
   <nav class="profile-navbar" id="navigationBar">
-    <div id="secondaryHeaderWelcome">Welcome : </div>
-    <div style="flex:1;text-align:center;">
-      <button class="profile-btn" id="profileBtn">Profile</button>
+    <div id="secondaryHeaderWelcome">Welcome: <span id="userFullName"></span></div>
+    <div class="nav-buttons">
+      <button class="nav-btn" id="profileBtn">Profile</button>
+      <button class="nav-btn" id="logoutBtn">Log Out</button>
     </div>
-    <button class="profile-signout-btn" id="logoutBtn">Sign Out</button>
   </nav>
 
   <!-- Form Container -->
@@ -107,7 +107,8 @@
           </fieldset>
         </fieldset>
       </section>
-<!-- Work Details -->
+
+      <!-- Work Details -->
       <section class="card">
         <fieldset>
           <legend><h3>Work Details</h3></legend>
@@ -181,7 +182,7 @@
         </fieldset>
       </section>
 
-      <!-- Required Documents -->
+            <!-- Required Documents -->
       <section class="card">
         <fieldset>
           <legend><h3>Required Documents</h3></legend>
@@ -235,7 +236,8 @@
           </div>
         </fieldset>
       </section>
-<!-- Date & Time -->
+
+      <!-- Date & Time -->
       <section class="card">
         <fieldset>
           <legend><h3>Date & Time</h3></legend>
@@ -316,15 +318,18 @@
     </form>
   </div>
 
-<<<<<<< HEAD
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"> </script>
-   <script src="mainscript.js"></script>
-   <script src="=profile.js"></script>
-=======
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <!-- Shared session guard + idle timer + navbar logic + validation -->
   <script src="mainscript.js"></script>
->>>>>>> 793a815afe6afa4e50569fa1bd892b3609e164f7
+  <script src="profile.js"></script>
+  <script>
+    // Set full name in nav bar from sessionStorage
+    document.addEventListener('DOMContentLoaded', () => {
+      const fullNameEl = document.getElementById('userFullName');
+      const storedName = sessionStorage.getItem('fullName');
+      if (fullNameEl && storedName) {
+        fullNameEl.textContent = storedName;
+      }
+    });
+  </script>
 </body>
 </html>

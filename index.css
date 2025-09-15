@@ -25,10 +25,9 @@ body {
    2. Define CSS Variables (Light mode only)
 ---------------------------------------- */
 :root {
-  /* Light mode colors */
-  --text-primary: #273172;  /* Primary text color */
-  --text-secondary: #666666; /* Secondary text color */
-  --text-muted: #999999;    /* Muted text color */
+  --text-primary: #273172;
+  --text-secondary: #666666;
+  --text-muted: #999999;
   --checkbox-border: #888;
   --checkbox-bg: #fff;
   --calendar-bg: #fff;
@@ -101,11 +100,10 @@ body {
   box-sizing: border-box;
 }
 
-/* 🟦 Common Styles for input and textarea */
 .md-input input,
 .md-input textarea {
   width: 100%;
-  padding: 1rem 0.75rem 0.5rem; /* Top padding for label space */
+  padding: 1rem 0.75rem 0.5rem;
   font-size: 1rem;
   border: 2px solid var(--input-border, #ccc);
   border-radius: 4px;
@@ -122,7 +120,6 @@ body {
   box-shadow: 0 0 5px var(--input-focus-border, #007BFF);
 }
 
-/* 🟦 Floating Labels (inside inputs and textareas) */
 .md-input input + label,
 .md-input textarea + label {
   position: absolute;
@@ -136,7 +133,6 @@ body {
   user-select: none;
 }
 
-/* 🟦 Float label up when focused or when value exists */
 .md-input input:focus + label,
 .md-input input:not(:placeholder-shown) + label,
 .md-input textarea:focus + label,
@@ -149,14 +145,13 @@ body {
   z-index: 1;
 }
 
-/* Hide placeholder but keep it for detection */
 .md-input input::placeholder,
 .md-input textarea::placeholder {
   color: transparent;
 }
 
 /* ----------------------------------------
-   🟨 SELECT Dropdown Styles
+   SELECT Dropdown Styles
 ---------------------------------------- */
 .md-input select {
   width: 100%;
@@ -177,7 +172,6 @@ body {
   box-shadow: 0 0 5px var(--input-focus-border, #007BFF);
 }
 
-/* 🟨 Static label for SELECT - always above */
 .md-input select + label {
   display: block;
   margin-bottom: 0.4rem;
@@ -186,7 +180,7 @@ body {
 }
 
 /* ----------------------------------------
-   10. Buttons
+   Buttons
 ---------------------------------------- */
 .button-container {
   display: flex;
@@ -215,19 +209,6 @@ body {
   user-select: none;
 }
 
-.md-button::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  border-radius: 6px;
-  border: 3px solid transparent;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  z-index: -1;
-}
-
 .md-button:hover:not(:disabled) {
   background-color: var(--button-hover-bg);
   box-shadow: 0 0 15px rgba(230, 0, 0, 0.8);
@@ -239,14 +220,6 @@ body {
   border-color: #999;
   color: #666;
   cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-
-/* Focus-visible for buttons */
-.md-button:focus-visible {
-  outline: 3px solid var(--button-hover-bg);
-  outline-offset: 3px;
 }
 
 .invalid {
@@ -257,7 +230,6 @@ body {
   display: none !important;
 }
 
-/* Error message styling */
 .error-message {
   font-size: 0.875rem;
   margin-top: 5px;
@@ -267,37 +239,6 @@ body {
 /* Auth Pages Styling */
 .auth-container {
   max-width: 500px;
-}
-
-.auth-toggle {
-  display: flex;
-  margin-bottom: 20px;
-  border-radius: 5px;
-  overflow: hidden;
-  border: 2px solid var(--input-border);
-}
-
-.auth-toggle-btn {
-  flex: 1;
-  padding: 12px;
-  text-align: center;
-  background: #ecf0f1;
-  cursor: pointer;
-  transition: background 0.3s;
-  font-weight: 600;
-}
-
-.auth-toggle-btn.active {
-  background: var(--button-bg);
-  color: white;
-}
-
-.auth-form {
-  display: none;
-}
-
-.auth-form.active {
-  display: block;
 }
 
 .form-footer {
@@ -331,12 +272,37 @@ body {
   margin-top: 0;
 }
 
+/* ----------------------------------------
+   Header Container + Weather Conditions
+---------------------------------------- */
 .header-container {
-  /* Inherit dynamic background from JS */
   color: #222;
   padding: 1.2rem 0 0.7rem 0;
   border-radius: 0 0 1.5rem 1.5rem;
   box-shadow: 0 3px 8px rgba(30, 2, 52, 0.07);
   margin-bottom: 1.2rem;
   transition: background 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Sunny */
+.header-container.sunny {
+  background: linear-gradient(to right, #fceabb, #f8b500);
+}
+
+/* Cloudy */
+.header-container.cloudy {
+  background: linear-gradient(to right, #bdc3c7, #2c3e50);
+  background-size: cover;
+}
+
+/* Rainy */
+.header-container.rainy {
+  background: linear-gradient(to right, #4b79a1, #283e51);
+  background-size: cover;
+}
+
+/* Snowy */
+.header-container.snowy {
+  background: linear-gradient(to right, #e0eafc, #cfdef3);
+  background-size: cover;
 }

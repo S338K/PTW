@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
+  const headerEl = document.querySelector('.header-container');
 
   // ====== HEADER: Live Date/Time ======
   function updateDateTime() {
@@ -21,11 +22,9 @@ document.addEventListener('DOMContentLoaded', function () {
   updateDateTime();
   setInterval(updateDateTime, 1000);
 
-  // ====== HEADER: Weather Fetch ======
+  // ====== HEADER: Weather Fetch + Background Class ======
   async function fetchWeather() {
-    const weatherEl = document.getElementById('tempDisplay');
     const city = 'Doha';
-
     try {
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
         credentials: 'include'
@@ -42,6 +41,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (weatherEl) weatherEl.textContent = data.formatted;
       } else {
         if (weatherEl) weatherEl.textContent = 'Weather data unavailable';
+      }
+
+      // 🔹 Weather condition ke hisaab se header background class lagana
+      if (data.condition) {
+        const condition = data.condition.toLowerCase();
+        headerEl?.classList.remove('sunny', 'cloudy', 'rainy', 'snowy');
+        if (condition.includes('cloud')) {
+          headerEl?.classList.add('cloudy');
+        } else if (condition.includes('rain')) {
+          headerEl?.classList.add('rainy');
+        } else if (condition.includes('snow')) {
+          headerEl?.classList.add('snowy');
+        } else {
+          headerEl?.classList.add('sunny');
+        }
       }
     } catch (err) {
       console.error('Weather fetch error:', err);
@@ -86,11 +100,12 @@ document.addEventListener('DOMContentLoaded', function () {
             ? new Date(data.user.lastLogin).toLocaleString()
             : new Date().toLocaleString()
           );
-        }
 
-        // 🔹 Start session for guard + idle timer
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('lastActivity', Date.now());
+          // 🔹 Session variables for guard + idle timer
+          sessionStorage.setItem('isLoggedIn', 'true');
+          sessionStorage.setItem('fullName', data.user.username || email.split('@')[0]);
+          sessionStorage.setItem('lastActivity', Date.now().toString());
+        }
 
         alert('Login successful!');
         window.location.href = 'profile.html';
