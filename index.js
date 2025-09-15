@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
 
-  // Optional: set API base to same-origin
-  const API_BASE = '';
+  // Set API base (empty = same origin; change if backend is on another domain)
+  const API_BASE = ''; // e.g. 'https://ptw-yu8u.onrender.com'
 
   // ====== HEADER: Live Date/Time ======
   function updateDateTime() {
@@ -31,10 +31,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!weatherEl) return;
     const city = 'Doha';
     try {
+      console.log('Fetching weather...');
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
         credentials: 'include'
       });
       if (!res.ok) {
+        console.warn('Weather API returned error:', res.status);
         weatherEl.textContent = 'Weather data unavailable';
         return;
       }
@@ -52,7 +54,8 @@ document.addEventListener('DOMContentLoaded', function () {
           else header.classList.add('sunny');
         }
       }
-    } catch {
+    } catch (err) {
+      console.error('Weather fetch failed:', err);
       weatherEl.textContent = 'Weather fetch failed';
     }
   }
@@ -73,25 +76,33 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       try {
-        const res = await fetch('/api/login', {
+        console.log('Sending login request to:', `${API_BASE}/api/login`);
+        const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ email, password })
         });
 
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
 
         if (!res.ok) {
+          console.warn('Login failed:', res.status, data);
           alert(data.message || 'Login failed');
           return;
         }
 
+        console.log('Login successful:', data);
         sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('fullName', data.user.username || '');
+        sessionStorage.setItem('fullName', data.user?.username || '');
         window.location.href = '/profile.html';
       } catch (err) {
-        console.error(err);
+        console.error('Network error during login:', err);
         alert('Network error. Please try again.');
       }
     });
