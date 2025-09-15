@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
 
+  // Optional: set API base to same-origin
+  const API_BASE = '';
+
   // ====== HEADER: Live Date/Time ======
   function updateDateTime() {
     const now = new Date();
@@ -25,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ====== HEADER: Weather Fetch ======
   async function fetchWeather() {
-    if (!weatherEl) return; // ✅ Run only if weather element exists
+    if (!weatherEl) return;
     const city = 'Doha';
     try {
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
@@ -38,12 +41,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await res.json();
       weatherEl.textContent = data.formatted || 'Weather data unavailable';
 
-      // Optional: background class change if API returns condition
       if (data.condition) {
         const header = document.querySelector('.header-container');
         if (header) {
           header.classList.remove('sunny', 'cloudy', 'rainy', 'snowy');
-          const cond = data.condition.toLowerCase();
+          const cond = String(data.condition).toLowerCase();
           if (cond.includes('cloud')) header.classList.add('cloudy');
           else if (cond.includes('rain')) header.classList.add('rainy');
           else if (cond.includes('snow')) header.classList.add('snowy');
@@ -57,16 +59,41 @@ document.addEventListener('DOMContentLoaded', function () {
   fetchWeather();
 
   // ====== LOGIN FORM HANDLING ======
-  const loginForm = document.getElementById('loginForm');
-  if (!loginForm) return;
+  const form = document.getElementById('loginForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-  loginForm.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    if (!email || !password) {
-      alert('Please fill in all fields');
-      return;
-    }
-    try {
-      const
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!email || !password) {
+        alert('Please enter email and password.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.message || 'Login failed');
+          return;
+        }
+
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('fullName', data.user.username || '');
+        window.location.href = '/profile.html';
+      } catch (err) {
+        console.error(err);
+        alert('Network error. Please try again.');
+      }
+    });
+  }
+});

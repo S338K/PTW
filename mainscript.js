@@ -507,7 +507,6 @@ if (submitBtn && form) {
     }
   });
 }
-
   }
-
 });
+
