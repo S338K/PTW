@@ -60,7 +60,7 @@ text-align: center;
   background: var(--bg-surface);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgb(97, 66, 66);
+  box-shadow: 0 8px 15px rgb(97, 66, 66);
 }
 
 fieldset {
