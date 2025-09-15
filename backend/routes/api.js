@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 const multer = require('multer');
 const Permit = require('../models/permit');
-
 const upload = multer({ dest: 'uploads/' }); // basic storage, customize if needed
-
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');

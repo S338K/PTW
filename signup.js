@@ -3,11 +3,12 @@ document.addEventListener('DOMContentLoaded', function () {
   
   const signupForm = document.getElementById('signupForm');
   const API_BASE = 'https://ptw-yu8u.onrender.com'; // change if needed
+ 
   if (!signupForm) return;
   signupForm.addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const name = document.getElementById('signupName').value.trim();
+    const username = document.getElementById('signupName').value.trim();
     const company = document.getElementById('companyName').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
@@ -20,9 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Password strength check
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
-      alert('Password must be at least 10 characters long and include at least one letter, one number, and one special character.');
+      alert('Password must be at least 8 characters long and include at least one letter, one number, and one special character.');
       return;
     }
 
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // send cookies if backend uses session
         body: JSON.stringify({
-          username: name,
+          username: username,
           company: company,
           email: email,
           password: password
@@ -60,8 +61,8 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      console.log('Signup successful. Redirecting to Login page...', data);
-      alert(data.message || 'Account created successfully!');
+      console.log('Signup successful', data);
+      alert(data.message || 'Account created successfully!Redirecting to Login page...');
       window.location.href = 'index.html';
     } catch (err) {
       console.error('Network error during signup:', err);
