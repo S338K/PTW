@@ -3,47 +3,61 @@ document.addEventListener('DOMContentLoaded', function () {
   const weatherEl = document.getElementById('tempDisplay');
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-  // ===== HEADER: Live Date/Time =====
+  // ===== Live Date/Time =====
   function updateDateTime() {
     const now = new Date();
     const month = now.toLocaleString('en-US', { month: 'long' });
     const day = String(now.getDate()).padStart(2, '0');
     const year = now.getFullYear();
-    const time = now.toLocaleString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
-    if (dateTimeEl) {
-      dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
-    }
+    const time = now.toLocaleTimeString('en-US', { hour12: true });
+    dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
   }
-  if (dateTimeEl) {
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
-  }
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
 
-  // ===== HEADER: Weather Fetch =====
+  // ===== Weather Fetch =====
   async function fetchWeather() {
-    if (!weatherEl) return;
     const city = 'Doha';
     try {
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
         credentials: 'include'
       });
       if (!res.ok) {
-        weatherEl.textContent = 'Weather data unavailable';
+        weatherEl.textContent = 'Weather unavailable';
         return;
       }
       const data = await res.json();
-      weatherEl.textContent = data.formatted || 'Weather data unavailable';
+      weatherEl.textContent = data.formatted || 'Weather unavailable';
+      setDynamicBackground(data.formatted);
     } catch (err) {
       console.error('Weather fetch failed:', err);
       weatherEl.textContent = 'Weather fetch failed';
     }
   }
   fetchWeather();
+
+  // ===== Dynamic Background =====
+  function setDynamicBackground(weatherString) {
+    const lower = weatherString.toLowerCase();
+    let bgUrl = '';
+
+    const hour = new Date().getHours();
+    const isDay = hour >= 6 && hour < 18;
+
+    if (lower.includes('clear')) {
+      bgUrl = isDay
+        ? 'url(https://images.unsplash.com/photo-1501973801540-537f08ccae7b)'
+        : 'url(https://images.unsplash.com/photo-1502082553048-f009c37129b9)';
+    } else if (lower.includes('cloud')) {
+      bgUrl = 'url(https://images.unsplash.com/photo-1506744038136-46273834b3fb)';
+    } else if (lower.includes('rain')) {
+      bgUrl = 'url(https://images.unsplash.com/photo-1501594907352-04cda38ebc29)';
+    } else {
+      bgUrl = 'url(https://images.unsplash.com/photo-1503264116251-35a269479413)';
+    }
+
+    document.body.style.backgroundImage = bgUrl;
+  }
 
   // ===== LOGIN FORM HANDLING =====
   const form = document.getElementById('loginForm');
@@ -73,9 +87,6 @@ document.addEventListener('DOMContentLoaded', function () {
           alert(data.message || 'Login failed');
           return;
         }
-
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('fullName', data.user?.username || '');
 
         window.location.href = 'profile.html';
       } catch (err) {
