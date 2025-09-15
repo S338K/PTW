@@ -1,38 +1,73 @@
 /* Profile Page Specific Styles */
 .profile-navbar {
-	background-color: #333;
-	color: white;
-	padding: 15px;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	z-index: 1000;
-    border-radius: 2px #1d2c91;
+  background-color: #273172; /* CHANGE: as per requirement */
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* responsive wrap */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
 }
 
-.profile-signout-btn {
-	background: #e60000;
-	color: #fff;
-	border: none;
-	border-radius: 4px;
-	padding: 8px 18px;
-	font-weight: 600;
-	cursor: pointer;
+/* Nav sections */
+.profile-navbar .nav-left,
+.profile-navbar .nav-center,
+.profile-navbar .nav-right {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
+.profile-navbar .nav-left {
+  justify-content: flex-start;
+}
+
+.profile-navbar .nav-center {
+  justify-content: center;
+}
+
+.profile-navbar .nav-right {
+  justify-content: flex-end;
+}
+
+/* Buttons */
+.profile-signout-btn,
 .profile-sbmtptw-btn {
-	background: #e60000;
-	color: #fff;
-	border: none;
-	border-radius: 4px;
-	padding: 8px 18px;
-	font-weight: 600;
+  background: #fff;
+  color: #273172;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
+.profile-signout-btn:hover,
+.profile-sbmtptw-btn:hover {
+  background-color: #e6e6e6;
+}
+
+/* Form container spacing */
 .profile-form-container {
-	margin-top: 90px;
+  margin-top: 90px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .profile-navbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .profile-navbar .nav-left,
+  .profile-navbar .nav-center,
+  .profile-navbar .nav-right {
+    justify-content: center;
+    margin: 5px 0;
+  }
 }

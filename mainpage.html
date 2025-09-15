@@ -7,14 +7,65 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   <link rel="stylesheet" href="mainstyles.css">
+  <style>
+    /* ===== NavBar Styling ===== */
+    .profile-navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #273172;
+      color: #fff;
+      padding: 10px 20px;
+      flex-wrap: wrap;
+    }
+    .profile-navbar .nav-left,
+    .profile-navbar .nav-center,
+    .profile-navbar .nav-right {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+    .profile-navbar .nav-left { justify-content: flex-start; }
+    .profile-navbar .nav-center { justify-content: center; }
+    .profile-navbar .nav-right { justify-content: flex-end; }
+    .profile-navbar button {
+      background-color: #fff;
+      color: #273172;
+      border: none;
+      padding: 8px 14px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .profile-navbar button:hover {
+      background-color: #e6e6e6;
+    }
+    @media (max-width: 600px) {
+      .profile-navbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .profile-navbar .nav-left,
+      .profile-navbar .nav-center,
+      .profile-navbar .nav-right {
+        justify-content: center;
+        margin: 5px 0;
+      }
+    }
+  </style>
 </head>
 <body>
 
   <!-- Navigation Bar -->
   <nav class="profile-navbar" id="navigationBar">
-    <div id="secondaryHeaderWelcome">Welcome: <span id="userFullName"></span></div>
-    <div class="nav-buttons">
+    <div class="nav-left">
+      Welcome: <span id="userFullName"></span>
+    </div>
+    <div class="nav-center">
       <button class="nav-btn" id="profileBtn">Profile</button>
+    </div>
+    <div class="nav-right">
       <button class="nav-btn" id="logoutBtn">Log Out</button>
     </div>
   </nav>
@@ -144,7 +195,7 @@
           <div id="specifyFacilityContainer" class="form-group hidden">
             <div class="md-input">
               <input type="text" id="specifyFacility" name="specifyFacility" placeholder=" " />
-              <label for="specifyFacility">Specify Facility</label>
+                            <label for="specifyFacility">Specify Facility</label>
             </div>
           </div>
 
@@ -182,7 +233,7 @@
         </fieldset>
       </section>
 
-            <!-- Required Documents -->
+      <!-- Required Documents -->
       <section class="card">
         <fieldset>
           <legend><h3>Required Documents</h3></legend>
@@ -320,7 +371,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="mainscript.js"></script>
-  <script src="profile.js"></script>
   <script>
     // Set full name in nav bar from sessionStorage
     document.addEventListener('DOMContentLoaded', () => {

@@ -5,15 +5,25 @@
   <title>User Profile</title>
   <link rel="stylesheet" href="mainstyles.css">
   <link rel="stylesheet" href="profile.css">
-</head>
+  </head>
 <body style="margin:0; padding:0;">
 
   <nav class="profile-navbar">
+  <div class="nav-left">
     <div id="profileWelcome">Welcome : </div>
-    <div id="profileLastLogin">Last login: -</div>
+  </div>
+  <div class="nav-center">
     <button class="profile-sbmtptw-btn" id="sbmtptw">Submit a PTW request</button>
+  </div>
+  <div class="nav-right">
     <button class="profile-signout-btn" id="logoutBtn">Sign Out</button>
-  </nav>
+  </div>
+</nav>
+
+
+  <div style="padding: 0 20px; margin-top: 10px; color: #555;">
+    <div id="profileLastLogin">Last login: -</div>
+  </div>
 
   <div class="form-container profile-form-container">
     <div class="card" id="userProfileCard">
@@ -22,17 +32,20 @@
       <p><strong>Email:</strong> <span id="profileEmail"></span></p>
       <p><strong>Company:</strong> <span id="profileCompany"></span></p>
     </div>
+
+    <!-- Permit Details Section -->
     <div class="card" id="permitCard">
-      <h3>Closed Permits</h3>
-      <ul id="closedPermitsList"></ul>
+      <h3>Permit Details</h3>
+      <ul id="closedPermitsList">
+        <!-- Example static entries (replace with dynamic later) -->
+        <!-- <li>Permit #123 - Submitted</li>
+        <li>Permit #124 - Approved</li> -->
+      </ul>
     </div>
   </div>
 
-  <!-- Page-specific JS first -->
   <script src="profile.js"></script>
-  <!-- Shared session guard + idle timer + navbar logic -->
   <script src="mainscript.js"></script>
 
 </body>
 </html>
-
