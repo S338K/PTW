@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const multer = require('multer');
 const Permit = require('../models/permit');
 
@@ -163,5 +164,16 @@ router.post('/logout', (req, res) => {
     res.json({ message: 'Logged out' });
   });
 });
+
+router.get('/db-check', (req, res) => {
+  try {
+    const dbName = mongoose.connection.name; // current DB ka naam
+    res.json({ connectedTo: dbName });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 module.exports = router;
