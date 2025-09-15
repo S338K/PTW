@@ -37,9 +37,9 @@ body {
 }
 
 /* ----------------------------------------
-   Profile Navbar
+   Header Container
 ---------------------------------------- */
-.profile-navbar {
+.header-container {
   color: #222;
   padding: 1.2rem 1.5rem;
   display: flex;
@@ -137,7 +137,7 @@ input[type="password"]:focus {
   color: #273172;;
 }
 
-.form-footer a:hover {
+.form-footer:hover {
   text-decoration: underline;
   text-decoration-color: #273172;
   color: var(--error-color);
