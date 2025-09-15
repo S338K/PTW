@@ -47,9 +47,8 @@ body {
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
   background: #f8f8f8;
-  max-width: auto;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  text-align: center;
+  text-align: centre;
  justify-content: space-between;
  flex-wrap: wrap;
 }
@@ -59,10 +58,9 @@ body {
 ---------------------------------------- */
 .form-container {
   width: auto;
-  margin: 2rem;
-  background: #ffffff;
+  background: #fff;
   padding: 30px;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
