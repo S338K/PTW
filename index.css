@@ -106,19 +106,20 @@ input[type="password"]:focus {
    Button Styling
 ---------------------------------------- */
 
-loginBtn {
+/* Login button same as signup button */
+#loginBtn {
   width: 100%;
   padding: 12px;
-  background-color: var(--button-bg);
-  color: #fff;
+  background-color: #273172;
   border-radius: 4px;
-  border-color:red;
   font-size: 16px;
   cursor: pointer;
+  color: #fff;
+  border-color: red;
   transition: background-color 0.3s ease;
 }
 
-loginBtn:hover {
+#loginBtn:hover {
   background-color: var(--button-hover-bg);
   border-radius: 25px;
   border-style: groove;
