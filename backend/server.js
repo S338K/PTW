@@ -44,7 +44,7 @@ app.use(session({
 
 // ===== Routes =====
 const mainPageRoutes = require('./routes/mainpageroute');
-app.use('/mainpage', mainPageRoutes);
+app.use('/permit', mainPageRoutes);
 
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
