@@ -1,46 +1,37 @@
 document.addEventListener('DOMContentLoaded', function () {
-
-  // =========================
-  // Session guard + idle timer
-  // =========================
-  const currentPage = window.location.pathname.split('/').pop();
-
+// ====== SESSION GUARD ======
   if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
     window.location.href = 'index.html';
     return;
   }
 
-  if (sessionStorage.getItem('isLoggedIn')) {
-    function logoutUser() {
-      sessionStorage.clear();
-      window.location.href = 'index.html';
+  // ====== IDLE TIMEOUT (5 MINUTES) ======
+  function logoutUser() {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+  function resetIdleTimer() {
+    sessionStorage.setItem('lastActivity', Date.now().toString());
+  }
+  function checkIdleTime() {
+    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
+    if (!last || Date.now() - last > 5 * 60 * 1000) {
+      logoutUser();
     }
-
-    function resetIdleTimer() {
-      sessionStorage.setItem('lastActivity', Date.now().toString());
-    }
-
-    function checkIdleTime() {
-      const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-      if (!last || Date.now() - last > 5 * 60 * 1000) {
-        logoutUser();
-      }
-    }
-
+  }
+  if (currentPage !== 'index.html') {
     ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
       document.addEventListener(evt, resetIdleTimer, { passive: true })
     );
-
     setInterval(checkIdleTime, 30000);
     resetIdleTimer();
   }
-
   // =========================
   // Navbar buttons
   // =========================
   const logoutBtn = document.getElementById('logoutBtn');
   const profileBtn = document.getElementById('profileBtn');
-  const submitNewBtn = document.getElementById('submitNewBtn');
 
   if (logoutBtn) logoutBtn.addEventListener('click', () => {
     sessionStorage.clear();
@@ -51,9 +42,12 @@ document.addEventListener('DOMContentLoaded', function () {
     window.location.href = 'profile.html';
   });
 
-  if (submitNewBtn) submitNewBtn.addEventListener('click', () => {
-    window.location.href = 'mainpage.html';
-  });
+  // Set full name in nav bar
+  const fullNameEl = document.getElementById('userFullName');
+  const storedName = sessionStorage.getItem('fullName');
+  if (fullNameEl && storedName) {
+    fullNameEl.textContent = storedName;
+  }
 
   // =========================
   // Utilities for validation
@@ -128,19 +122,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // Facility list update
   // =========================
   const facilityData = {
-    'PTC': [
-      'Arrival Hall', 'Baggage Hall', 'Check-In Area',
-      'Terminating Alpha', 'Terminating Bravo',
-      'Transfer Alpha', 'Transfer Bravo', 'Transfer Charlie',
-      'Dog Sniffing Area', 'Stand C1', 'Stand C2', 'Stand C3', 'Stand C4', 'Stand C5'
-    ],
-    'RTBF': [
-      'Employee Service Building', 'Customer Service Building',
-      'RTBF Baggage Hall', 'RTBF Baggage Control Room'
-    ],
-    'QROC': [
-      'Arrival Area', 'Departure Area', 'Baggage Hall Area'
-    ]
+    'PTC': ['Arrival Hall', 'Baggage Hall', 'Check-In Area', 'Terminating Alpha', 'Terminating Bravo', 'Transfer Alpha', 'Transfer Bravo', 'Transfer Charlie', 'Dog Sniffing Area', 'Stand C1', 'Stand C2', 'Stand C3', 'Stand C4', 'Stand C5'],
+    'RTBF': ['Employee Service Building', 'Customer Service Building', 'RTBF Baggage Hall', 'RTBF Baggage Control Room'],
+    'QROC': ['Arrival Area', 'Departure Area', 'Baggage Hall Area']
   };
 
   const terminalEl = document.getElementById('terminal');
@@ -182,30 +166,62 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  function setupRadioToggle(radioYesId, radioNoId, targetSectionId) {
-  const yesRadio = document.getElementById(radioYesId);
-  const noRadio = document.getElementById(radioNoId);
-  const targetSection = document.getElementById(targetSectionId);
+  // =========================
+  // Impact on Operation fix
+  // =========================
+  const impactEl = document.getElementById('impact');
+  if (impactEl) {
+    impactEl.addEventListener('change', function () {
+      const eqType = document.getElementById('equipmentType');
+      const impactDetails = document.getElementById('impactDetails');
+      const eqInput = document.getElementById('equipmentTypeInput');
+      const impactInput = document.getElementById('impactDetailsInput');
 
-  if (yesRadio && noRadio && targetSection) {
-    const hideSection = () => {
-      targetSection.classList.add('hidden');
-      targetSection.querySelectorAll('input, select, textarea').forEach(el => el.value = '');
-    };
-    const showSection = () => {
-      targetSection.classList.remove('hidden');
-    };
-
-    yesRadio.addEventListener('change', () => { if (yesRadio.checked) hideSection(); });
-    noRadio.addEventListener('change', () => { if (noRadio.checked) showSection(); });
+      if (this.value === 'Yes') {
+        eqType.classList.remove('hidden');        impactDetails.classList.remove('hidden');
+        eqInput.setAttribute('required', 'required');
+        impactInput.setAttribute('required', 'required');
+      } else {
+        eqType.classList.add('hidden');
+        impactDetails.classList.add('hidden');
+        eqInput.removeAttribute('required');
+        impactInput.removeAttribute('required');
+        eqInput.value = '';
+        impactInput.value = '';
+      }
+    });
   }
-}
 
-// Apply to all 4 document sections
-setupRadioToggle('ePermitYes', 'ePermitNo', 'ePermitDetails');
-setupRadioToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr');
-setupRadioToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt');
-setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt');
+  // =========================
+  // Required Documents fix
+  // =========================
+  function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
+    const yesRadio = document.getElementById(radioYesId);
+    const noRadio = document.getElementById(radioNoId);
+    const container = document.getElementById(containerId);
+    const input = document.getElementById(inputId);
+
+    if (yesRadio && noRadio && container && input) {
+      yesRadio.addEventListener('change', () => {
+        if (yesRadio.checked) {
+          container.classList.add('hidden');
+          input.removeAttribute('required');
+          input.value = '';
+        }
+      });
+      noRadio.addEventListener('change', () => {
+        if (noRadio.checked) {
+          container.classList.remove('hidden');
+          input.setAttribute('required', 'required');
+        }
+      });
+    }
+  }
+
+  setupDocToggle('ePermitYes', 'ePermitNo', 'ePermitDetails', 'ePermitReason');
+  setupDocToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr', 'noFmmWorkorder');
+  setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
+  setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
   // =========================
   // Date & time validation
@@ -398,8 +414,6 @@ setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt');
 
       const ok =
         validateRequesterDetails() &&
-        validateWorkDetails &&
-        validateRequiredDocuments &&
         validateDateTime() &&
         validateFileUpload() &&
         validateSignature() &&
@@ -416,7 +430,7 @@ setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt');
         if (signDate) {
           const y = now.getFullYear();
           const m = String(now.getMonth() + 1).padStart(2, '0');
-          const d = String(now.getDate()).padStart(2, '0');
+                  const d = String(now.getDate()).padStart(2, '0');
           signDate.value = `${y}-${m}-${d}`;
         }
         if (signTime) {
@@ -439,8 +453,10 @@ setupRadioToggle('opRiskYes', 'opRiskNo', 'opsassmnt');
         if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
         if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
 
-        equipmentTypeSection?.classList.add('hidden');
-        impactDetailsSection?.classList.add('hidden');
+        const equipmentTypeSection = document.getElementById('equipmentType');
+        const impactDetailsSection = document.getElementById('impactDetails');
+        if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
+        if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
 
         document.querySelectorAll('.error-message').forEach(n => n.remove());
         document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
