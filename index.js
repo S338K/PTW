@@ -1,13 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
+  const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-  // API base URL: local vs deploy
-  const API_BASE = location.hostname.includes('localhost')
-    ? 'http://localhost:5000'
-    : 'https://ptw-yu8u.onrender.com';
-
-  // ====== HEADER: Live Date/Time ======
+  // ===== HEADER: Live Date/Time =====
   function updateDateTime() {
     const now = new Date();
     const month = now.toLocaleString('en-US', { month: 'long' });
@@ -20,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
       hour12: true
     });
     if (dateTimeEl) {
-      dateTimeEl.textContent = `${month}, ${day}, ${year} | ${time}`;
+      dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
     }
   }
   if (dateTimeEl) {
@@ -28,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(updateDateTime, 1000);
   }
 
-  // ====== HEADER: Weather Fetch ======
+  // ===== HEADER: Weather Fetch =====
   async function fetchWeather() {
     if (!weatherEl) return;
     const city = 'Doha';
@@ -49,46 +45,43 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   fetchWeather();
 
-  // ====== LOGIN FORM HANDLING ======
+  // ===== LOGIN FORM HANDLING =====
   const form = document.getElementById('loginForm');
   if (form) {
     form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+      e.preventDefault();
 
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
 
-  if (!email || !password) {
-    alert('Please enter email and password.');
-    return;
-  }
+      if (!email || !password) {
+        alert('Please enter email and password.');
+        return;
+      }
 
-  try {
-    console.log('Sending payload:', { email, password });
+      try {
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
+        });
 
-    const res = await fetch(`${API_BASE}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password })
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.message || 'Login failed');
+          return;
+        }
+
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('fullName', data.user?.username || '');
+
+        window.location.href = 'profile.html';
+      } catch (err) {
+        console.error('Network error during login:', err);
+        alert('Network error. Please try again.');
+      }
     });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.message || 'Login failed');
-      return;
-    }
-
-    sessionStorage.setItem('isLoggedIn', 'true');
-    sessionStorage.setItem('fullName', data.user?.username || '');
-
-    window.location.href = 'profile.html';
-  } catch (err) {
-    console.error('Network error during login:', err);
-    alert('Network error. Please try again.');
-  }
-});
-
   }
 });

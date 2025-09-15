@@ -3,46 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HIA Baggage Handling System - Login Page</title>
-  <link rel="stylesheet" href="index.css" />
+  <title>Login - HIA Baggage Handling System</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-
-  <!-- 🔷 Header Section -->
-  <header class="header-container">
-    <div class="header-center">
-      <div id="dateTimeDisplay" class="header-datetime"></div>
-      <div id="tempDisplay" class="header-weather"></div>
+  <!-- ===== HEADER START ===== -->
+  <header>
+    <div class="app-title">
+      <h1>Welcome to HIA Baggage Handling System</h1>
+      <h3>Permit to Work - A gateway to access the BHS</h3>
+    </div>
+    <div class="header-info">
+      <span id="dateTimeDisplay"></span>
+      <span id="tempDisplay"></span>
     </div>
   </header>
+  <!-- ===== HEADER END ===== -->
 
-  <!-- Title -->
-  <div class="app-title">
-    <h1>Welcome to HIA Baggage Handling System</h1>
-    <h3>Permit to Work - A gateway to access the BHS</h3>
-  </div>
-
-  <!-- Login Card with Fieldset -->
-  <div class="form-container auth-container" id="authContainer">
-    <fieldset>
-      <legend>Login</legend>
-      <form id="loginForm" novalidate>
-        <div class="form-group">
-          <label for="email">Email id</label>
-          <input type="email" id="email" name="email" required autocomplete="username" />
+  <main>
+    <div class="form-container auth-container">
+      <fieldset>
+        <legend>Login</legend>
+        <form id="loginForm" method="POST" action="" novalidate>
+          <div class="form-group">
+            <label for="email">Email id</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required />
+          </div>
+          <button type="submit">Login</button>
+        </form>
+        <div class="form-footer">
+          <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required autocomplete="current-password" />
-        </div>
-        <button type="submit" id="loginBtn">Login</button>
-      </form>
-      <div class="form-footer">
-        <p>Don't have an account? <a href="signup.html" id="goToSignup">Sign up here</a></p>
-      </div>
-    </fieldset>
-  </div>
+      </fieldset>
+    </div>
+  </main>
 
   <script src="index.js"></script>
 </body>

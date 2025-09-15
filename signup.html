@@ -3,48 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HIA Baggage Handling System - Sign Up Page</title>
-  <link rel="stylesheet" href="signup.css" />
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-
-   <!-- Title -->
-  <div class="app-title">
-    <h1>Welcome to HIA Baggage Handling System</h1>
-    <h3>Permit to Work - A gateway to access the BHS</h3>
-  </div>
-
-  <div class="form-container auth-container" id="authContainer">
-    <fieldset>
-      <legend>Sign Up</legend>
-      <form id="signupForm" action="/api/register" novalidate>
-      <div class="form-group">
-        <label for="signupName">Full Name</label>
-        <input type="text" id="signupName" name="username" required />
-      </div>
-      <div class="form-group">
-        <label for="companyName">Company Name</label>
-        <input type="text" id="companyName" name="company" required />
-      </div>
-      <div class="form-group">
-        <label for="signupEmail">Email Address</label>
-        <input type="email" id="signupEmail" name="email" required />
-      </div>
-      <div class="form-group">
-        <label for="signupPassword">Password</label>
-        <input type="password" id="signupPassword" name="password" required />
-      </div>
-      <div class="form-group">
-        <label for="signupConfirmPassword">Confirm Password</label>
-        <input type="password" id="signupConfirmPassword" name="confirmPassword" required />
-      </div>
-      <div class="form-group">
-        <button type="submit" id="signupBtn">Create Account</button>
-      </div>
-    </form>
-    <div class="form-footer">
-      <p>Already have an account? <a href="index.html" id="goToLogin">Login here</a></p>
+  <main>
+    <div class="form-container auth-container">
+      <fieldset>
+        <legend>Sign Up</legend>
+        <form id="signupForm" method="POST" action="" novalidate>
+          <div class="form-group">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="companyName">Company Name</label>
+            <input type="text" id="companyName" name="company" required />
+          </div>
+          <div class="form-group">
+            <label for="signupEmail">Email Address</label>
+            <input type="email" id="signupEmail" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" name="password" required />
+          </div>
+          <div class="form-group">
+            <label for="signupConfirmPassword">Confirm Password</label>
+            <input type="password" id="signupConfirmPassword" name="confirmPassword" required />
+          </div>
+          <button type="submit">Create Account</button>
+        </form>
+        <div class="form-footer">
+          <p>Already have an account? <a href="index.html">Login here</a></p>
+        </div>
+      </fieldset>
     </div>
-  </fieldset>
-</div>
+  </main>
+
+  <script src="signup.js"></script>
+</body>
+</html>
