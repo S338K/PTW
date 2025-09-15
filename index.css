@@ -59,8 +59,8 @@ body {
 /* ----------------------------------------
    Form Card Layout
 ---------------------------------------- */
-..form-container {
-  max-width: responsive;
+.form-container {
+  max-width: 100%;
   margin: auto;
   background: #ffffff;
   padding: 30px;
@@ -68,14 +68,14 @@ body {
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-fieldset {
+.fieldset {
   border: 2px solid #ccc;
   border-radius: 8px;
   padding: 20px;
   color : #1E235E;
 }
 
-legend {
+.legend {
   font-size: 1.2em;
   font-weight: bold;
   padding: 0 10px;
