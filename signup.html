@@ -18,7 +18,7 @@
   <div class="form-container auth-container" id="authContainer">
     <fieldset>
       <legend>Sign Up</legend>
-      <form id="signupForm" class="auth-form active">
+      <form id="signupForm" method="POST" action="/api/register" novalidate>
       <div class="form-group">
         <label for="signupName">Full Name</label>
         <input type="text" id="signupName" name="username" required />
