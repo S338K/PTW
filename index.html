@@ -15,7 +15,7 @@
   </header>
   <!-- ===== HEADER END ===== -->
 
-<div class="app-title">
+  <div class="app-title">
     <h1>Welcome to HIA Baggage Handling System</h1>
     <h3>Permit to Work - A gateway to access the BHS</h3>
   </div>
@@ -28,21 +28,25 @@
           <div class="form-group">
             <label for="email">Email id</label>
             <input type="email" id="email" name="email" required />
+            <span class="error-message" aria-live="polite"></span>
           </div>
           <div class="form-group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required />
+            <span class="error-message" aria-live="polite"></span>
           </div>
           <button id="loginBtn" type="submit">Login</button>
         </form>
         <div>
           <p>Don't have an account?</p>
-         <div>
-          <div class="form-footer"> <a href="signup.html">Sign up here</a>
-          </div>
+        </div>
+        <div class="form-footer">
+          <a href="signup.html">Sign up here</a>
+        </div>
       </fieldset>
     </div>
   </main>
+
   <script src="index.js"></script>
 </body>
 </html>
