@@ -1,3 +1,4 @@
+// ================= IMPORTS =================
 const mongoose = require('mongoose');
 const multer = require('multer');
 const Permit = require('../models/permit');
@@ -8,18 +9,35 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 require('dotenv').config();
-const requireAuth = require('../middleware/auth');
 
-// ================= WEATHER ROUTE =================
+// ================= AUTH MIDDLEWARE =================
+function requireAuth(req, res, next) {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  const now = Date.now();
+  const maxInactivity = 1000 * 60 * 5; // 5 minutes
+  if (req.session.lastActivity && (now - req.session.lastActivity) > maxInactivity) {
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      return res.status(401).json({ message: 'Session expired due to inactivity' });
+    });
+  } else {
+    req.session.lastActivity = now;
+    next();
+  }
+}
+
+// ================= ROUTES =================
+
+// ----- WEATHER -----
 router.get('/weather', async (req, res) => {
   const city = req.query.city;
   if (!city) return res.status(400).json({ message: "City is required" });
 
   try {
     const apiKey = process.env.WEATHER_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ message: "API key not configured" });
-    }
+    if (!apiKey) return res.status(500).json({ message: "API key not configured" });
 
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
     const weatherResp = await axios.get(weatherUrl);
@@ -56,35 +74,14 @@ router.get('/weather', async (req, res) => {
     }
 
     const formatted = `Temperature: ${temperature}°C (Feels like ${feelsLike}°C) | Sky Status: ${weatherStatus} | Humidity: ${humidity}% | Visibility: ${visibilityKm} km | Wind Gust: ${windGust} m/s | AQI: ${aqiIndex ?? '-'} | PO: ${poValue ?? '-'} | Air Quality: ${aqiStatus ?? '-'}`;
-
     res.json({ formatted });
-
   } catch (err) {
     console.error("Weather API error:", err.message);
     res.status(500).json({ message: "Error fetching weather data" });
   }
 });
 
-// ================= AUTH MIDDLEWARE =================
-function requireAuth(req, res, next) {
-  if (!req.session || !req.session.userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-  const now = Date.now();
-  const maxInactivity = 1000 * 60 * 5; // 5 minutes
-  if (req.session.lastActivity && (now - req.session.lastActivity) > maxInactivity) {
-    req.session.destroy(() => {
-      res.clearCookie('connect.sid');
-      return res.status(401).json({ message: 'Session expired due to inactivity' });
-    });
-  } else {
-    req.session.lastActivity = now;
-    next();
-  }
-}
-module.exports = requireAuth;
-
-// ================= REGISTER =================
+// ----- REGISTER -----
 router.post('/register', async (req, res) => {
   console.log('--- SIGNUP REQUEST RECEIVED ---');
 
@@ -102,9 +99,7 @@ router.post('/register', async (req, res) => {
     }
 
     const exists = await User.findOne({ email });
-    if (exists) {
-      return res.status(409).json({ message: 'Email is already in use' });
-    }
+    if (exists) return res.status(409).json({ message: 'Email is already in use' });
 
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({
@@ -117,7 +112,6 @@ router.post('/register', async (req, res) => {
 
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ message: 'Session error' });
-
       req.session.userId = user._id;
       req.session.username = user.username;
       req.session.lastActivity = Date.now();
@@ -134,30 +128,24 @@ router.post('/register', async (req, res) => {
       });
     });
   } catch (err) {
-    console.error('❌ Registration error details:', err);
+    console.error('Registration error:', err);
     res.status(500).json({ message: 'Something went wrong', error: err.message });
   }
 });
 
-// ================= LOGIN =================
+// ----- LOGIN -----
 router.post('/login', async (req, res) => {
   console.log('--- LOGIN REQUEST RECEIVED ---');
 
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
+    if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
 
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
@@ -182,12 +170,12 @@ router.post('/login', async (req, res) => {
       });
     });
   } catch (err) {
-    console.error('❌ Login error details:', err);
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Something went wrong during login', error: err.message });
   }
 });
 
-// ================= PROFILE =================
+// ----- PROFILE -----
 router.get('/profile', requireAuth, async (req, res) => {
   const user = await User.findById(req.session.userId).select('-password');
   if (!user) return res.status(404).json({ message: 'User not found' });
@@ -203,7 +191,7 @@ router.get('/profile', requireAuth, async (req, res) => {
   });
 });
 
-// ================= LOGOUT =================
+// ----- LOGOUT -----
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
@@ -211,7 +199,7 @@ router.post('/logout', (req, res) => {
   });
 });
 
-// ================= DB CHECK =================
+// ----- DB CHECK -----
 router.get('/db-check', (req, res) => {
   try {
     const dbName = mongoose.connection.name;
@@ -221,6 +209,7 @@ router.get('/db-check', (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 //Keep-alive endpoint
 router.get('/keep-alive', (req, res) => {
   if (req.session) {
@@ -231,4 +220,7 @@ router.get('/keep-alive', (req, res) => {
   }
 });
 
+=======
+// ================= EXPORT =================
+>>>>>>> bf03bfd8a96a099c80a342f6ec42f4ce2b882d8f
 module.exports = router;
