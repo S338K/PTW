@@ -1,16 +1,24 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
   const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
-  const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes TTL
+  const PING_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+  // Skip session management on login/signup pages
+  if (window.location.pathname.includes('index.html') || window.location.pathname.includes('signup.html')) {
+    return;
+  }
 
   function resetIdleTimer() {
     const now = Date.now();
     localStorage.setItem('lastActivity', now.toString());
   }
 
-  // Initialize lastActivity and loginTime if missing
-  if (!localStorage.getItem('lastActivity')) resetIdleTimer();
-  if (!localStorage.getItem('loginTime')) localStorage.setItem('loginTime', Date.now().toString());
+  function logoutUser() {
+    ['fullName','email','company','lastActivity'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('logoutEvent', Date.now()); // notify other tabs
+    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => window.location.href = 'index.html');
+  }
 
   async function checkSession() {
     try {
@@ -19,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         credentials: 'include'
       });
       if (!res.ok) {
-        logoutUser(); // centralized logout
+        logoutUser();
         return null;
       }
       const data = await res.json();
@@ -28,7 +36,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         localStorage.setItem('email', data.user.email || '');
         localStorage.setItem('company', data.user.company || '');
         localStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
-        localStorage.setItem('loginTime', Date.now().toString()); // store login timestamp
       }
       resetIdleTimer();
       return data.user;
@@ -39,28 +46,35 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  await checkSession();
-
-  function logoutUser() {
-    ['fullName','email','company','lastLogin','lastActivity','loginTime'].forEach(k => localStorage.removeItem(k));
-    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
-      .finally(() => window.location.href = 'index.html');
+  async function pingBackend() {
+    try {
+      await fetch(`${API_BASE}/api/ping`, { method: 'GET', credentials: 'include' });
+    } catch (err) {
+      console.warn('Ping failed:', err);
+    }
   }
 
   function checkIdleTime() {
     const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
-    const loginTime = parseInt(localStorage.getItem('loginTime') || '0', 10);
-
     if (!last || Date.now() - last > IDLE_LIMIT_MS) logoutUser();
-    if (!loginTime || Date.now() - loginTime > LOGIN_TTL_MS) logoutUser();
   }
 
+  // Activity listeners
   ['click','mousemove','keypress','scroll','focus','touchstart','touchmove']
     .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
 
+  // Multi-tab sync
   window.addEventListener('storage', e => {
     if (e.key === 'lastActivity') resetIdleTimer();
+    if (e.key === 'logoutEvent') logoutUser();
   });
 
-  setInterval(checkIdleTime, 60 * 1000); // check every 1 minute
+  // Initial session check
+  await checkSession();
+
+  // Periodic idle and ping checks
+  setInterval(() => {
+    checkIdleTime();
+    pingBackend();
+  }, PING_INTERVAL_MS);
 });
