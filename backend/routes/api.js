@@ -211,11 +211,13 @@ router.get('/db-check', (req, res) => {
 //======KEEP SESSION ALIVE======
 router.get('/ping', (req, res) => {
   if (req.session) {
-    req.session.lastActivity = Date.now();
+    req.session.touch(); // refresh session expiry in Mongo + cookie
+    req.session.lastActivity = Date.now(); // optional: store lastActivity too
     return res.json({ message: 'Session refreshed' });
   } else {
     res.status(401).json({ message: 'No active session' });
   }
 });
+
 // ================= EXPORT =================
 module.exports = router;
