@@ -1,32 +1,48 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // ====== SESSION GUARD ======
-  const currentPage = window.location.pathname.split('/').pop(); // CHANGE: ensure currentPage is defined
-  if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
+  // ====== SESSION GUARD & IDLE TIMEOUT ======
+  const currentPage = window.location.pathname.split('/').pop();
+
+  const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+  const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes TTL
+
+  function logoutUser() {
+    sessionStorage.clear();
+    localStorage.clear();
     window.location.href = 'index.html';
-    return;
   }
 
-  // ====== IDLE TIMEOUT (5 MINUTES) ======
-  function logoutUser() {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = 'index.html';
-  }
   function resetIdleTimer() {
     sessionStorage.setItem('lastActivity', Date.now().toString());
   }
+
   function checkIdleTime() {
     const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 5 * 60 * 1000) {
-      logoutUser();
-    }
+    const loginTime = parseInt(localStorage.getItem('loginTime') || '0', 10);
+
+    if (!last || Date.now() - last > IDLE_LIMIT_MS) logoutUser();
+    if (!loginTime || Date.now() - loginTime > LOGIN_TTL_MS) logoutUser();
   }
+
   if (currentPage !== 'index.html') {
-    ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
-      document.addEventListener(evt, resetIdleTimer, { passive: true })
-    );
-    setInterval(checkIdleTime, 30000);
+    if (!sessionStorage.getItem('isLoggedIn')) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    ['click', 'mousemove', 'keypress', 'scroll', 'focus', 'touchstart', 'touchmove']
+      .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
+
+    window.addEventListener('storage', e => {
+      if (e.key === 'lastActivity') resetIdleTimer();
+    });
+
+    setInterval(checkIdleTime, 60 * 1000); // check every 1 minute
     resetIdleTimer();
+
+    // Store login time if not already
+    if (!localStorage.getItem('loginTime')) {
+      localStorage.setItem('loginTime', Date.now().toString());
+    }
   }
 
   // =========================
@@ -35,21 +51,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const logoutBtn = document.getElementById('logoutBtn');
   const profileBtn = document.getElementById('profileBtn');
 
-  if (logoutBtn) logoutBtn.addEventListener('click', () => {
-    sessionStorage.clear();
-    window.location.href = 'index.html';
-  });
-
-  if (profileBtn) profileBtn.addEventListener('click', () => {
-    window.location.href = 'profile.html';
-  });
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
+  if (profileBtn) profileBtn.addEventListener('click', () => window.location.href = 'profile.html');
 
   // Set full name in nav bar
   const fullNameEl = document.getElementById('userFullName');
   const storedName = sessionStorage.getItem('fullName');
-  if (fullNameEl && storedName) {
-    fullNameEl.textContent = storedName;
-  }
+  if (fullNameEl && storedName) fullNameEl.textContent = storedName;
 
   // =========================
   // Utilities for validation
@@ -119,6 +127,14 @@ document.addEventListener('DOMContentLoaded', function () {
       return el ? validateField(el, regex, msg) : true;
     });
   }
+
+  // =========================
+  // Facility, Impact, Documents, Date/Time, File, Signature, Form Handling
+  // =========================
+  // The rest of mainscript.js remains **unchanged** from your original code
+  // Include part 1 and part 2 as-is after this session update block
+
+});
 
   // =========================
   // Facility list update
