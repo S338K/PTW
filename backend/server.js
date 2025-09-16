@@ -35,16 +35,17 @@ app.use(cors({
 
 // ===== Session Setup =====
 // saveUninitialized:false → no session until something is stored (login/signup)
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 5 // idle timeout: 5 minutes
-  }
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: 1000 * 60 * 30 // 30 minutes
+}
 }));
 
 // ===== Routes =====
