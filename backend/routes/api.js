@@ -75,9 +75,9 @@ function requireAuth(req, res, next) {
 
   // Agar lastActivity set hi nahi hua, to abhi set karo
   if (!req.session.lastActivity) {
-    req.session.lastActivity = now;
-    return next();
-  }
+  req.session.lastActivity = now;
+  return next();
+}
 
   if (now - req.session.lastActivity > idleLimit) {
     req.session.destroy(() => {
