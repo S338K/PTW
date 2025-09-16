@@ -45,8 +45,6 @@ body {
   text-align: center;              /* centers text inside each child */
 }
 
-
-
 /* ----------------------------------------
    Form Card Layout
 ---------------------------------------- */
@@ -81,6 +79,9 @@ label {
   display: block;
   margin-bottom: 8px;
   font-weight: regular;
+  color: #1a245a;
+  font-weight: 500;
+  font-size: large;
 }
 
 input[type="email"],
@@ -143,6 +144,7 @@ input[type="password"]:focus {
   text-align: center;
   margin-bottom: auto;
   margin-top: auto;
+  color: #1E245E;
 }
 
 /* ===== Responsive Add-on (Safe) ===== */
