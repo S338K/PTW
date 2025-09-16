@@ -70,8 +70,20 @@ function requireAuth(req, res, next) {
     // Session does not exist, return unauthorized
     return res.status(401).json({ message: "Unauthorized" });
   }
+
+  const now = Date.now();
+  const idleLimit = 5 * 60 * 1000; // 5 minutes
+
+  if(now - req.session.lastActivity > idleLimit) {
+    req.session.destroy(() => { // Session expired
+      return res.status(401).json({ message: "Session expired due to inactivity" });
+    });
+  } else {
+    // Update last activity timestamp
+    req.session.lastActivity = now;
+    next();
+  }
 }
-module.exports.requireAuth = requireAuth;
 
 // ================= REGISTER =================
 router.post('/register', async (req, res) => {
