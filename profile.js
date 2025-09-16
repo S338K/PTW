@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     logoutBtn.addEventListener('click', logoutUser);
   }
 
-  //KEEP SESSIONS ALIVE (PING)
+  //==========KEEP SESSIONS ALIVE (PING)==========
 
   const API_BASE = 'https://ptw-yu8u.onrender.com/api'; // Adjust as needed
 

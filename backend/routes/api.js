@@ -208,19 +208,14 @@ router.get('/db-check', (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-<<<<<<< HEAD
-//Keep-alive endpoint
-router.get('/keep-alive', (req, res) => {
+//======KEEP SESSION ALIVE======
+router.get('/ping', (req, res) => {
   if (req.session) {
     req.session.lastActivity = Date.now();
-    res.json({ message: 'Session is active' });
+    return res.json({ message: 'Session refreshed' });
   } else {
-    res.status(401).json({ message: 'Unauthorized' });
+    res.status(401).json({ message: 'No active session' });
   }
 });
-
-=======
 // ================= EXPORT =================
->>>>>>> bf03bfd8a96a099c80a342f6ec42f4ce2b882d8f
 module.exports = router;

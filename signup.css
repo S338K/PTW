@@ -7,6 +7,19 @@ body {
   padding: 0;
 }
 
+:root {
+  --text-primary: #1E245E;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --bg-surface: #ffffff;
+  --button-bg: #273172;
+  --button-hover-bg: #1a245a;
+  --button-border: transparent;
+  --input-border: #ccc;
+  --input-focus-border: #273172;
+  --error-color: #d9534f;
+}
+
 .app-title {
   text-align: center;
   color: #273172;
@@ -17,7 +30,7 @@ body {
 .form-container {
   max-width: 100%;
   margin: auto;
-  background: #ffffff;
+  background: #fff;
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -27,6 +40,7 @@ fieldset {
   border: 2px solid #273172;
   border-radius: 8px;
   padding: 20px;
+  color: #1E245E;
 }
 
 legend {
@@ -63,7 +77,7 @@ input:focus {
 }
 
 #signupBtn {
-  width: 100%;
+  width: 90%;
   padding: 12px;
   background-color: #273172;
   border-radius: 4px;
@@ -72,6 +86,7 @@ input:focus {
   color: #fff;
   border-color: red;
   transition: background-color 0.3s ease;
+  position: center;
 }
 
 #signupBtn:hover {
@@ -82,7 +97,7 @@ input:focus {
   transition: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-./* Sign-out link same as sign-in page link */
+/* Sign-out link same as sign-in page link */
 .signout-link {
   color: #273172;
   text-decoration: none;
@@ -108,3 +123,5 @@ input:focus {
     padding: 12px;
     font-size: 14px;
   }
+}
+}
