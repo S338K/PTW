@@ -9,14 +9,6 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 require('dotenv').config();
 
-// ================= AUTH MIDDLEWARE =================
-function requireAuth(req, res, next) {
-  if (!req.session || !req.session.userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-  next();
-}
-
 // ================= WEATHER ROUTE =================
 router.get('/weather', async (req, res) => {
   const city = req.query.city;
@@ -74,26 +66,31 @@ router.get('/weather', async (req, res) => {
 
 <<<<<<< HEAD
 // ================= AUTH MIDDLEWARE =================
+// middleware/auth.js
+
 function requireAuth(req, res, next) {
-  if (! req.session.userId) {
-    // Session does not exist, return unauthorized
+  if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const now = Date.now();
   const idleLimit = 5 * 60 * 1000; // 5 minutes
 
-  if(now - req.session.lastActivity > idleLimit) {
-    req.session.destroy(() => { // Session expired
-      return res.status(401).json({ message: "Session expired due to inactivity" });
+  if (now - req.session.lastActivity > idleLimit) {
+    // destroy session if idle too long
+    req.session.destroy(() => {
+      return res
+        .status(440) // custom: 440 = login timeout
+        .json({ message: "Session expired due to inactivity" });
     });
   } else {
-    // Update last activity timestamp
+    // refresh idle timer on every valid request
     req.session.lastActivity = now;
     next();
   }
 }
 
+module.exports = requireAuth;
 =======
 >>>>>>> dc2737fb3e88ce1609657ac9c194556b7de1cb69
 // ================= REGISTER =================
