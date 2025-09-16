@@ -8,17 +8,16 @@ document.addEventListener('DOMContentLoaded', function () {
   const passwordEl = document.getElementById('signupPassword');
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
   const termsEl = document.getElementById('termsCheckbox');
+  const signupBtn = document.getElementById('signupBtn');
 
   // Validation rules
   function validateName(value) {
-  // Letters (A-Z, a-z) + accented letters + ñ/Ñ + spaces, 2–25 chars
-  return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,25}$/.test(value.trim());
-}
-
-function validateCompany(value) {
-  // Letters + numbers + accented letters + ñ/Ñ + spaces, 2–25 chars
-  return /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]{2,25}$/.test(value.trim());
-}
+    // Allow accented letters for Spanish and other Latin-based languages
+    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,25}$/.test(value.trim());
+  }
+  function validateCompany(value) {
+    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]{2,25}$/.test(value.trim());
+  }
   function validateEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
@@ -59,11 +58,11 @@ function validateCompany(value) {
     switch (inputEl.id) {
       case 'signupName':
         isValid = validateName(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
+        showError(inputEl, isValid ? '' : 'Name: letters only, 2–25 chars.');
         break;
       case 'companyName':
         isValid = validateCompany(inputEl.value);
-        showError(inputEl, isValid ? '' : Letters only, 2–25 chars.');
+        showError(inputEl, isValid ? '' : 'Company: letters/numbers, 2–25 chars.');
         break;
       case 'signupEmail':
         isValid = validateEmail(inputEl.value);
@@ -129,6 +128,12 @@ function validateCompany(value) {
           alert(data.message || 'Sign up failed.');
           return;
         }
+
+        // Change button text and color on success, disable it
+        signupBtn.textContent = 'Account created successfully';
+        signupBtn.style.backgroundColor = '#28a745'; // green
+        signupBtn.style.borderColor = '#28a745';
+        signupBtn.disabled = true;
 
         alert('Account created successfully! Please log in.');
         window.location.href = 'index.html';
