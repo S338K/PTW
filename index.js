@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await res.json();
 
       if (data.detailsLine) {
-        // Use the backend's exact format for row 2
         weatherEl.innerHTML = `
           <div style="text-align:center; margin-top:5px; font-weight:bold;">
             ${data.detailsLine}
@@ -59,8 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
           weatherEl.textContent = 'Weather unavailable';
         }
       }
-    } catch (err) {
-      console.error('Weather fetch failed:', err);
+    } catch {
       weatherEl.textContent = 'Weather fetch failed';
     }
   }
@@ -68,17 +66,76 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');
+  const emailEl = document.getElementById('email');
+  const passwordEl = document.getElementById('password');
+  const loginBtn = document.getElementById('loginBtn');
+
+  function showError(inputEl, message) {
+    const group = inputEl.closest('.form-group');
+    if (!group) return;
+    let span = group.querySelector('.error-message');
+    if (!span) {
+      span = document.createElement('span');
+      span.className = 'error-message';
+      span.setAttribute('aria-live', 'polite');
+      group.appendChild(span);
+    }
+    span.textContent = message || '';
+    if (message) {
+      inputEl.classList.add('invalid');
+      inputEl.classList.remove('valid');
+    } else {
+      inputEl.classList.remove('invalid');
+      inputEl.classList.add('valid');
+    }
+  }
+
+  function validateEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+  function validatePassword(value) {
+    return value.trim().length >= 8;
+  }
+
+  function validateField(inputEl) {
+    let isValid = true;
+    switch (inputEl.id) {
+      case 'email':
+        isValid = validateEmail(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Enter a valid email address.');
+        break;
+      case 'password':
+        isValid = validatePassword(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Password must be at least 8 characters.');
+        break;
+    }
+    return isValid;
+  }
+
+  function validateForm() {
+    let valid = true;
+    [emailEl, passwordEl].forEach(input => {
+      if (!validateField(input)) valid = false;
+    });
+    return valid;
+  }
+
+  [emailEl, passwordEl].forEach(input => {
+    input.addEventListener('input', () => validateField(input));
+  });
+
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-
-      if (!email || !password) {
-        alert('Please enter email and password.');
+      if (!validateForm()) {
+        const firstInvalid = form.querySelector('.invalid');
+        if (firstInvalid) firstInvalid.focus();
         return;
       }
+
+      const email = emailEl.value.trim();
+      const password = passwordEl.value.trim();
 
       try {
         const res = await fetch(`${API_BASE}/api/login`, {
@@ -91,7 +148,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = await res.json();
 
         if (!res.ok) {
-          alert(data.message || 'Login failed');
+          if (data.message && data.message.toLowerCase().includes('email')) {
+            showError(emailEl, data.message);
+          } else if (data.message && data.message.toLowerCase().includes('password')) {
+            showError(passwordEl, data.message);
+          } else {
+            showError(passwordEl, data.message || 'Login failed.');
+          }
           return;
         }
 
@@ -107,10 +170,29 @@ document.addEventListener('DOMContentLoaded', function () {
           localStorage.setItem('lastLogin', data.user.lastLogin || '');
         }
 
-        window.location.href = 'profile.html';
-      } catch (err) {
-        console.error('Network error during login:', err);
-        alert('Network error. Please try again.');
+        // Success button animation
+        loginBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
+        loginBtn.textContent = 'Logged in Successfully';
+        loginBtn.style.backgroundColor = '#28a745';
+        loginBtn.style.borderColor = '#28a745';
+        loginBtn.style.color = '#fff';
+        loginBtn.disabled = true;
+
+        loginBtn.animate([
+          { boxShadow: '0 0 0 rgba(40, 167, 69, 0.7)' },
+          { boxShadow: '0 0 15px rgba(40, 167, 69, 0.9)' },
+          { boxShadow: '0 0 0 rgba(40, 167, 69, 0.7)' }
+        ], {
+          duration: 1200,
+          iterations: 3
+        });
+
+        setTimeout(() => {
+          window.location.href = 'profile.html';
+        }, 2000);
+
+      } catch {
+        showError(passwordEl, 'Network error. Please try again.');
       }
     });
   }
