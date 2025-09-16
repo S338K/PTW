@@ -32,15 +32,16 @@ body {
    Header Container
 ---------------------------------------- */
 .header-container {
-  color: #1E245E;
+  color: #fff;
   padding: 1.2rem 1.5rem;
   display: flex;
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
-  background: #f8f8f8;
+  background: #1a245a;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
  justify-content: space-between;
  flex-wrap: wrap;
+ text-align: center;
 }
 
 /* ----------------------------------------
