@@ -49,7 +49,7 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     dbName: 'PTW',
     collectionName: 'sessions',
-    ttl: 60 * 60 // 30 minutes
+    ttl: 60 * 60 // 60 minutes
   }),
   cookie: {
     httpOnly: true,
