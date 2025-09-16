@@ -5,9 +5,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ====== SESSION GUARD ======
   const currentPage = window.location.pathname.split('/').pop(); 
+
+  async function verifyBackendSession() {
+    try {
+      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Session invalid');
+      const data = await res.json();
+      if (data.user) {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('fullName', data.user.username || '');
+        sessionStorage.setItem('email', data.user.email || '');
+        sessionStorage.setItem('company', data.user.company || '');
+        sessionStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
+        localStorage.setItem('loginTime', Date.now().toString());
+        resetIdleTimer();
+        return true;
+      }
+    } catch (err) {
+      logoutUser();
+      return false;
+    }
+  }
+
   if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
-    window.location.href = 'index.html';
-    return;
+    verifyBackendSession();
   }
 
   function logoutUser() {
@@ -18,8 +39,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function resetIdleTimer() {
-    sessionStorage.setItem('lastActivity', Date.now().toString());
-    localStorage.setItem('lastActivity', Date.now().toString());
+    const now = Date.now();
+    sessionStorage.setItem('lastActivity', now.toString());
+    localStorage.setItem('lastActivity', now.toString());
+
+    // Refresh backend session TTL
+    fetch(`${API_BASE}/api/ping`, { credentials: 'include' }).catch(() => {
+      logoutUser();
+    });
   }
 
   function checkIdleTime() {
