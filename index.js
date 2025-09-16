@@ -20,25 +20,35 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ===== HEADER: Weather Fetch ===== */
-  async function fetchWeather() {
-    if (!weatherEl) return;
-    const city = 'Doha';
-    try {
-      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
-        credentials: 'include'
-      });
-      if (!res.ok) {
-        weatherEl.textContent = 'Weather unavailable';
-        return;
-      }
-      const data = await res.json();
-      weatherEl.textContent = data.formatted || 'Weather unavailable';
-    } catch (err) {
-      console.error('Weather fetch failed:', err);
-      weatherEl.textContent = 'Weather fetch failed';
+async function fetchWeather() {
+  if (!weatherEl) return;
+  const city = 'Doha';
+  try {
+    const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      weatherEl.textContent = 'Weather unavailable';
+      return;
     }
+
+    const data = await res.json();
+
+    // Safely access the formatted field or fallback to constructing temperature info
+    if (data.formatted) {
+      weatherEl.textContent = data.formatted;
+    } else if (data.temperature && data.condition) {
+      weatherEl.textContent = `${data.temperature}°C | ${data.condition}`;
+    } else {
+      weatherEl.textContent = 'Weather unavailable';
+    }
+  } catch (err) {
+    console.error('Weather fetch failed:', err);
+    weatherEl.textContent = 'Weather fetch failed';
   }
-  fetchWeather();
+}
+fetchWeather();
 
   /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');
