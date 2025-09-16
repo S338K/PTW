@@ -127,4 +127,26 @@ router.get('/ping', requireAuth, (req, res) => {
   res.json({ message: 'Session refreshed' });
 });
 
+// ===== WEATHER ROUTE =====
+router.get('/weather', async (req, res) => {
+  try {
+    const city = req.query.city || 'Doha';
+    const apiKey = process.env.WEATHER_API_KEY; // set this in your .env
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+
+    const response = await axios.get(url);
+    const temp = response.data.main.temp;
+    const condition = response.data.weather[0].description;
+
+    res.json({
+      formatted: `${temp}°C | ${condition}`,
+      temperature: temp,
+      condition: condition
+    });
+  } catch (err) {
+    console.error('Weather fetch error:', err.message);
+    res.status(500).json({ message: 'Unable to fetch weather' });
+  }
+});
+
 module.exports = router;
