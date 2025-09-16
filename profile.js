@@ -73,16 +73,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('profileCompany').textContent = localStorage.getItem('company') || '-';
   document.getElementById('profileLastLogin').textContent = `Last login: ${localStorage.getItem('lastLogin') || '-'}`;
 
-    // Set full name in nav bar from sessionStorage
-    document.addEventListener('DOMContentLoaded', () => {
-      const fullNameEl = document.getElementById('userFullName');
-      const storedName = sessionStorage.getItem('fullName');
-      if (fullNameEl && storedName) {
-        fullNameEl.textContent = storedName;
-      }
-    });
-
- // ====== GO TO MAINPAGE BUTTON ======
+  // ====== GO TO MAINPAGE BUTTON ======
 const submitPTWBtn = document.getElementById('sbmtptw');
 if (submitPTWBtn) {
   submitPTWBtn.addEventListener('click', (e) => {
