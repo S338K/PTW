@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
+  const headerContainer = document.getElementById('header-container'); // NEW
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
   /* ===== HEADER: Live Date/Time ===== */
@@ -10,32 +11,39 @@ document.addEventListener('DOMContentLoaded', function () {
     const day = String(now.getDate()).padStart(2, '0');
     const year = now.getFullYear();
     const time = now.toLocaleTimeString('en-US', { hour12: true });
+
     if (dateTimeEl) {
       dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
+    } else if (headerContainer) {
+      const el = headerContainer.querySelector('#dateTimeDisplay');
+      if (el) el.textContent = `${month} ${day}, ${year} | ${time}`;
     }
   }
-  if (dateTimeEl) {
+
+  if (dateTimeEl || headerContainer) {
     updateDateTime();
     setInterval(updateDateTime, 1000);
   }
 
   /* ===== HEADER: Weather Fetch ===== */
   async function fetchWeather() {
-    if (!weatherEl) return;
+    const targetEl = weatherEl || headerContainer?.querySelector('#tempDisplay');
+    if (!targetEl) return;
+
     const city = 'Doha';
     try {
       const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
         credentials: 'include'
       });
       if (!res.ok) {
-        weatherEl.textContent = 'Weather unavailable';
+        targetEl.textContent = 'Weather unavailable';
         return;
       }
       const data = await res.json();
-      weatherEl.textContent = data.formatted || 'Weather unavailable';
+      targetEl.textContent = data.formatted || 'Weather unavailable';
     } catch (err) {
       console.error('Weather fetch failed:', err);
-      weatherEl.textContent = 'Weather fetch failed';
+      targetEl.textContent = 'Weather fetch failed';
     }
   }
   fetchWeather();
@@ -58,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },          
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
 
