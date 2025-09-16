@@ -36,7 +36,37 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await res.json();
 
       if (data.formatted) {
-        weatherEl.textContent = data.formatted;
+        // Updated: show all fields with icons
+        weatherEl.innerHTML = `
+          <div>
+            <img src="${data.icons.condition}" alt="Condition" style="width:32px;height:32px;vertical-align:middle;">
+            ${data.formatted}
+          </div>
+          <div>
+            <img src="${data.icons.feelsLike}" alt="Feels Like" style="width:24px;height:24px;vertical-align:middle;">
+            Feels like: ${data.feelsLike}
+          </div>
+          <div>
+            <img src="${data.icons.humidity}" alt="Humidity" style="width:24px;height:24px;vertical-align:middle;">
+            Humidity: ${data.humidity}
+          </div>
+          <div>
+            <img src="${data.icons.windSpeed}" alt="Wind Speed" style="width:24px;height:24px;vertical-align:middle;">
+            Wind: ${data.windSpeed}
+          </div>
+          <div>
+            <img src="${data.icons.visibility}" alt="Visibility" style="width:24px;height:24px;vertical-align:middle;">
+            Visibility: ${data.visibility}
+          </div>
+          <div>
+            <img src="${data.icons.airQuality}" alt="Air Quality" style="width:24px;height:24px;vertical-align:middle;">
+            Air Quality: ${data.airQualityStatus} (AQI ${data.airQualityIndex})
+          </div>
+          <div>
+            <img src="${data.icons.poNumber}" alt="PO Number" style="width:24px;height:24px;vertical-align:middle;">
+            PO Number: ${data.poNumber}
+          </div>
+        `;
       } else {
         const temp = data.temperature ?? data?.main?.temp;
         const cond = data.condition ?? data?.weather?.[0]?.description;
