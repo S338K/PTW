@@ -8,6 +8,7 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 require('dotenv').config();
+const requireAuth = require('../middleware/auth');
 
 // ================= WEATHER ROUTE =================
 router.get('/weather', async (req, res) => {
@@ -64,35 +65,25 @@ router.get('/weather', async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 // ================= AUTH MIDDLEWARE =================
-// middleware/auth.js
-
 function requireAuth(req, res, next) {
-  if (!req.session.userId) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-
   const now = Date.now();
-  const idleLimit = 5 * 60 * 1000; // 5 minutes
-
-  if (now - req.session.lastActivity > idleLimit) {
-    // destroy session if idle too long
+  const maxInactivity = 1000 * 60 * 5; // 5 minutes
+  if (req.session.lastActivity && (now - req.session.lastActivity) > maxInactivity) {
     req.session.destroy(() => {
-      return res
-        .status(440) // custom: 440 = login timeout
-        .json({ message: "Session expired due to inactivity" });
+      res.clearCookie('connect.sid');
+      return res.status(401).json({ message: 'Session expired due to inactivity' });
     });
   } else {
-    // refresh idle timer on every valid request
     req.session.lastActivity = now;
     next();
   }
 }
-
 module.exports = requireAuth;
-=======
->>>>>>> dc2737fb3e88ce1609657ac9c194556b7de1cb69
+
 // ================= REGISTER =================
 router.post('/register', async (req, res) => {
   console.log('--- SIGNUP REQUEST RECEIVED ---');
