@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('signupForm');
   const API_BASE = 'https://ptw-yu8u.onrender.com';
-  const formMessage = document.getElementById('formMessage');
 
   const usernameEl = document.getElementById('signupName');
   const companyEl = document.getElementById('companyName');
@@ -10,13 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
   const termsEl = document.getElementById('termsCheckbox');
   const signupBtn = document.getElementById('signupBtn');
-
-  // Helper to show custom messages
-  function showFormMessage(type, text) {
-    formMessage.textContent = text;
-    formMessage.className = `form-message ${type}`;
-    formMessage.style.display = 'block';
-  }
 
   // Validation rules
   function validateName(value) {
@@ -43,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return checked;
   }
 
+  // Show error under the field
   function showError(inputEl, message) {
     const group = inputEl.closest('.form-group');
     if (!group) return;
@@ -58,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Validate a single field
   function validateField(inputEl) {
     let isValid = true;
     switch (inputEl.id) {
@@ -89,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return isValid;
   }
 
+  // Validate all fields
   function validateForm() {
     let valid = true;
     [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl, termsEl].forEach(input => {
@@ -97,11 +92,13 @@ document.addEventListener('DOMContentLoaded', function () {
     return valid;
   }
 
+  // Real-time validation
   [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl].forEach(input => {
     input.addEventListener('input', () => validateField(input));
   });
   termsEl.addEventListener('change', () => validateField(termsEl));
 
+  // Submit validation
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -109,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!validateForm()) {
         const firstInvalid = form.querySelector('.invalid') || form.querySelector('#termsCheckbox:not(:checked)');
         if (firstInvalid) firstInvalid.focus();
-        showFormMessage('error', 'Please fix the errors above before submitting.');
         return;
       }
 
@@ -128,11 +124,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const data = await res.json();
         if (!res.ok) {
-          showFormMessage('error', data.message || 'Sign up failed.');
+          // Show error on email field if it's a duplicate email, else generic
+          if (data.message && data.message.toLowerCase().includes('email')) {
+            showError(emailEl, data.message);
+          } else {
+            alert(data.message || 'Sign up failed.');
+          }
           return;
         }
 
-        // Success state
+        // Success state: change button text, color, disable, animate
         signupBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
         signupBtn.textContent = 'Form submitted successfully';
         signupBtn.style.backgroundColor = '#28a745';
@@ -150,13 +151,13 @@ document.addEventListener('DOMContentLoaded', function () {
           iterations: 3
         });
 
-        showFormMessage('success', 'Account created successfully! Redirecting to login...');
+        // Redirect after short delay
         setTimeout(() => {
           window.location.href = 'index.html';
         }, 2000);
 
       } catch (err) {
-        showFormMessage('error', 'Network error. Please try again.');
+        alert('Network error. Please try again.');
       }
     });
   }
