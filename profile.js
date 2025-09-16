@@ -73,39 +73,34 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('profileCompany').textContent = localStorage.getItem('company') || '-';
   document.getElementById('profileLastLogin').textContent = `Last login: ${localStorage.getItem('lastLogin') || '-'}`;
 
-  // ====== GO TO MAIN PAGE BUTTON ======
-  const submitPTWBtn = document.getElementById('sbmtptw');
-  if (submitPTWBtn) {
-    submitPTWBtn.addEventListener('click', () => {
-      window.location.href = 'mainpage.html';
-    });
-  }
+ // ====== GO TO MAINPAGE BUTTON ======
+const submitPTWBtn = document.getElementById('sbmtptw');
+if (submitPTWBtn) {
+  submitPTWBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // stop form submission if inside a form
+    window.location.href = 'mainpage.html';
+  });
+}
 
-  // ====== LOGOUT BUTTON ======
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', logoutUser);
-  }
-<<<<<<< HEAD
+// ====== LOGOUT BUTTON ======
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', logoutUser);
+}
 
-  //==========KEEP SESSIONS ALIVE (PING)==========
+// ====== KEEP SESSION ALIVE ======
+const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-  const API_BASE = 'https://ptw-yu8u.onrender.com/api'; // Adjust as needed
-
-  setInterval(() => {
-    fetch(`${API_BASE}/api-/ping`, {
-      method: 'GET',
-      credentials: 'include'
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log('Session keep-alive response:', data);
-    })
-    .catch(err => {
-      console.warn('Keep-alive ping failed:', err);
-    });
-  }, 2 * 60 * 1000); // 2 minutes
-  
-=======
->>>>>>> a87355f9643015bf9418cd9c945de81e9e8b1652
-});
+setInterval(() => {
+  fetch(`${API_BASE}/api/ping`, {
+    method: 'GET',
+    credentials: 'include'
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log('Session keep-alive response:', data);
+  })
+  .catch(err => {
+    console.warn('Keep-alive ping failed:', err);
+  });
+}, 2 * 60 * 1000); // 2 minutes
