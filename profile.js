@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         localStorage.setItem('company', data.user.company || '');
         localStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
       }
+
+      resetIdleTimer(); // 🔹 reset timer after session check
       return data.user;
     } catch (err) {
       console.warn('Session check failed:', err);
@@ -30,56 +32,43 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   await checkSession();
 
- // ====== IDLE TIMEOUT (15 MINUTES) ======
-function logoutUser() {
-  localStorage.removeItem('fullName');
-  localStorage.removeItem('email');
-  localStorage.removeItem('company');
-  localStorage.removeItem('lastLogin');
-  sessionStorage.removeItem('lastActivity');
+  // ====== IDLE TIMEOUT (15 MINUTES) ======
+  function logoutUser() {
+    localStorage.removeItem('fullName');
+    localStorage.removeItem('email');
+    localStorage.removeItem('company');
+    localStorage.removeItem('lastLogin');
+    sessionStorage.removeItem('lastActivity');
 
-  fetch('https://ptw-yu8u.onrender.com/api/logout', {
-    method: 'POST',
-    credentials: 'include'
-  }).finally(() => {
-    window.location.href = 'index.html';
-  });
-}
-
-function resetIdleTimer() {
-  sessionStorage.setItem('lastActivity', Date.now().toString());
-}
-
-function checkIdleTime() {
-  const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-  const idleLimit = 15 * 60 * 1000; // 15 minutes
-  if (!last || Date.now() - last > idleLimit) {
-    logoutUser();
+    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => window.location.href = 'index.html');
   }
-}
 
-// Reset idle timer on user interaction
-['click', 'mousemove', 'keypress', 'scroll', 'focus', 'touchstart', 'touchmove']
-  .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
+  function resetIdleTimer() {
+    sessionStorage.setItem('lastActivity', Date.now().toString());
+  }
 
-setInterval(checkIdleTime, 30000); // check every 30 sec
-resetIdleTimer();
+  function checkIdleTime() {
+    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
+    if (!last || Date.now() - last > 15 * 60 * 1000) { // 15 min
+      logoutUser();
+    }
+  }
 
-// ====== KEEP SESSION ALIVE (PING) ======
-setInterval(() => {
-  fetch("https://ptw-yu8u.onrender.com/api/ping", {
-    method: "GET",
-    credentials: "include"
-  })
-    .then(res => {
-      if (!res.ok) {
-        console.warn("Ping failed, session may expire soon");
-      }
-      return res.json();
-    })
-    .then(data => console.log("Ping:", data))
-    .catch(err => console.warn("Ping request error:", err));
-}, 5 * 60 * 1000); // every 5 minutes
+  // Reset idle timer on user interaction
+  ['click','mousemove','keypress','scroll','focus','touchstart','touchmove']
+    .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
+
+  setInterval(checkIdleTime, 30000); // check every 30 sec
+  resetIdleTimer(); // 🔹 reset immediately on page load
+
+  // ====== KEEP SESSION ALIVE (PING) ======
+  setInterval(() => {
+    fetch(`${API_BASE}/api/ping`, { method: "GET", credentials: "include" })
+      .then(res => res.ok ? res.json() : Promise.reject('Ping failed'))
+      .then(data => console.log("Ping:", data))
+      .catch(err => console.warn("Ping request error:", err));
+  }, 5 * 60 * 1000); // every 5 minutes
 
   // ====== SHOW PROFILE DETAILS ======
   document.getElementById('profileWelcome').textContent = `Welcome : ${localStorage.getItem('fullName') || '-'}`;
@@ -92,6 +81,7 @@ setInterval(() => {
   const submitPTWBtn = document.getElementById('sbmtptw');
   if (submitPTWBtn) {
     submitPTWBtn.addEventListener('click', e => {
+      e.preventDefault(); // 🔹 prevent default form submission
       window.location.href = 'mainpage.html';
     });
   }
