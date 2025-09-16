@@ -26,6 +26,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin-top: 20px;
   background-color: #1E245E;
+  box-shadow: 0 4px 10px rgba(2, 6, 47, 0.807);
   margin: auto;
   width: auto;
   height: auto;
