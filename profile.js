@@ -73,6 +73,15 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('profileCompany').textContent = localStorage.getItem('company') || '-';
   document.getElementById('profileLastLogin').textContent = `Last login: ${localStorage.getItem('lastLogin') || '-'}`;
 
+    // Set full name in nav bar from sessionStorage
+    document.addEventListener('DOMContentLoaded', () => {
+      const fullNameEl = document.getElementById('userFullName');
+      const storedName = sessionStorage.getItem('fullName');
+      if (fullNameEl && storedName) {
+        fullNameEl.textContent = storedName;
+      }
+    });
+
  // ====== GO TO MAINPAGE BUTTON ======
 const submitPTWBtn = document.getElementById('sbmtptw');
 if (submitPTWBtn) {
@@ -87,21 +96,4 @@ const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', logoutUser);
 }
-
-// ====== KEEP SESSION ALIVE ======
-const API_BASE = 'https://ptw-yu8u.onrender.com';
-
-setInterval(() => {
-  fetch(`${API_BASE}/api/ping`, {
-    method: 'GET',
-    credentials: 'include'
-  })
-  .then(res => res.json())
-  .then(data => {
-    console.log('Session keep-alive response:', data);
-  })
-  .catch(err => {
-    console.warn('Keep-alive ping failed:', err);
-  });
-}, 2 * 60 * 1000); // 2 minutes
 });
