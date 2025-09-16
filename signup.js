@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('signupForm');
   const API_BASE = 'https://ptw-yu8u.onrender.com';
+  const formMessage = document.getElementById('formMessage');
 
   const usernameEl = document.getElementById('signupName');
   const companyEl = document.getElementById('companyName');
@@ -9,6 +10,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
   const termsEl = document.getElementById('termsCheckbox');
   const signupBtn = document.getElementById('signupBtn');
+
+  // Helper to show custom messages
+  function showFormMessage(type, text) {
+    formMessage.textContent = text;
+    formMessage.className = `form-message ${type}`;
+    formMessage.style.display = 'block';
+  }
 
   // Validation rules
   function validateName(value) {
@@ -35,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
     return checked;
   }
 
-  // Show error under the field
   function showError(inputEl, message) {
     const group = inputEl.closest('.form-group');
     if (!group) return;
@@ -51,39 +58,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Validate a single field
   function validateField(inputEl) {
-  let isValid = true;
-  switch (inputEl.id) {
-    case 'signupName':
-      isValid = validateName(inputEl.value);
-      showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
-      break;
-    case 'companyName':
-      isValid = validateCompany(inputEl.value);
-      showError(inputEl, isValid ? '' : 'Letters/numbers, 2–25 chars.');
-      break;
-    case 'signupEmail':
-      isValid = validateEmail(inputEl.value);
-      showError(inputEl, isValid ? '' : 'Enter a valid email address.');
-      break;
-    case 'signupPassword':
-      isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);
-      showError(inputEl, isValid ? '' : 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
-      break;
-    case 'signupConfirmPassword':
-      isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
-      showError(inputEl, isValid ? '' : 'Passwords do not match.');
-      break;
-    case 'termsCheckbox':
-      isValid = validateTerms(inputEl.checked);
-      showError(inputEl, isValid ? '' : 'Please accept the terms and conditions.');
-      break;
+    let isValid = true;
+    switch (inputEl.id) {
+      case 'signupName':
+        isValid = validateName(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
+        break;
+      case 'companyName':
+        isValid = validateCompany(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Letters/numbers, 2–25 chars.');
+        break;
+      case 'signupEmail':
+        isValid = validateEmail(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Enter a valid email address.');
+        break;
+      case 'signupPassword':
+        isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);
+        showError(inputEl, isValid ? '' : 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
+        break;
+      case 'signupConfirmPassword':
+        isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
+        showError(inputEl, isValid ? '' : 'Passwords do not match.');
+        break;
+      case 'termsCheckbox':
+        isValid = validateTerms(inputEl.checked);
+        showError(inputEl, isValid ? '' : 'Please accept the terms and conditions.');
+        break;
+    }
+    return isValid;
   }
-  return isValid;
-}
 
-  // Validate all fields
   function validateForm() {
     let valid = true;
     [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl, termsEl].forEach(input => {
@@ -92,13 +97,11 @@ document.addEventListener('DOMContentLoaded', function () {
     return valid;
   }
 
-  // Real-time validation
   [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl].forEach(input => {
     input.addEventListener('input', () => validateField(input));
   });
   termsEl.addEventListener('change', () => validateField(termsEl));
 
-  // Submit validation
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -106,6 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!validateForm()) {
         const firstInvalid = form.querySelector('.invalid') || form.querySelector('#termsCheckbox:not(:checked)');
         if (firstInvalid) firstInvalid.focus();
+        showFormMessage('error', 'Please fix the errors above before submitting.');
         return;
       }
 
@@ -124,20 +128,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const data = await res.json();
         if (!res.ok) {
-          alert(data.message || 'Sign up failed.');
+          showFormMessage('error', data.message || 'Sign up failed.');
           return;
         }
 
-        // Smooth fade-in for success state with white text + pulse glow
+        // Success state
         signupBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
         signupBtn.textContent = 'Form submitted successfully';
-        signupBtn.style.backgroundColor = '#28a745'; // green
+        signupBtn.style.backgroundColor = '#28a745';
         signupBtn.style.borderColor = '#28a745';
-        signupBtn.style.color = '#fff'; // white text
+        signupBtn.style.color = '#fff';
         signupBtn.disabled = true;
 
-        // Add pulse glow animation
-        signupBtn.style.boxShadow = '0 0 0 rgba(40, 167, 69, 0.7)';
+        // Pulse glow animation
         signupBtn.animate([
           { boxShadow: '0 0 0 rgba(40, 167, 69, 0.7)' },
           { boxShadow: '0 0 15px rgba(40, 167, 69, 0.9)' },
@@ -147,11 +150,13 @@ document.addEventListener('DOMContentLoaded', function () {
           iterations: 3
         });
 
-        alert('Account created successfully! Please log in.');
-        window.location.href = 'index.html';
+        showFormMessage('success', 'Account created successfully! Redirecting to login...');
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
+
       } catch (err) {
-        console.error('Network error during signup:', err);
-        alert('Network error. Please try again.');
+        showFormMessage('error', 'Network error. Please try again.');
       }
     });
   }
