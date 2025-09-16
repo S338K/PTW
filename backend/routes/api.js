@@ -11,30 +11,24 @@ const User = require('../models/user');
 require('dotenv').config();
 
 // ================= AUTH MIDDLEWARE =================
-// Protect routes except login & register
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
-
   const now = Date.now();
-  const idleTimeout = 1000 * 60 * 15; // 15 minutes idle timeout
-
-  // Check inactivity
+  const idleTimeout = 1000 * 60 * 15; // 15 minutes
   if (req.session.lastActivity && (now - req.session.lastActivity) > idleTimeout) {
     req.session.destroy(() => {
       res.clearCookie('connect.sid');
       return res.status(401).json({ message: 'Session expired due to inactivity' });
     });
   } else {
-    // Update last activity timestamp
     req.session.lastActivity = now;
     next();
   }
 }
 
 // ===== SESSION INITIALIZATION =====
-// Called only after successful login
 function createSession(req, user) {
   req.session.userId = user._id;
   req.session.username = user.username;
@@ -59,7 +53,6 @@ router.post('/register', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({ username, email, password: hash, company: company || '', lastLogin: null });
 
-    // Initialize session after registration
     createSession(req, user);
 
     res.status(201).json({
@@ -88,7 +81,6 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // Initialize session after login
     createSession(req, user);
 
     res.json({
@@ -131,17 +123,56 @@ router.get('/ping', requireAuth, (req, res) => {
 router.get('/weather', async (req, res) => {
   try {
     const city = req.query.city || 'Doha';
-    const apiKey = process.env.WEATHER_API_KEY; // set this in your .env
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+    const apiKey = process.env.WEATHER_API_KEY;
+    const poNumber = process.env.PO_NUMBER || 'N/A';
 
-    const response = await axios.get(url);
-    const temp = response.data.main.temp;
-    const condition = response.data.weather[0].description;
+    // Get weather data
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+    const weatherRes = await axios.get(weatherUrl);
+    const w = weatherRes.data;
+
+    const temp = Math.round(w.main.temp);
+    const feelsLike = Math.round(w.main.feels_like);
+    const humidity = Math.round(w.main.humidity);
+    const windSpeed = Math.round(w.wind.speed);
+    const visibility = Math.round((w.visibility || 0) / 1000); // km
+    const condition = w.weather[0].description;
+    const conditionIcon = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
+
+    // Get air quality data
+    const { lat, lon } = w.coord;
+    const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+    const airRes = await axios.get(airUrl);
+    const aqi = airRes.data.list[0].main.aqi;
+    const aqiStatus = {
+      1: 'Good',
+      2: 'Fair',
+      3: 'Moderate',
+      4: 'Poor',
+      5: 'Very Poor'
+    }[aqi] || 'Unknown';
 
     res.json({
       formatted: `${temp}°C | ${condition}`,
       temperature: temp,
-      condition: condition
+      feelsLike: `${feelsLike}°C`,
+      humidity: `${humidity}%`,
+      windSpeed: `${windSpeed} m/s`,
+      visibility: `${visibility} km`,
+      airQualityIndex: aqi,
+      airQualityStatus: aqiStatus,
+      poNumber: poNumber,
+      condition: condition,
+      icons: {
+        condition: conditionIcon,
+        temperature: conditionIcon, // same as condition icon
+        feelsLike: conditionIcon,
+        humidity: 'https://openweathermap.org/img/wn/50d@2x.png', // generic humidity icon
+        windSpeed: 'https://openweathermap.org/img/wn/50n@2x.png', // generic wind icon
+        visibility: 'https://openweathermap.org/img/wn/01d@2x.png', // generic visibility icon
+        airQuality: 'https://openweathermap.org/img/wn/04d@2x.png', // generic AQ icon
+        poNumber: 'https://openweathermap.org/img/wn/09d@2x.png' // generic doc icon
+      }
     });
   } catch (err) {
     console.error('Weather fetch error:', err.message);
