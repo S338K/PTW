@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
   const termsEl = document.getElementById('termsCheckbox');
 
-  // Validation rules (same as before)
+  // Validation rules
   function validateName(value) {
     return /^[A-Za-z\s]{2,25}$/.test(value.trim());
   }
@@ -34,8 +34,12 @@ document.addEventListener('DOMContentLoaded', function () {
     return checked;
   }
 
+  // Show error under the field
   function showError(inputEl, message) {
-    const span = inputEl.closest('.form-group').querySelector('.error-message');
+    const group = inputEl.closest('.form-group');
+    if (!group) return;
+    const span = group.querySelector('.error-message');
+    if (!span) return;
     span.textContent = message || '';
     if (message) {
       inputEl.classList.add('invalid');
@@ -46,9 +50,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Validate a single field
   function validateField(inputEl) {
     let isValid = true;
-
     switch (inputEl.id) {
       case 'signupName':
         isValid = validateName(inputEl.value);
@@ -72,13 +76,13 @@ document.addEventListener('DOMContentLoaded', function () {
         break;
       case 'termsCheckbox':
         isValid = validateTerms(inputEl.checked);
-        const termsError = inputEl.closest('.form-group').querySelector('.error-message');
-        termsError.textContent = isValid ? '' : 'Please accept the terms and conditions.';
+        showError(inputEl, isValid ? '' : 'Please accept the terms and conditions.');
         break;
     }
     return isValid;
   }
 
+  // Validate all fields
   function validateForm() {
     let valid = true;
     [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl, termsEl].forEach(input => {
@@ -118,7 +122,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         const data = await res.json();
-
         if (!res.ok) {
           alert(data.message || 'Sign up failed.');
           return;
