@@ -49,13 +49,13 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     dbName: 'PTW',
     collectionName: 'sessions',
-    ttl: 60 * 60 // 60 minutes
+    ttl: 30 * 60 // 30 minutes TTL in MongoDB
   }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 60 // 60 minutes
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    // Removed maxAge: session expiry handled by TTL in MongoStore
   }
 }));
 
