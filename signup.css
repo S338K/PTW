@@ -124,6 +124,7 @@ input:focus {
     align-items: center;
     text-align: center;
   }
+}
 
 @media (max-width: 480px) {
   input[type="email"],
@@ -131,5 +132,4 @@ input:focus {
     padding: 12px;
     font-size: 14px;
   }
-}
 }
