@@ -41,17 +41,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const data = await res.json();
 
-      if (data.formatted) {
+      if (data.detailsLine) {
+        // Use the backend's exact format for row 2
         weatherEl.innerHTML = `
-          <div style="text-align:center; margin-top:5px;">
-            <span><img src="${data.icons.temperature}" alt="Temp" style="width:20px;height:20px;vertical-align:middle;"> Temp: ${data.temperature}°C</span> &nbsp;|&nbsp;
-            <span><img src="${data.icons.humidity}" alt="Humidity" style="width:20px;height:20px;vertical-align:middle;"> Humidity: ${data.humidity}</span> &nbsp;|&nbsp;
-            <span><img src="${data.icons.visibility}" alt="Visibility" style="width:20px;height:20px;vertical-align:middle;"> Visibility: ${data.visibility}</span> &nbsp;|&nbsp;
-            <span><img src="${data.icons.windSpeed}" alt="Wind" style="width:20px;height:20px;vertical-align:middle;"> Wind Speed: ${data.windSpeed}</span> &nbsp;|&nbsp;
-            <span><img src="${data.icons.airQuality}" alt="Air Quality" style="width:20px;height:20px;vertical-align:middle;"> Air Quality: ${data.airQualityStatus}</span> &nbsp;|&nbsp;
-            <span><img src="${data.icons.poNumber}" alt="PO" style="width:20px;height:20px;vertical-align:middle;"> PO Number: ${data.poNumber}</span>
+          <div style="text-align:center; margin-top:5px; font-weight:bold;">
+            ${data.detailsLine}
           </div>
         `;
+      } else if (data.formatted) {
+        weatherEl.textContent = data.formatted;
       } else {
         const temp = data.temperature ?? data?.main?.temp;
         const cond = data.condition ?? data?.weather?.[0]?.description;
@@ -97,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
+        // Store session + user details
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('lastActivity', Date.now().toString());
         sessionStorage.setItem('loginTime', Date.now().toString());
