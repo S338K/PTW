@@ -83,7 +83,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitPTWBtn = document.getElementById('sbmtptw');
   if (submitPTWBtn) {
     submitPTWBtn.addEventListener('click', e => {
-      e.preventDefault();
       window.location.href = 'mainpage.html';
     });
   }
