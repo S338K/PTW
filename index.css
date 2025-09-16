@@ -61,6 +61,8 @@ body {
   border-radius: 8px;
   padding: 20px;
   color : #1E235E;
+  font-size: large;
+  font-weight: 500;
 }
 
 .legend {
@@ -80,8 +82,8 @@ label {
   margin-bottom: 8px;
   font-weight: regular;
   color: #1a245a;
-  font-weight: 500;
-  font-size: large;
+  font-weight: 200;
+  font-size: medium;
 }
 
 input[type="email"],
