@@ -9,6 +9,14 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 require('dotenv').config();
 
+// ================= AUTH MIDDLEWARE =================
+function requireAuth(req, res, next) {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  next();
+}
+
 // ================= WEATHER ROUTE =================
 router.get('/weather', async (req, res) => {
   const city = req.query.city;
@@ -64,15 +72,6 @@ router.get('/weather', async (req, res) => {
   }
 });
 
-// ================= AUTH MIDDLEWARE =================
-function requireAuth(req, res, next) {
-  if (! req.session.userId) {
-    // Session does not exist, return unauthorized
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-}
-module.exports.requireAuth = requireAuth;
-
 // ================= REGISTER =================
 router.post('/register', async (req, res) => {
   console.log('--- SIGNUP REQUEST RECEIVED ---');
@@ -104,7 +103,6 @@ router.post('/register', async (req, res) => {
       lastLogin: null
     });
 
-    // Start session only after successful registration
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ message: 'Session error' });
 
@@ -153,7 +151,6 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // Regenerate session after successful login
     req.session.regenerate((err) => {
       if (err) return res.status(500).json({ message: 'Session error' });
 
