@@ -9,15 +9,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
   const submitBtn = document.getElementById('signupBtn');
 
-  // Create error spans with ARIA live for accessibility
+  // Create error spans inside .form-group
   [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl].forEach(input => {
     const span = document.createElement('span');
     span.className = 'error-message';
     span.setAttribute('aria-live', 'polite');
-    input.parentNode.appendChild(span);
+    const container = input.closest('.form-group') || input.parentNode;
+    container.appendChild(span);
   });
 
-  // Validation rules
   function validateName(value) {
     return /^[A-Za-z\s]{2,25}$/.test(value.trim());
   }
@@ -25,15 +25,14 @@ document.addEventListener('DOMContentLoaded', function () {
     return /^[A-Za-z0-9\s]{2,25}$/.test(value.trim());
   }
   function validateEmail(value) {
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailPattern.test(value);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
   function validatePassword(value, name, email) {
     const strongPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!strongPattern.test(value)) return false;
     const lowerPass = value.toLowerCase();
     if (name && lowerPass.includes(name.toLowerCase())) return false;
-    if (email && lowerPass.includes(email.split('@')[0].toLowerCase())) return false;
+    if (validateEmail(email) && lowerPass.includes(email.split('@')[0].toLowerCase())) return false;
     return true;
   }
   function validateConfirmPassword(pass, confirm) {
@@ -41,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function showError(inputEl, message) {
-    const span = inputEl.parentNode.querySelector('.error-message');
+    const span = inputEl.closest('.form-group').querySelector('.error-message');
     span.textContent = message || '';
     if (message) {
       inputEl.classList.add('invalid');
@@ -90,7 +89,8 @@ document.addEventListener('DOMContentLoaded', function () {
     input.addEventListener('input', checkAllFields);
   });
 
-  submitBtn.disabled = true;
+  // Validate on load (for autofill)
+  checkAllFields();
 
   if (form) {
     form.addEventListener('submit', async (e) => {
