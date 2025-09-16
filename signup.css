@@ -1,5 +1,3 @@
-/* signup.css: Same layout as login page */
-
 body {
   background-color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -20,43 +18,45 @@ body {
   --error-color: #d9534f;
 }
 
+/* ===== App Title Banner ===== */
 .app-title {
-  position: sticky; /* stays at the top when scrolling */
+  position: sticky;
   top: 0;
   z-index: 1000;
   text-align: center;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #1E245E;
+  background-color: var(--text-primary);
   box-shadow: 0 4px 10px rgba(2, 6, 47, 0.807);
   padding: 15px 10px;
 }
 
+/* ===== Form Container with 3D Effect ===== */
 .form-container {
   max-width: 100%;
   margin: 30px auto;
   background: #fff;
   padding: 30px;
   border-radius: 8px;
-  border: 2px solid #273172; /* visible border */
+  border: 2px solid var(--text-primary);
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.1),
-    0 8px 20px rgba(0, 0, 0, 0.15); /* layered shadow for depth */
-  transform: translateZ(0); /* ensures crisp rendering */
+    0 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateZ(0);
 }
 
 fieldset {
-  border: 2px solid #273172;
+  border: 2px solid var(--text-primary);
   border-radius: 8px;
   padding: 20px;
-  color: #1E245E;
+  color: var(--text-primary);
 }
 
 legend {
   font-size: 1.2em;
   font-weight: bold;
   padding: 0 10px;
-  color: #273172;
+  color: var(--text-primary);
 }
 
 .form-group {
@@ -67,7 +67,6 @@ legend {
 label {
   display: block;
   margin-bottom: 8px;
-  font-weight: regular;
 }
 
 input[type="text"],
@@ -75,52 +74,67 @@ input[type="email"],
 input[type="password"] {
   width: 100%;
   padding: 15px;
-  border: 2px solid #ccc;
+  border: 2px solid var(--input-border);
   border-radius: 25px;
   font-size: 15px;
 }
 
 input:focus {
-  border-color: #273172;
+  border-color: var(--input-focus-border);
   outline: none;
 }
 
 #signupBtn {
   width: 90%;
   padding: 12px;
-  background-color: #273172;
+  background-color: var(--button-bg);
   border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
   color: #fff;
-  border-color: red;
+  border: none;
   transition: background-color 0.3s ease;
-  position: center;
 }
 
 #signupBtn:hover {
-  background-color: var(--button-hover-bg);
-  border-radius: 25px;
-  border-style: groove;
   background-color: goldenrod;
-  transition: cubic-bezier(0.075, 0.82, 0.165, 1);
+  border-radius: 25px;
 }
 
-/* Sign-out link same as sign-in page link */
-.form-footer{
-  color: #273172;
+/* Footer link */
+.form-footer {
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 600;
 }
 
 .form-footer:hover {
   text-decoration: underline;
-  text-shadow: 0 0 5px #d9534f;
+  text-shadow: 0 0 5px var(--error-color);
   color: var(--error-color);
-  text-transform: calc(0.075, 0.82, 0.165, 1);
-  transition: cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
+/* ===== Error Message Styling ===== */
+.error-message {
+  color: var(--error-color);
+  font-size: 0.85em;
+  margin-top: 4px;
+  display: block;
+  min-height: 16px;
+  transition: opacity 0.2s ease-in-out;
+  opacity: 0;
+}
+
+.error-message:not(:empty) {
+  opacity: 1;
+}
+
+input.invalid {
+  border-color: var(--error-color);
+  box-shadow: 0 0 5px rgba(217, 83, 79, 0.5);
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
   .header-container {
     flex-direction: column;
