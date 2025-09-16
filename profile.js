@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   });
 
-  // Run idle check every 30 seconds
-  setInterval(checkIdleTime, 30000);
+  // Run idle check every 05 minutes
+  setInterval(checkIdleTime, 5 * 60 * 1000);
   resetIdleTimer();
 
   // ====== KEEP SESSION ALIVE (PING) ======
