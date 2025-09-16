@@ -49,13 +49,13 @@ app.use(session({
     mongoUrl: process.env.MONGO_URI,
     dbName: 'PTW',
     collectionName: 'sessions',
-    ttl: 60 * 30 // 30 minutes
+    ttl: 60 * 60 // 30 minutes
   }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 30 // 30 minutes
+    maxAge: 1000 * 60 * 60 // 60 minutes
   }
 }));
 
