@@ -50,6 +50,9 @@ body {
 ---------------------------------------- */
 .form-container {
   width: auto;
+  height: auto;
+  padding: auto;
+  margin: auto;
   background: #fff;
   padding: 30px;
   border-radius: 10px;
