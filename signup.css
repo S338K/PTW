@@ -137,12 +137,13 @@ input:focus {
 }
 
 /* ===== Error & Valid States ===== */
-.error-message {
-  color: var(--error-color);
-  font-size: 0.85em;
-  margin-top: 4px;
+..error-message {
   display: block;
-  min-height: 16px;
+  margin-top: 4px;       /* space between input and error */
+  font-size: 0.85em;
+  color: var(--error-color);
+  min-height: 16px;      /* reserve space to avoid layout shift */
+  line-height: 1.2;
   transition: opacity 0.2s ease-in-out;
   opacity: 0;
 }
@@ -150,7 +151,6 @@ input:focus {
 .error-message:not(:empty) {
   opacity: 1;
 }
-
 input.invalid {
   border-color: var(--error-color);
   box-shadow: 0 0 5px rgba(217, 83, 79, 0.5);
