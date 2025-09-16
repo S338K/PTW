@@ -9,55 +9,67 @@
 <body>
 
 <div class="app-title">
-    <h1>Welcome to HIA Baggage Handling System</h1>
-    <h3>Permit to Work - A gateway to access the BHS</h3>
-  </div>
-
-
-  <main>
-    <div class="form-container auth-container">
-      <fieldset>
-        <legend>Sign Up</legend>
-        <form id="signupForm" method="POST" action="" novalidate>
-          <div class="form-group">
-            <label for="signupName">Full Name</label>
-            <input type="text" id="signupName" name="username" required />
-          </div>
-          <div class="form-group">
-            <label for="companyName">Company Name</label>
-            <input type="text" id="companyName" name="company" required />
-          </div>
-          <div class="form-group">
-            <label for="signupEmail">Email Address</label>
-            <input type="email" id="signupEmail" name="email" required />
-          </div>
-          <div class="form-group">
-            <label for="signupPassword">Password</label>
-            <input type="password" id="signupPassword" name="password" required />
-          </div>
-          <div class="form-group">
-            <label for="signupConfirmPassword">Confirm Password</label>
-            <input type="password" id="signupConfirmPassword" name="confirmPassword" required />
-
-<div class="form-group terms-group">
-  <label>
-    <input type="checkbox" id="termsCheckbox" name="terms" />
-    I agree to the <a href="terms.html" target="_blank">Terms and Conditions</a>
-  </label>
-  <span class="error-message" aria-live="polite"></span>
+  <h1>Welcome to HIA Baggage Handling System</h1>
+  <h3>Permit to Work - A gateway to access the BHS</h3>
 </div>
-          </div>
-          <button id="signupBtn" type="submit">Create Account</button>
-        </form>
 
-        <div>
-          <p>Already have an account?</p>
+<main>
+  <div class="form-container auth-container">
+    <fieldset>
+      <legend>Sign Up</legend>
+      <form id="signupForm" method="POST" action="" novalidate>
+        
+        <div class="form-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" name="username" required />
+          <span class="error-message" aria-live="polite"></span>
         </div>
-         <div class="form-footer"> <a href="index.html">Login here</a>
+
+        <div class="form-group">
+          <label for="companyName">Company Name</label>
+          <input type="text" id="companyName" name="company" required />
+          <span class="error-message" aria-live="polite"></span>
         </div>
-      </fieldset>
-    </div>
-  </main>
-  <script src="signup.js"></script>
+
+        <div class="form-group">
+          <label for="signupEmail">Email Address</label>
+          <input type="email" id="signupEmail" name="email" required />
+          <span class="error-message" aria-live="polite"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" name="password" required />
+          <span class="error-message" aria-live="polite"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="signupConfirmPassword">Confirm Password</label>
+          <input type="password" id="signupConfirmPassword" name="confirmPassword" required />
+          <span class="error-message" aria-live="polite"></span>
+        </div>
+
+        <div class="form-group terms-group">
+          <label>
+            <input type="checkbox" id="termsCheckbox" name="terms" />
+            I agree to the <a href="terms.html" target="_blank">Terms and Conditions</a>
+          </label>
+          <span class="error-message" aria-live="polite"></span>
+        </div>
+
+        <button id="signupBtn" type="submit">Create Account</button>
+      </form>
+
+      <div>
+        <p>Already have an account?</p>
+      </div>
+      <div class="form-footer">
+        <a href="index.html">Login here</a>
+      </div>
+    </fieldset>
+  </div>
+</main>
+
+<script src="signup.js"></script>
 </body>
 </html>
