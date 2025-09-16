@@ -7,17 +7,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const emailEl = document.getElementById('signupEmail');
   const passwordEl = document.getElementById('signupPassword');
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
-  const submitBtn = document.getElementById('signupBtn');
+  const termsEl = document.getElementById('termsCheckbox');
 
-  // Create error spans inside .form-group
-  [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl].forEach(input => {
-    const span = document.createElement('span');
-    span.className = 'error-message';
-    span.setAttribute('aria-live', 'polite');
-    const container = input.closest('.form-group') || input.parentNode;
-    container.appendChild(span);
-  });
-
+  // Validation rules (same as before)
   function validateName(value) {
     return /^[A-Za-z\s]{2,25}$/.test(value.trim());
   }
@@ -38,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function validateConfirmPassword(pass, confirm) {
     return pass === confirm && confirm.length > 0;
   }
+  function validateTerms(checked) {
+    return checked;
+  }
 
   function showError(inputEl, message) {
     const span = inputEl.closest('.form-group').querySelector('.error-message');
@@ -51,52 +46,60 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  function checkAllFields() {
+  function validateField(inputEl) {
+    let isValid = true;
+
+    switch (inputEl.id) {
+      case 'signupName':
+        isValid = validateName(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Name: letters only, 2–25 chars.');
+        break;
+      case 'companyName':
+        isValid = validateCompany(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Company: letters/numbers, 2–25 chars.');
+        break;
+      case 'signupEmail':
+        isValid = validateEmail(inputEl.value);
+        showError(inputEl, isValid ? '' : 'Enter a valid email address.');
+        break;
+      case 'signupPassword':
+        isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);
+        showError(inputEl, isValid ? '' : 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
+        break;
+      case 'signupConfirmPassword':
+        isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
+        showError(inputEl, isValid ? '' : 'Passwords do not match.');
+        break;
+      case 'termsCheckbox':
+        isValid = validateTerms(inputEl.checked);
+        const termsError = inputEl.closest('.form-group').querySelector('.error-message');
+        termsError.textContent = isValid ? '' : 'Please accept the terms and conditions.';
+        break;
+    }
+    return isValid;
+  }
+
+  function validateForm() {
     let valid = true;
-
-    if (!validateName(usernameEl.value)) {
-      showError(usernameEl, 'Name: letters only, 2–25 chars.');
-      valid = false;
-    } else showError(usernameEl, '');
-
-    if (!validateCompany(companyEl.value)) {
-      showError(companyEl, 'Company: letters/numbers, 2–25 chars.');
-      valid = false;
-    } else showError(companyEl, '');
-
-    if (!validateEmail(emailEl.value)) {
-      showError(emailEl, 'Enter a valid email address.');
-      valid = false;
-    } else showError(emailEl, '');
-
-    if (!validatePassword(passwordEl.value, usernameEl.value, emailEl.value)) {
-      showError(passwordEl, 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
-      valid = false;
-    } else showError(passwordEl, '');
-
-    if (!validateConfirmPassword(passwordEl.value, confirmPasswordEl.value)) {
-      showError(confirmPasswordEl, 'Passwords do not match.');
-      valid = false;
-    } else showError(confirmPasswordEl, '');
-
-    submitBtn.disabled = !valid;
-    submitBtn.title = valid ? '' : 'Please fix errors before submitting';
+    [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl, termsEl].forEach(input => {
+      if (!validateField(input)) valid = false;
+    });
     return valid;
   }
 
   // Real-time validation
   [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl].forEach(input => {
-    input.addEventListener('input', checkAllFields);
+    input.addEventListener('input', () => validateField(input));
   });
+  termsEl.addEventListener('change', () => validateField(termsEl));
 
-  // Validate on load (for autofill)
-  checkAllFields();
-
+  // Submit validation
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!checkAllFields()) {
-        const firstInvalid = form.querySelector('.invalid');
+
+      if (!validateForm()) {
+        const firstInvalid = form.querySelector('.invalid') || form.querySelector('#termsCheckbox:not(:checked)');
         if (firstInvalid) firstInvalid.focus();
         return;
       }
