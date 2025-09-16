@@ -106,11 +106,11 @@ input:focus {
 
 .form-footer:hover {
   text-decoration: underline;
-  text-decoration-color: greenyellow;
   text-shadow: 0 0 5px #d9534f;
   color: var(--error-color);
+  text-transform: calc(0.075, 0.82, 0.165, 1);
+  transition: cubic-bezier(0.165, 0.84, 0.44, 1);
 }
-
 
 @media (max-width: 768px) {
   .header-container {
