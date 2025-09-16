@@ -33,40 +33,12 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       const data = await res.json();
       weatherEl.textContent = data.formatted || 'Weather unavailable';
-      setDynamicBackground(data.formatted);
     } catch (err) {
       console.error('Weather fetch failed:', err);
       weatherEl.textContent = 'Weather fetch failed';
     }
   }
   fetchWeather();
-
-  /* ===== HEADER: Dynamic Background ===== */
-  function setDynamicBackground(weatherString) {
-    if (!weatherString) return;
-    const lower = weatherString.toLowerCase();
-    let bgUrl = '';
-
-    const hour = new Date().getHours();
-    const isDay = hour >= 6 && hour < 18;
-
-    if (lower.includes('clear')) {
-      bgUrl = isDay
-        ? 'url(https://images.unsplash.com/photo-1501973801540-537f08ccae7b)'
-        : 'url(https://images.unsplash.com/photo-1502082553048-f009c37129b9)';
-    } else if (lower.includes('cloud')) {
-      bgUrl = 'url(https://images.unsplash.com/photo-1506744038136-46273834b3fb)';
-    } else if (lower.includes('rain')) {
-      bgUrl = 'url(https://images.unsplash.com/photo-1501594907352-04cda38ebc29)';
-    } else {
-      bgUrl = 'url(https://images.unsplash.com/photo-1503264116251-35a269479413)';
-    }
-
-    document.body.style.backgroundImage = bgUrl;
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.transition = 'background-image 1s ease-in-out';
-  }
 
   /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');
