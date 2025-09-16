@@ -176,23 +176,3 @@ input.valid {
   max-width:calc(100% -25px);
 }
 
-/* ===== Form-level Messages ===== */
-.form-message {
-  margin-bottom: 15px;
-  padding: 10px;
-  border-radius: 5px;
-  font-size: 0.95em;
-  display: none;
-}
-
-.form-message.success {
-  background-color: none;
-  color: #155724;
-  border: none;
-}
-
-.form-message.error {
-  background-colo: none;
-  color: var (--error-color);
-  border: 1px solid #f5c6cb;
-}
