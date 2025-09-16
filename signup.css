@@ -16,6 +16,7 @@ body {
   --input-border: #ccc;
   --input-focus-border: #273172;
   --error-color: #d9534f;
+  --success-color: #28a745;
 }
 
 /* ===== App Title Banner ===== */
@@ -77,76 +78,4 @@ input[type="password"] {
   border: 2px solid var(--input-border);
   border-radius: 25px;
   font-size: 15px;
-}
-
-input:focus {
-  border-color: var(--input-focus-border);
-  outline: none;
-}
-
-#signupBtn {
-  width: 90%;
-  padding: 12px;
-  background-color: var(--button-bg);
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  color: #fff;
-  border: none;
-  transition: background-color 0.3s ease;
-}
-
-#signupBtn:hover {
-  background-color: goldenrod;
-  border-radius: 25px;
-}
-
-/* Footer link */
-.form-footer {
-  color: var(--text-primary);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.form-footer:hover {
-  text-decoration: underline;
-  text-shadow: 0 0 5px var(--error-color);
-  color: var(--error-color);
-}
-
-/* ===== Error Message Styling ===== */
-.error-message {
-  color: var(--error-color);
-  font-size: 0.85em;
-  margin-top: 4px;
-  display: block;
-  min-height: 16px;
-  transition: opacity 0.2s ease-in-out;
-  opacity: 0;
-}
-
-.error-message:not(:empty) {
-  opacity: 1;
-}
-
-input.invalid {
-  border-color: var(--error-color);
-  box-shadow: 0 0 5px rgba(217, 83, 79, 0.5);
-}
-
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-}
-
-@media (max-width: 480px) {
-  input[type="email"],
-  input[type="password"] {
-    padding: 12px;
-    font-size: 14px;
-  }
-}
+  transition
