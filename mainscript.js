@@ -1,22 +1,31 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // ====== SESSION GUARD & IDLE TIMEOUT ======
   const currentPage = window.location.pathname.split('/').pop();
 
+  // ===== SESSION GUARD =====
+  if (currentPage !== 'index.html') {
+    if (!localStorage.getItem('loginTime')) {
+      window.location.href = 'index.html';
+      return;
+    }
+  }
+
+  // ====== IDLE TIMEOUT & LOGIN TTL (15 min idle / 60 min login TTL) ======
   const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
-  const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes TTL
+  const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes
 
   function logoutUser() {
-    sessionStorage.clear();
     localStorage.clear();
+    sessionStorage.clear();
     window.location.href = 'index.html';
   }
 
   function resetIdleTimer() {
-    sessionStorage.setItem('lastActivity', Date.now().toString());
+    const now = Date.now();
+    localStorage.setItem('lastActivity', now.toString());
   }
 
   function checkIdleTime() {
-    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
+    const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
     const loginTime = parseInt(localStorage.getItem('loginTime') || '0', 10);
 
     if (!last || Date.now() - last > IDLE_LIMIT_MS) logoutUser();
@@ -24,12 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   if (currentPage !== 'index.html') {
-    if (!sessionStorage.getItem('isLoggedIn')) {
-      window.location.href = 'index.html';
-      return;
-    }
-
-    ['click', 'mousemove', 'keypress', 'scroll', 'focus', 'touchstart', 'touchmove']
+    ['click','mousemove','keypress','scroll','focus','touchstart','touchmove']
       .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
 
     window.addEventListener('storage', e => {
@@ -38,11 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setInterval(checkIdleTime, 60 * 1000); // check every 1 minute
     resetIdleTimer();
-
-    // Store login time if not already
-    if (!localStorage.getItem('loginTime')) {
-      localStorage.setItem('loginTime', Date.now().toString());
-    }
   }
 
   // =========================
@@ -51,13 +50,20 @@ document.addEventListener('DOMContentLoaded', function () {
   const logoutBtn = document.getElementById('logoutBtn');
   const profileBtn = document.getElementById('profileBtn');
 
-  if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
-  if (profileBtn) profileBtn.addEventListener('click', () => window.location.href = 'profile.html');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    logoutUser();
+  });
+
+  if (profileBtn) profileBtn.addEventListener('click', () => {
+    window.location.href = 'profile.html';
+  });
 
   // Set full name in nav bar
   const fullNameEl = document.getElementById('userFullName');
-  const storedName = sessionStorage.getItem('fullName');
-  if (fullNameEl && storedName) fullNameEl.textContent = storedName;
+  const storedName = localStorage.getItem('fullName'); // use localStorage for consistency
+  if (fullNameEl && storedName) {
+    fullNameEl.textContent = storedName;
+  }
 
   // =========================
   // Utilities for validation
@@ -127,14 +133,6 @@ document.addEventListener('DOMContentLoaded', function () {
       return el ? validateField(el, regex, msg) : true;
     });
   }
-
-  // =========================
-  // Facility, Impact, Documents, Date/Time, File, Signature, Form Handling
-  // =========================
-  // The rest of mainscript.js remains **unchanged** from your original code
-  // Include part 1 and part 2 as-is after this session update block
-
-});
 
   // =========================
   // Facility list update
@@ -242,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
   setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
-    // =========================
+  // =========================
   // Date & time validation
   // =========================
   let fpStart = null;
@@ -307,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return valid;
   }
 
-  // =========================
+// =========================
   // File upload validation
   // =========================
   (function setupFileUploadValidation() {
@@ -315,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const typeMsg = document.getElementById('fileTypeMessage');
     const list = document.getElementById('uploadedFiles');
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg'];
-    const maxSize = 3 * 1024 * 1024; // CHANGE: 3 MB size limit
+    const maxSize = 3 * 1024 * 1024; // 3 MB
 
     if (!fileInput) return;
 
@@ -332,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (typeMsg) typeMsg.textContent = 'Only PDF or JPG/JPEG files are allowed.';
           return false;
         }
-        if (file.size > maxSize) { // CHANGE: size check
+        if (file.size > maxSize) {
           showErrorMessage(fileInput, 'File size must not exceed 3 MB');
           if (typeMsg) typeMsg.textContent = 'File size must not exceed 3 MB.';
           return false;
@@ -350,7 +348,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const li = document.createElement('li');
         li.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
 
-        // CHANGE: Preview option
         if (f.type === 'application/pdf') {
           const link = document.createElement('a');
           link.href = URL.createObjectURL(f);
@@ -382,6 +379,7 @@ document.addEventListener('DOMContentLoaded', function () {
       ? window.__validateFileUpload()
       : true;
   }
+
   // =========================
   // Signature defaults + auto-fill from full name
   // =========================
@@ -446,81 +444,79 @@ document.addEventListener('DOMContentLoaded', function () {
   // Form submit handler
   // =========================
   const form = document.getElementById('permitForm');
-const submitBtn = document.getElementById('submitBtn');
+  const submitBtn = document.getElementById('submitBtn');
 
-if (submitBtn && form) {
-  submitBtn.addEventListener('click', async function (e) {
-    e.preventDefault();
+  if (submitBtn && form) {
+    submitBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
 
-    const ok =
-      validateRequesterDetails() &&
-      validateDateTime() &&
-      validateFileUpload() &&
-      validateSignature() &&
-      validateConditions();
+      const ok =
+        validateRequesterDetails() &&
+        validateDateTime() &&
+        validateFileUpload() &&
+        validateSignature() &&
+        validateConditions();
 
-    if (ok) {
-      // === NEW: Send form data to backend API ===
-      const formData = new FormData(form);
+      if (ok) {
+        const formData = new FormData(form);
 
-      try {
-        const res = await fetch('http://localhost:5000/api/permits', {
-          method: 'POST',
-          body: formData
-        });
+        try {
+          const res = await fetch('http://localhost:5000/api/permits', {
+            method: 'POST',
+            body: formData
+          });
 
-        if (res.ok) {
-          alert('Form submitted successfully!');
-          form.reset();
+          if (res.ok) {
+            alert('Form submitted successfully!');
+            form.reset();
 
-          // Re-apply defaults
-          const now = new Date();
-          const signDate = document.getElementById('signDate');
-          const signTime = document.getElementById('signTime');
-          if (signDate) {
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            signDate.value = `${y}-${m}-${d}`;
+            const now = new Date();
+            const signDate = document.getElementById('signDate');
+            const signTime = document.getElementById('signTime');
+            if (signDate) {
+              const y = now.getFullYear();
+              const m = String(now.getMonth() + 1).padStart(2, '0');
+              const d = String(now.getDate()).padStart(2, '0');
+              signDate.value = `${y}-${m}-${d}`;
+            }
+            if (signTime) {
+              const hh = String(now.getHours()).padStart(2, '0');
+              const mm = String(now.getMinutes()).padStart(2, '0');
+              signTime.value = `${hh}:${mm}`;
+            }
+
+            if (fullNameInput && signNameInput) {
+              signNameInput.value = fullNameInput.value;
+            }
+
+            const fileList = document.getElementById('uploadedFiles');
+            const fileMsg = document.getElementById('fileTypeMessage');
+            if (fileList) fileList.innerHTML = '';
+            if (fileMsg) fileMsg.textContent = '';
+
+            if (facilityContainer) facilityContainer.classList.add('hidden');
+            if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
+            if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
+            if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
+
+            const equipmentTypeSection = document.getElementById('equipmentType');
+            const impactDetailsSection = document.getElementById('impactDetails');
+            if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
+            if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
+
+            document.querySelectorAll('.error-message').forEach(n => n.remove());
+            document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
+          } else {
+            const err = await res.json();
+            alert('Error: ' + (err.message || 'Unable to submit form'));
           }
-          if (signTime) {
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            signTime.value = `${hh}:${mm}`;
-          }
-
-          if (fullNameInput && signNameInput) {
-            signNameInput.value = fullNameInput.value;
-          }
-
-          const fileList = document.getElementById('uploadedFiles');
-          const fileMsg = document.getElementById('fileTypeMessage');
-          if (fileList) fileList.innerHTML = '';
-          if (fileMsg) fileMsg.textContent = '';
-
-          if (facilityContainer) facilityContainer.classList.add('hidden');
-          if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
-          if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
-          if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
-
-          const equipmentTypeSection = document.getElementById('equipmentType');
-          const impactDetailsSection = document.getElementById('impactDetails');
-          if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
-          if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
-
-          document.querySelectorAll('.error-message').forEach(n => n.remove());
-          document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
-        } else {
-          const err = await res.json();
-          alert('Error: ' + (err.message || 'Unable to submit form'));
+        } catch (error) {
+          console.error('Submit error:', error);
+          alert('Network or server error while submitting form.');
         }
-      } catch (error) {
-        console.error('Submit error:', error);
-        alert('Network or server error while submitting form.');
+      } else {
+        alert('Please review highlighted fields and complete all required details.');
       }
-    } else {
-      alert('Please review highlighted fields and complete all required details.');
-    }
-  });
-}
+    });
+  }
 });
