@@ -141,7 +141,7 @@ input:focus {
   display: block;
   margin-top: 4px;       /* space between input and error */
   font-size: 0.85em;
-  color: var(--error-color);
+  color: red;
   min-height: 16px;      /* reserve space to avoid layout shift */
   line-height: 1.2;
   transition: opacity 0.2s ease-in-out;
