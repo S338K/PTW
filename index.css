@@ -61,7 +61,7 @@ body {
   border-radius: 8px;
   padding: 20px;
   color : #1E235E;
-  font-size: large;
+  font-size: larger;
   font-weight: 500;
 }
 
@@ -82,7 +82,7 @@ label {
   margin-bottom: 8px;
   font-weight: regular;
   color: #1a245a;
-  font-weight: 200;
+  font-weight: 400;
   font-size: medium;
 }
 
