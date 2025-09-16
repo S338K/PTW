@@ -24,7 +24,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!weatherEl) return;
     const city = 'Doha';
     try {
-      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`);
+      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
+        credentials: 'include'
+      });
 
       if (!res.ok) {
         weatherEl.textContent = 'Weather unavailable';
@@ -35,10 +37,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (data.formatted) {
         weatherEl.textContent = data.formatted;
-      } else if (data.temperature && data.condition) {
-        weatherEl.textContent = `${data.temperature}°C | ${data.condition}`;
       } else {
-        weatherEl.textContent = 'Weather unavailable';
+        const temp = data.temperature ?? data?.main?.temp;
+        const cond = data.condition ?? data?.weather?.[0]?.description;
+        if (temp != null && cond) {
+          weatherEl.textContent = `${temp}°C | ${cond}`;
+        } else {
+          weatherEl.textContent = 'Weather unavailable';
+        }
       }
     } catch (err) {
       console.error('Weather fetch failed:', err);
