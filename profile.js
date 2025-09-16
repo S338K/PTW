@@ -8,8 +8,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     localStorage.setItem('lastActivity', now.toString());
   }
 
-  // Reset idle timer immediately on load
-  resetIdleTimer();
+  // Initialize lastActivity and loginTime if missing
+  if (!localStorage.getItem('lastActivity')) resetIdleTimer();
+  if (!localStorage.getItem('loginTime')) localStorage.setItem('loginTime', Date.now().toString());
 
   async function checkSession() {
     try {
