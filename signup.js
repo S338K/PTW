@@ -53,35 +53,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Validate a single field
   function validateField(inputEl) {
-    let isValid = true;
-    switch (inputEl.id) {
-      case 'signupName':
-        isValid = validateName(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
-        break;
-      case 'companyName':
-        isValid = validateCompany(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
-        break;
-      case 'signupEmail':
-        isValid = validateEmail(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Enter a valid email address.');
-        break;
-      case 'signupPassword':
-        isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);
-        showError(inputEl, isValid ? '' : 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
-        break;
-      case 'signupConfirmPassword':
-        isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
-        showError(inputEl, isValid ? '' : 'Passwords do not match.');
-        break;
-      case 'termsCheckbox':
-        isValid = validateTerms(inputEl.checked);
-        showError(inputEl, isValid ? '' : 'Please accept the terms and conditions.');
-        break;
-    }
-    return isValid;
+  let isValid = true;
+  switch (inputEl.id) {
+    case 'signupName':
+      isValid = validateName(inputEl.value);
+      showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
+      break;
+    case 'companyName':
+      isValid = validateCompany(inputEl.value);
+      showError(inputEl, isValid ? '' : 'Letters/numbers, 2–25 chars.');
+      break;
+    case 'signupEmail':
+      isValid = validateEmail(inputEl.value);
+      showError(inputEl, isValid ? '' : 'Enter a valid email address.');
+      break;
+    case 'signupPassword':
+      isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);
+      showError(inputEl, isValid ? '' : 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
+      break;
+    case 'signupConfirmPassword':
+      isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
+      showError(inputEl, isValid ? '' : 'Passwords do not match.');
+      break;
+    case 'termsCheckbox':
+      isValid = validateTerms(inputEl.checked);
+      showError(inputEl, isValid ? '' : 'Please accept the terms and conditions.');
+      break;
   }
+  return isValid;
+}
 
   // Validate all fields
   function validateForm() {
