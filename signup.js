@@ -59,11 +59,11 @@ function validateCompany(value) {
     switch (inputEl.id) {
       case 'signupName':
         isValid = validateName(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Name: letters only, 2–25 chars.');
+        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
         break;
       case 'companyName':
         isValid = validateCompany(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Company: letters/numbers, 2–25 chars.');
+        showError(inputEl, isValid ? '' : Letters only, 2–25 chars.');
         break;
       case 'signupEmail':
         isValid = validateEmail(inputEl.value);
