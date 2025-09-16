@@ -1,16 +1,24 @@
+// ================= IMPORTS & CONFIG =================
 require('dotenv').config();
 console.log('MONGO_URI from env:', process.env.MONGO_URI);
+
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const cors = require('cors');
+const MongoStore = require('connect-mongo');
+
+const mainPageRoutes = require('./routes/mainpageroute');
+const apiRoutes = require('./routes/api');
 
 const app = express();
 
-// ===== Middleware =====
+// ================= MIDDLEWARE =================
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Root test route
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
@@ -32,16 +40,16 @@ app.use(cors({
   credentials: true
 }));
 
-// ===== Session Setup =====
-const MongoStore = require('connect-mongo');
-
+// ===== SESSION SETUP =====
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI, dbName: 'PTW', collectionName: 'sessions',
-  ttl: 60 * 30, // 30 minutes
+    mongoUrl: process.env.MONGO_URI,
+    dbName: 'PTW',
+    collectionName: 'sessions',
+    ttl: 60 * 30 // 30 minutes
   }),
   cookie: {
     httpOnly: true,
@@ -51,14 +59,11 @@ app.use(session({
   }
 }));
 
-// ===== Routes =====
-const mainPageRoutes = require('./routes/mainpageroute');
+// ================= ROUTES =================
 app.use('/mainpage', mainPageRoutes);
-
-const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
 
-// ===== MongoDB Connect =====
+// ================= MONGODB CONNECT =================
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -67,7 +72,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
-// ===== Start Server =====
+// ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
