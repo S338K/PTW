@@ -9,24 +9,32 @@ document.addEventListener('DOMContentLoaded', function () {
   const confirmPasswordEl = document.getElementById('signupConfirmPassword');
   const submitBtn = document.getElementById('signupBtn');
 
-  // Create error spans
+  // Create error spans with ARIA live for accessibility
   [usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl].forEach(input => {
     const span = document.createElement('span');
     span.className = 'error-message';
+    span.setAttribute('aria-live', 'polite');
     input.parentNode.appendChild(span);
   });
 
+  // Validation rules
   function validateName(value) {
-    return value.trim().length > 0;
+    return /^[A-Za-z\s]{2,25}$/.test(value.trim());
   }
   function validateCompany(value) {
-    return value.trim().length > 0;
+    return /^[A-Za-z0-9\s]{2,25}$/.test(value.trim());
   }
   function validateEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(value);
   }
-  function validatePassword(value) {
-    return /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value);
+  function validatePassword(value, name, email) {
+    const strongPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!strongPattern.test(value)) return false;
+    const lowerPass = value.toLowerCase();
+    if (name && lowerPass.includes(name.toLowerCase())) return false;
+    if (email && lowerPass.includes(email.split('@')[0].toLowerCase())) return false;
+    return true;
   }
   function validateConfirmPassword(pass, confirm) {
     return pass === confirm && confirm.length > 0;
@@ -37,8 +45,10 @@ document.addEventListener('DOMContentLoaded', function () {
     span.textContent = message || '';
     if (message) {
       inputEl.classList.add('invalid');
+      inputEl.classList.remove('valid');
     } else {
       inputEl.classList.remove('invalid');
+      inputEl.classList.add('valid');
     }
   }
 
@@ -46,12 +56,12 @@ document.addEventListener('DOMContentLoaded', function () {
     let valid = true;
 
     if (!validateName(usernameEl.value)) {
-      showError(usernameEl, 'Full name is required.');
+      showError(usernameEl, 'Name: letters only, 2–25 chars.');
       valid = false;
     } else showError(usernameEl, '');
 
     if (!validateCompany(companyEl.value)) {
-      showError(companyEl, 'Company name is required.');
+      showError(companyEl, 'Company: letters/numbers, 2–25 chars.');
       valid = false;
     } else showError(companyEl, '');
 
@@ -60,8 +70,8 @@ document.addEventListener('DOMContentLoaded', function () {
       valid = false;
     } else showError(emailEl, '');
 
-    if (!validatePassword(passwordEl.value)) {
-      showError(passwordEl, 'Min 8 chars, 1 letter, 1 number, 1 special char.');
+    if (!validatePassword(passwordEl.value, usernameEl.value, emailEl.value)) {
+      showError(passwordEl, 'Min 8 chars, 1 letter, 1 number, 1 special char, no name/email.');
       valid = false;
     } else showError(passwordEl, '');
 
@@ -71,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else showError(confirmPasswordEl, '');
 
     submitBtn.disabled = !valid;
+    submitBtn.title = valid ? '' : 'Please fix errors before submitting';
     return valid;
   }
 
@@ -84,7 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!checkAllFields()) return;
+      if (!checkAllFields()) {
+        const firstInvalid = form.querySelector('.invalid');
+        if (firstInvalid) firstInvalid.focus();
+        return;
+      }
 
       const username = usernameEl.value.trim();
       const company = companyEl.value.trim();
