@@ -1,39 +1,38 @@
 /* Profile Page Specific Styles */
+./* ===== Navbar Buttons ===== */
+.profile-sbmtptw-btn,
+.profile-signout-btn {
+  background-color: #273172;   /* dark blue */
+  color: #fff;                 /* white text */
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-sbmtptw-btn:hover,
+.profile-signout-btn:hover {
+  background-color: goldenrod; /* gold hover */
+  color: #273172;              /* text flips to blue */
+  border-radius: 25px;
+}
+
+/* ===== Navbar Layout ===== */
 .profile-navbar {
-  background-color: #273172; /* CHANGE: as per requirement */
-  color: white;
-  padding: 10px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; /* responsive wrap */
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
+  background: #fff;
+  padding: 12px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  color: #273172;
+  font-weight: 600;
 }
 
-/* Nav sections */
-.profile-navbar .nav-left,
-.profile-navbar .nav-center,
-.profile-navbar .nav-right {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
 
-.profile-navbar .nav-left {
-  justify-content: flex-start;
-}
-
-.profile-navbar .nav-center {
-  justify-content: center;
-}
-
-.profile-navbar .nav-right {
-  justify-content: flex-end;
-}
 
 /* Buttons */
 .profile-signout-btn,
