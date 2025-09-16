@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.style.transition = 'background-image 1s ease-in-out';
   }
 
-  /* ===== EXISTING LOGIN FUNCTIONALITY (UNCHANGED) ===== */
+  /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');
   if (form) {
     form.addEventListener('submit', async (e) => {
@@ -97,6 +97,17 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
+        // ===== STORE SESSION + USER DETAILS =====
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('lastActivity', Date.now().toString());
+        if (data.user) {
+          localStorage.setItem('fullName', data.user.username || '');
+          localStorage.setItem('email', data.user.email || '');
+          localStorage.setItem('company', data.user.company || '');
+          localStorage.setItem('lastLogin', data.user.lastLogin || '');
+        }
+
+        // Redirect to profile
         window.location.href = 'profile.html';
       } catch (err) {
         console.error('Network error during login:', err);
