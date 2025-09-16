@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function () {
   // ====== BACKEND SESSION CHECK ======
   try {
-    const res = await fetch('http://localhost:5000/api/profile', {
+    const res = await fetch('https://ptw-yu8u.onrender.com/api/profile', {
       method: 'GET',
       credentials: 'include'
     });
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     localStorage.removeItem('lastLogin');
     sessionStorage.removeItem('lastActivity');
 
-    fetch('http://localhost:5000/api/logout', {
+    fetch('https://ptw-yu8u.onrender.com/api/logout', {
       method: 'POST',
       credentials: 'include'
     }).finally(() => {
@@ -46,16 +46,25 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   function checkIdleTime() {
     const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 5 * 60 * 1000) {
+    if (!last || Date.now() - last > 5 * 60 * 1000) { // 5 minutes
       logoutUser();
     }
   }
 
+  // Reset idle timer on any user interaction
   ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
     document.addEventListener(evt, resetIdleTimer, { passive: true })
   );
-  setInterval(checkIdleTime, 30000);
+  setInterval(checkIdleTime, 30000); // check every 30 seconds
   resetIdleTimer();
+
+  // ====== KEEP SESSION ALIVE ======
+  setInterval(() => {
+    fetch("https://ptw-yu8u.onrender.com/api/ping", {
+      method: "GET",
+      credentials: "include"
+    }).catch(err => console.log("Ping failed:", err));
+  }, 2 * 60 * 1000); // every 2 minutes
 
   // ====== SHOW PROFILE DETAILS ======
   document.getElementById('profileWelcome').textContent = `Welcome : ${localStorage.getItem('fullName') || '-'}`;
@@ -77,23 +86,4 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', logoutUser);
   }
-
-  //KEEP SESSIONS ALIVE (PING)
-
-  const API_BASE = 'https://ptw-yu8u.onrender.com/api'; // Adjust as needed
-
-  setInterval(() => {
-    fetch(`${API_BASE}/api-/ping`, {
-      method: 'GET',
-      credentials: 'include'
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log('Session keep-alive response:', data);
-    })
-    .catch(err => {
-      console.warn('Keep-alive ping failed:', err);
-    });
-  }, 2 * 60 * 1000); // 2 minutes
-  
 });
