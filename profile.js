@@ -1,28 +1,34 @@
 document.addEventListener('DOMContentLoaded', async function () {
-  // ====== BACKEND SESSION CHECK ======
-  try {
-    const res = await fetch('https://ptw-yu8u.onrender.com/api/profile', {
-      method: 'GET',
-      credentials: 'include'
-    });
-    if (!res.ok) {
-      window.location.href = 'index.html';
-      return;
-    }
-    const data = await res.json();
+  const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-    // Set user details from backend
-    if (data.user) {
-      localStorage.setItem('fullName', data.user.username || '');
-      localStorage.setItem('email', data.user.email || '');
-      localStorage.setItem('company', data.user.company || '');
-      localStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
+  // ====== BACKEND SESSION CHECK ======
+  async function checkSession() {
+    try {
+      const res = await fetch(`${API_BASE}/api/profile`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        window.location.href = 'index.html';
+        return null;
+      }
+      const data = await res.json();
+
+      if (data.user) {
+        localStorage.setItem('fullName', data.user.username || '');
+        localStorage.setItem('email', data.user.email || '');
+        localStorage.setItem('company', data.user.company || '');
+        localStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
+      }
+      return data.user;
+    } catch (err) {
+      console.warn('Session check failed:', err);
+      window.location.href = 'index.html';
+      return null;
     }
-  } catch (err) {
-    console.warn('Session check failed:', err);
-    window.location.href = 'index.html';
-    return;
   }
+
+  await checkSession();
 
   // ====== IDLE TIMEOUT (5 MINUTES) ======
   function logoutUser() {
@@ -32,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     localStorage.removeItem('lastLogin');
     sessionStorage.removeItem('lastActivity');
 
-    fetch('https://ptw-yu8u.onrender.com/api/logout', {
+    fetch(`${API_BASE}/api/logout`, {
       method: 'POST',
       credentials: 'include'
     }).finally(() => {
@@ -51,19 +57,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  // Reset idle timer on any user interaction
-  ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
-    document.addEventListener(evt, resetIdleTimer, { passive: true })
-  );
-  setInterval(checkIdleTime, 30000); // check every 30 seconds
+  ['click', 'mousemove', 'keypress', 'keydown', 'scroll', 'touchstart', 'touchmove', 'focus']
+    .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
+
+  setInterval(checkIdleTime, 30000); // every 30 seconds
   resetIdleTimer();
 
   // ====== KEEP SESSION ALIVE ======
   setInterval(() => {
-    fetch("https://ptw-yu8u.onrender.com/api/ping", {
-      method: "GET",
-      credentials: "include"
-    }).catch(err => console.log("Ping failed:", err));
+    fetch(`${API_BASE}/api/ping`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .catch(err => console.warn('Ping failed:', err));
   }, 2 * 60 * 1000); // every 2 minutes
 
   // ====== SHOW PROFILE DETAILS ======
@@ -74,17 +80,17 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('profileLastLogin').textContent = `Last login: ${localStorage.getItem('lastLogin') || '-'}`;
 
   // ====== GO TO MAINPAGE BUTTON ======
-const submitPTWBtn = document.getElementById('sbmtptw');
-if (submitPTWBtn) {
-  submitPTWBtn.addEventListener('click', (e) => {
-    e.preventDefault(); // stop form submission if inside a form
-    window.location.href = 'mainpage.html';
-  });
-}
+  const submitPTWBtn = document.getElementById('sbmtptw');
+  if (submitPTWBtn) {
+    submitPTWBtn.addEventListener('click', e => {
+      e.preventDefault();
+      window.location.href = 'mainpage.html';
+    });
+  }
 
-// ====== LOGOUT BUTTON ======
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-  logoutBtn.addEventListener('click', logoutUser);
-}
+  // ====== LOGOUT BUTTON ======
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logoutUser);
+  }
 });
