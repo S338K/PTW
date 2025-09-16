@@ -79,3 +79,29 @@ input[type="password"] {
   border-radius: 25px;
   font-size: 15px;
   transition
+}
+
+.terms-group {
+  margin-top: 15px;
+}
+
+.terms-group label {
+  font-size: 0.95em;
+  color: var(--text-secondary);
+}
+
+.terms-group a {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.terms-group a:hover {
+  color: var(--button-hover-bg);
+}
+
+.terms-group .error-message {
+  color: var(--error-color);
+  font-size: 0.85em;
+  display: block;
+  margin-top: 4px;
+}
