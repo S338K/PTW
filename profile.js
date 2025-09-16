@@ -77,4 +77,23 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', logoutUser);
   }
+
+  //KEEP SESSIONS ALIVE (PING)
+
+  const API_BASE = 'https://ptw-yu8u.onrender.com/api'; // Adjust as needed
+
+  setInterval(() => {
+    fetch(`${API_BASE}/api-/ping`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log('Session keep-alive response:', data);
+    })
+    .catch(err => {
+      console.warn('Keep-alive ping failed:', err);
+    });
+  }, 2 * 60 * 1000); // 2 minutes
+  
 });

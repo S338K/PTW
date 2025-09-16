@@ -221,4 +221,14 @@ router.get('/db-check', (req, res) => {
   }
 });
 
+//Keep-alive endpoint
+router.get('/keep-alive', (req, res) => {
+  if (req.session) {
+    req.session.lastActivity = Date.now();
+    res.json({ message: 'Session is active' });
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+});
+
 module.exports = router;

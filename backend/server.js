@@ -1,6 +1,5 @@
 require('dotenv').config();
 console.log('MONGO_URI from env:', process.env.MONGO_URI);
-
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -34,7 +33,6 @@ app.use(cors({
 }));
 
 // ===== Session Setup =====
-// saveUninitialized:false → no session until something is stored (login/signup)
 const MongoStore = require('connect-mongo');
 
 app.use(session({
