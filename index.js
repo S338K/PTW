@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
-  const headerContainer = document.getElementById('header-container'); // NEW
+  const headerContainer = document.querySelector('.header-container'); // FIXED: it's a class
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
   /* ===== HEADER: Live Date/Time ===== */
