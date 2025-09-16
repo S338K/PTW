@@ -35,17 +35,22 @@ app.use(cors({
 
 // ===== Session Setup =====
 // saveUninitialized:false → no session until something is stored (login/signup)
+const MongoStore = require('connect-mongo');
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI, dbName: 'PTW', collectionName: 'sessions',
+  ttl: 60 * 30, // 30 minutes
+  }),
   cookie: {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  maxAge: 1000 * 60 * 30 // 30 minutes
-}
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 30 // 30 minutes
+  }
 }));
 
 // ===== Routes =====

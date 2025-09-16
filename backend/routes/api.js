@@ -65,17 +65,13 @@ router.get('/weather', async (req, res) => {
 });
 
 // ================= AUTH MIDDLEWARE =================
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'supersecret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 30 // 30 minutes cookie expiry
+function requireAuth(req, res, next) {
+  if (! req.session.userId) {
+    // Session does not exist, return unauthorized
+    return res.status(401).json({ message: "Unauthorized" });
   }
-}));
+}
+module.exports.requireAuth = requireAuth;
 
 // ================= REGISTER =================
 router.post('/register', async (req, res) => {
