@@ -121,19 +121,16 @@ input[type="password"]:focus {
 /* ----------------------------------------
    Footer Link
 ---------------------------------------- */
-.form-footer {
-  text-align: center;
-  margin-top: 15px;
+.form-footer a{
+  color: #273172;
+  text-decoration: none;
   font-weight: 600;
 }
 
-.form-footer a {
-  color: #273172;
-}
-
-.form-footer:hover {
+.form-footer a:hover {
   text-decoration: underline;
-  text-decoration-color: #273172;
+  text-decoration-color: greenyellow;
+  text-shadow: 0 0 5px #d9534f;
   color: var(--error-color);
 }
 
@@ -149,14 +146,6 @@ input[type="password"]:focus {
     flex-direction: column;
     align-items: center;
     text-align: center;
-  }
-  .header-info {
-    align-items: center;
-    margin-top: 0.5rem;
-  }
-  .form-container {
-    width: 95%;
-    margin: auto;
   }
 }
 

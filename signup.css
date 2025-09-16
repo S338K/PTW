@@ -98,17 +98,19 @@ input:focus {
 }
 
 /* Sign-out link same as sign-in page link */
-.signout-link {
+.form-footer a{
   color: #273172;
   text-decoration: none;
   font-weight: 600;
 }
 
-.signout-link:hover {
+.form-footer a:hover {
   text-decoration: underline;
-  text-decoration-color: #273172;
+  text-decoration-color: greenyellow;
+  text-shadow: 0 0 5px #d9534f;
   color: var(--error-color);
 }
+
 
 @media (max-width: 768px) {
   .header-container {
