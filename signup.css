@@ -26,7 +26,6 @@ body {
   z-index: 1000;
   text-align: center;
   color: #fff;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--text-primary);
   box-shadow: 0 4px 10px rgba(2, 6, 47, 0.807);
   padding: 15px 10px;
@@ -43,7 +42,6 @@ body {
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.1),
     0 8px 20px rgba(0, 0, 0, 0.15);
-  transform: translateZ(0);
 }
 
 fieldset {
@@ -61,8 +59,9 @@ legend {
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 30px; /* extra space for floating error */
   width: 90%;
+  position: relative; /* for floating error positioning */
 }
 
 label {
@@ -105,11 +104,12 @@ input:focus {
   color: var(--button-hover-bg);
 }
 
+/* Floating error for checkbox */
 .terms-group .error-message {
-  color: var(--error-color);
-  font-size: 0.85em;
-  display: block;
-  margin-top: 4px;
+  bottom: -18px;
+  left: 25px;
+  white-space: normal;
+  max-width: calc(100% - 25px);
 }
 
 /* ===== Button Styling ===== */
@@ -136,21 +136,30 @@ input:focus {
   transform: translateY(0);
 }
 
-/* ===== Error & Valid States ===== */
-..error-message {
-  display: block;
-  margin-top: 4px;       /* space between input and error */
-  font-size: 0.85em;
-  color: red;
-  min-height: 16px;      /* reserve space to avoid layout shift */
-  line-height: 1.2;
-  transition: opacity 0.2s ease-in-out;
+/* ===== Floating Error Messages ===== */
+.error-message {
+  position: absolute;
+  left: 0;
+  bottom: -18px;
+  background: rgba(217, 83, 79, 0.95);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  pointer-events: none;
   opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 10;
 }
 
 .error-message:not(:empty) {
   opacity: 1;
+  transform: translateY(0);
 }
+
+/* ===== Input States ===== */
 input.invalid {
   border-color: var(--error-color);
   box-shadow: 0 0 5px rgba(217, 83, 79, 0.5);
@@ -161,12 +170,13 @@ input.valid {
   box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
 }
 
+/* ===== Form-level Messages ===== */
 .form-message {
   margin-bottom: 15px;
   padding: 10px;
   border-radius: 5px;
   font-size: 0.95em;
-  display: none; /* hidden by default */
+  display: none;
 }
 
 .form-message.success {
