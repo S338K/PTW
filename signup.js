@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Validation rules
   function validateName(value) {
-    // Allow accented letters for Spanish and other Latin-based languages
     return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,25}$/.test(value.trim());
   }
   function validateCompany(value) {
@@ -58,11 +57,11 @@ document.addEventListener('DOMContentLoaded', function () {
     switch (inputEl.id) {
       case 'signupName':
         isValid = validateName(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Name: letters only, 2–25 chars.');
+        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
         break;
       case 'companyName':
         isValid = validateCompany(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Company: letters/numbers, 2–25 chars.');
+        showError(inputEl, isValid ? '' : 'Letters only, 2–25 chars.');
         break;
       case 'signupEmail':
         isValid = validateEmail(inputEl.value);
@@ -129,11 +128,24 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        // Change button text and color on success, disable it
-        signupBtn.textContent = 'Account created successfully';
+        // Smooth fade-in for success state with white text + pulse glow
+        signupBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
+        signupBtn.textContent = 'Form submitted successfully';
         signupBtn.style.backgroundColor = '#28a745'; // green
         signupBtn.style.borderColor = '#28a745';
+        signupBtn.style.color = '#fff'; // white text
         signupBtn.disabled = true;
+
+        // Add pulse glow animation
+        signupBtn.style.boxShadow = '0 0 0 rgba(40, 167, 69, 0.7)';
+        signupBtn.animate([
+          { boxShadow: '0 0 0 rgba(40, 167, 69, 0.7)' },
+          { boxShadow: '0 0 15px rgba(40, 167, 69, 0.9)' },
+          { boxShadow: '0 0 0 rgba(40, 167, 69, 0.7)' }
+        ], {
+          duration: 1200,
+          iterations: 3
+        });
 
         alert('Account created successfully! Please log in.');
         window.location.href = 'index.html';
