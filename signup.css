@@ -78,9 +78,15 @@ input[type="password"] {
   border: 2px solid var(--input-border);
   border-radius: 25px;
   font-size: 15px;
-  transition
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+input:focus {
+  border-color: var(--input-focus-border);
+  outline: none;
+}
+
+/* ===== Terms & Conditions ===== */
 .terms-group {
   margin-top: 15px;
 }
@@ -104,4 +110,53 @@ input[type="password"] {
   font-size: 0.85em;
   display: block;
   margin-top: 4px;
+}
+
+/* ===== Button Styling ===== */
+#signupBtn {
+  width: 90%;
+  padding: 12px;
+  background-color: var(--button-bg);
+  border-radius: 25px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#signupBtn:hover {
+  background-color: var(--button-hover-bg);
+  transform: translateY(-2px);
+}
+
+#signupBtn:active {
+  transform: translateY(0);
+}
+
+/* ===== Error & Valid States ===== */
+.error-message {
+  color: var(--error-color);
+  font-size: 0.85em;
+  margin-top: 4px;
+  display: block;
+  min-height: 16px;
+  transition: opacity 0.2s ease-in-out;
+  opacity: 0;
+}
+
+.error-message:not(:empty) {
+  opacity: 1;
+}
+
+input.invalid {
+  border-color: var(--error-color);
+  box-shadow: 0 0 5px rgba(217, 83, 79, 0.5);
+}
+
+input.valid {
+  border-color: var(--success-color);
+  box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
 }
