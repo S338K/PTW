@@ -22,9 +22,14 @@ body {
 
 .app-title {
   text-align: center;
-  color: #273172;
+  color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin-top: 20px;
+  background-color: #1E245E;
+  margin: auto;
+  width: auto;
+  height: auto;
+  padding: auto;
 }
 
 .form-container {
