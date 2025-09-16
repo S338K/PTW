@@ -73,7 +73,13 @@ function requireAuth(req, res, next) {
   const now = Date.now();
   const idleLimit = 1000 * 60 * 5; // 5 minutes
 
-  if (now - (req.session.lastActivity || 0) > idleLimit) {
+  // Agar lastActivity set hi nahi hua, to abhi set karo
+  if (!req.session.lastActivity) {
+    req.session.lastActivity = now;
+    return next();
+  }
+
+  if (now - req.session.lastActivity > idleLimit) {
     req.session.destroy(() => {
       res.clearCookie('connect.sid');
       return res.status(440).json({ message: 'Session expired due to inactivity' });
