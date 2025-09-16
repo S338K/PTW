@@ -1,27 +1,25 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const currentPage = window.location.pathname.split('/').pop();
-
-  // ===== SESSION GUARD =====
-  if (currentPage !== 'index.html') {
-    if (!localStorage.getItem('loginTime')) {
-      window.location.href = 'index.html';
-      return;
-    }
-  }
-
-  // ====== IDLE TIMEOUT & LOGIN TTL (15 min idle / 60 min login TTL) ======
-  const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+  const API_BASE = 'https://ptw-yu8u.onrender.com';
+  const IDLE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
   const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes
+
+  // ====== SESSION GUARD ======
+  const currentPage = window.location.pathname.split('/').pop(); 
+  if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
+    window.location.href = 'index.html';
+    return;
+  }
 
   function logoutUser() {
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = 'index.html';
+    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => window.location.href = 'index.html');
   }
 
   function resetIdleTimer() {
-    const now = Date.now();
-    localStorage.setItem('lastActivity', now.toString());
+    sessionStorage.setItem('lastActivity', Date.now().toString());
+    localStorage.setItem('lastActivity', Date.now().toString());
   }
 
   function checkIdleTime() {
@@ -33,14 +31,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   if (currentPage !== 'index.html') {
-    ['click','mousemove','keypress','scroll','focus','touchstart','touchmove']
-      .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
-
-    window.addEventListener('storage', e => {
-      if (e.key === 'lastActivity') resetIdleTimer();
-    });
-
-    setInterval(checkIdleTime, 60 * 1000); // check every 1 minute
+    ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
+      document.addEventListener(evt, resetIdleTimer, { passive: true })
+    );
+    setInterval(checkIdleTime, 30 * 1000); // check every 30 sec
     resetIdleTimer();
   }
 
@@ -50,17 +44,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const logoutBtn = document.getElementById('logoutBtn');
   const profileBtn = document.getElementById('profileBtn');
 
-  if (logoutBtn) logoutBtn.addEventListener('click', () => {
-    logoutUser();
-  });
-
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
   if (profileBtn) profileBtn.addEventListener('click', () => {
     window.location.href = 'profile.html';
   });
 
   // Set full name in nav bar
   const fullNameEl = document.getElementById('userFullName');
-  const storedName = localStorage.getItem('fullName'); // use localStorage for consistency
+  const storedName = sessionStorage.getItem('fullName') || localStorage.getItem('fullName');
   if (fullNameEl && storedName) {
     fullNameEl.textContent = storedName;
   }
@@ -313,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const typeMsg = document.getElementById('fileTypeMessage');
     const list = document.getElementById('uploadedFiles');
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg'];
-    const maxSize = 3 * 1024 * 1024; // 3 MB
+    const maxSize = 3 * 1024 * 1024; // CHANGE: 3 MB size limit
 
     if (!fileInput) return;
 
@@ -330,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (typeMsg) typeMsg.textContent = 'Only PDF or JPG/JPEG files are allowed.';
           return false;
         }
-        if (file.size > maxSize) {
+        if (file.size > maxSize) { // CHANGE: size check
           showErrorMessage(fileInput, 'File size must not exceed 3 MB');
           if (typeMsg) typeMsg.textContent = 'File size must not exceed 3 MB.';
           return false;
@@ -348,6 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const li = document.createElement('li');
         li.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
 
+        // CHANGE: Preview option
         if (f.type === 'application/pdf') {
           const link = document.createElement('a');
           link.href = URL.createObjectURL(f);
@@ -379,7 +371,6 @@ document.addEventListener('DOMContentLoaded', function () {
       ? window.__validateFileUpload()
       : true;
   }
-
   // =========================
   // Signature defaults + auto-fill from full name
   // =========================
@@ -444,79 +435,81 @@ document.addEventListener('DOMContentLoaded', function () {
   // Form submit handler
   // =========================
   const form = document.getElementById('permitForm');
-  const submitBtn = document.getElementById('submitBtn');
+const submitBtn = document.getElementById('submitBtn');
 
-  if (submitBtn && form) {
-    submitBtn.addEventListener('click', async function (e) {
-      e.preventDefault();
+if (submitBtn && form) {
+  submitBtn.addEventListener('click', async function (e) {
+    e.preventDefault();
 
-      const ok =
-        validateRequesterDetails() &&
-        validateDateTime() &&
-        validateFileUpload() &&
-        validateSignature() &&
-        validateConditions();
+    const ok =
+      validateRequesterDetails() &&
+      validateDateTime() &&
+      validateFileUpload() &&
+      validateSignature() &&
+      validateConditions();
 
-      if (ok) {
-        const formData = new FormData(form);
+    if (ok) {
+      // === NEW: Send form data to backend API ===
+      const formData = new FormData(form);
 
-        try {
-          const res = await fetch('http://localhost:5000/api/permits', {
-            method: 'POST',
-            body: formData
-          });
+      try {
+        const res = await fetch('http://localhost:5000/api/permits', {
+          method: 'POST',
+          body: formData
+        });
 
-          if (res.ok) {
-            alert('Form submitted successfully!');
-            form.reset();
+        if (res.ok) {
+          alert('Form submitted successfully!');
+          form.reset();
 
-            const now = new Date();
-            const signDate = document.getElementById('signDate');
-            const signTime = document.getElementById('signTime');
-            if (signDate) {
-              const y = now.getFullYear();
-              const m = String(now.getMonth() + 1).padStart(2, '0');
-              const d = String(now.getDate()).padStart(2, '0');
-              signDate.value = `${y}-${m}-${d}`;
-            }
-            if (signTime) {
-              const hh = String(now.getHours()).padStart(2, '0');
-              const mm = String(now.getMinutes()).padStart(2, '0');
-              signTime.value = `${hh}:${mm}`;
-            }
-
-            if (fullNameInput && signNameInput) {
-              signNameInput.value = fullNameInput.value;
-            }
-
-            const fileList = document.getElementById('uploadedFiles');
-            const fileMsg = document.getElementById('fileTypeMessage');
-            if (fileList) fileList.innerHTML = '';
-            if (fileMsg) fileMsg.textContent = '';
-
-            if (facilityContainer) facilityContainer.classList.add('hidden');
-            if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
-            if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
-            if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
-
-            const equipmentTypeSection = document.getElementById('equipmentType');
-            const impactDetailsSection = document.getElementById('impactDetails');
-            if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
-            if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
-
-            document.querySelectorAll('.error-message').forEach(n => n.remove());
-            document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
-          } else {
-            const err = await res.json();
-            alert('Error: ' + (err.message || 'Unable to submit form'));
+          // Re-apply defaults
+          const now = new Date();
+          const signDate = document.getElementById('signDate');
+          const signTime = document.getElementById('signTime');
+          if (signDate) {
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            signDate.value = `${y}-${m}-${d}`;
           }
-        } catch (error) {
-          console.error('Submit error:', error);
-          alert('Network or server error while submitting form.');
+          if (signTime) {
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            signTime.value = `${hh}:${mm}`;
+          }
+
+          if (fullNameInput && signNameInput) {
+            signNameInput.value = fullNameInput.value;
+          }
+
+          const fileList = document.getElementById('uploadedFiles');
+          const fileMsg = document.getElementById('fileTypeMessage');
+          if (fileList) fileList.innerHTML = '';
+          if (fileMsg) fileMsg.textContent = '';
+
+          if (facilityContainer) facilityContainer.classList.add('hidden');
+          if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
+          if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
+          if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
+
+          const equipmentTypeSection = document.getElementById('equipmentType');
+          const impactDetailsSection = document.getElementById('impactDetails');
+          if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
+          if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
+
+          document.querySelectorAll('.error-message').forEach(n => n.remove());
+          document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.message || 'Unable to submit form'));
         }
-      } else {
-        alert('Please review highlighted fields and complete all required details.');
+      } catch (error) {
+        console.error('Submit error:', error);
+        alert('Network or server error while submitting form.');
       }
-    });
-  }
+    } else {
+      alert('Please review highlighted fields and complete all required details.');
+    }
+  });
+}
 });
