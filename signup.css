@@ -21,25 +21,28 @@ body {
 }
 
 .app-title {
+  position: sticky; /* stays at the top when scrolling */
+  top: 0;
+  z-index: 1000;
   text-align: center;
   color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin-top: 20px;
   background-color: #1E245E;
   box-shadow: 0 4px 10px rgba(2, 6, 47, 0.807);
-  margin: auto;
-  width: auto;
-  height: auto  ;
-  padding: auto;
+  padding: 15px 10px;
 }
 
 .form-container {
   max-width: 100%;
-  margin: auto;
+  margin: 30px auto;
   background: #fff;
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border: 2px solid #273172; /* visible border */
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 8px 20px rgba(0, 0, 0, 0.15); /* layered shadow for depth */
+  transform: translateZ(0); /* ensures crisp rendering */
 }
 
 fieldset {
