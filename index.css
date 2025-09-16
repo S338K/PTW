@@ -32,12 +32,12 @@ body {
    Header Container
 ---------------------------------------- */
 .header-container {
-  text-decoration: color #fff;
+  color: #1a245a;
   padding: 1.2rem 1.5rem;
   display: flex;
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
-  background: #1a245a;
+  background: #fff;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
  justify-content: space-between;
  flex-wrap: wrap;
