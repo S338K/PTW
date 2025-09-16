@@ -1,14 +1,30 @@
 document.addEventListener('DOMContentLoaded', async function () {
-  // ====== SESSION GUARD ======
-  if (!sessionStorage.getItem('isLoggedIn')) {
+  // ====== BACKEND SESSION CHECK ======
+  try {
+    const res = await fetch('http://localhost:5000/api/profile', {
+      method: 'GET',
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      window.location.href = 'index.html';
+      return;
+    }
+  } catch (err) {
+    console.warn('Session check failed:', err);
     window.location.href = 'index.html';
     return;
   }
 
   // ====== IDLE TIMEOUT (5 MINUTES) ======
   function logoutUser() {
-    localStorage.clear();
-    sessionStorage.clear();
+    // Clear only auth-related keys
+    localStorage.removeItem('fullName');
+    localStorage.removeItem('email');
+    localStorage.removeItem('company');
+    localStorage.removeItem('lastLogin');
+    sessionStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('lastActivity');
+
     fetch('http://localhost:5000/api/logout', {
       method: 'POST',
       credentials: 'include'
@@ -23,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   function checkIdleTime() {
     const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 5 * 60 * 1000) {
+    if (!last || Date.now() - last > 5 * 60 * 1000) { // 5 minutes
       logoutUser();
     }
   }
