@@ -9,9 +9,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const month = now.toLocaleString('en-US', { month: 'long' });
     const day = String(now.getDate()).padStart(2, '0');
     const year = now.getFullYear();
-    const time = now.toLocaleTimeString('en-US', { hour12: true });
+    const dateStr = `${month} ${day}, ${year}`;
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
+
     if (dateTimeEl) {
-      dateTimeEl.textContent = `${month} ${day}, ${year} | ${time}`;
+      dateTimeEl.innerHTML = `
+        <div style="text-align:center; font-weight:bold;">
+          ${dateStr} &nbsp;||&nbsp; ${timeStr}
+        </div>
+      `;
     }
   }
   if (dateTimeEl) {
@@ -36,35 +42,14 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await res.json();
 
       if (data.formatted) {
-        // Updated: show all fields with icons
         weatherEl.innerHTML = `
-          <div>
-            <img src="${data.icons.condition}" alt="Condition" style="width:32px;height:32px;vertical-align:middle;">
-            ${data.formatted}
-          </div>
-          <div>
-            <img src="${data.icons.feelsLike}" alt="Feels Like" style="width:24px;height:24px;vertical-align:middle;">
-            Feels like: ${data.feelsLike}
-          </div>
-          <div>
-            <img src="${data.icons.humidity}" alt="Humidity" style="width:24px;height:24px;vertical-align:middle;">
-            Humidity: ${data.humidity}
-          </div>
-          <div>
-            <img src="${data.icons.windSpeed}" alt="Wind Speed" style="width:24px;height:24px;vertical-align:middle;">
-            Wind: ${data.windSpeed}
-          </div>
-          <div>
-            <img src="${data.icons.visibility}" alt="Visibility" style="width:24px;height:24px;vertical-align:middle;">
-            Visibility: ${data.visibility}
-          </div>
-          <div>
-            <img src="${data.icons.airQuality}" alt="Air Quality" style="width:24px;height:24px;vertical-align:middle;">
-            Air Quality: ${data.airQualityStatus} (AQI ${data.airQualityIndex})
-          </div>
-          <div>
-            <img src="${data.icons.poNumber}" alt="PO Number" style="width:24px;height:24px;vertical-align:middle;">
-            PO Number: ${data.poNumber}
+          <div style="text-align:center; margin-top:5px;">
+            <span><img src="${data.icons.temperature}" alt="Temp" style="width:20px;height:20px;vertical-align:middle;"> Temp: ${data.temperature}°C</span> &nbsp;|&nbsp;
+            <span><img src="${data.icons.humidity}" alt="Humidity" style="width:20px;height:20px;vertical-align:middle;"> Humidity: ${data.humidity}</span> &nbsp;|&nbsp;
+            <span><img src="${data.icons.visibility}" alt="Visibility" style="width:20px;height:20px;vertical-align:middle;"> Visibility: ${data.visibility}</span> &nbsp;|&nbsp;
+            <span><img src="${data.icons.windSpeed}" alt="Wind" style="width:20px;height:20px;vertical-align:middle;"> Wind Speed: ${data.windSpeed}</span> &nbsp;|&nbsp;
+            <span><img src="${data.icons.airQuality}" alt="Air Quality" style="width:20px;height:20px;vertical-align:middle;"> Air Quality: ${data.airQualityStatus}</span> &nbsp;|&nbsp;
+            <span><img src="${data.icons.poNumber}" alt="PO" style="width:20px;height:20px;vertical-align:middle;"> PO Number: ${data.poNumber}</span>
           </div>
         `;
       } else {
@@ -112,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        // ===== STORE SESSION + USER DETAILS AFTER SUCCESSFUL LOGIN =====
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('lastActivity', Date.now().toString());
         sessionStorage.setItem('loginTime', Date.now().toString());
@@ -124,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
           localStorage.setItem('lastLogin', data.user.lastLogin || '');
         }
 
-        // Redirect to profile
         window.location.href = 'profile.html';
       } catch (err) {
         console.error('Network error during login:', err);
