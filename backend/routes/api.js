@@ -124,7 +124,6 @@ router.get('/weather', async (req, res) => {
   try {
     const city = req.query.city || 'Doha';
     const apiKey = process.env.WEATHER_API_KEY;
-    const poNumber = process.env.PO_NUMBER || 'N/A'; // <-- Added PO number here
 
     // Get weather data
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
@@ -152,8 +151,12 @@ router.get('/weather', async (req, res) => {
       5: 'Very Poor'
     }[aqi] || 'Unknown';
 
+    // Build the exact format string
+    const detailsLine = `Temperature: ${temp}°C | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | Quality: ${aqiStatus}`;
+
     res.json({
       formatted: `${temp}°C | ${condition}`,
+      detailsLine: detailsLine,
       temperature: temp,
       feelsLike: `${feelsLike}°C`,
       humidity: `${humidity}%`,
@@ -161,7 +164,6 @@ router.get('/weather', async (req, res) => {
       visibility: `${visibility} km`,
       airQualityIndex: aqi,
       airQualityStatus: aqiStatus,
-      poNumber: poNumber, // <-- Now included in response
       condition: condition,
       icons: {
         condition: conditionIcon,
@@ -170,8 +172,7 @@ router.get('/weather', async (req, res) => {
         humidity: 'https://openweathermap.org/img/wn/50d@2x.png',
         windSpeed: 'https://openweathermap.org/img/wn/50n@2x.png',
         visibility: 'https://openweathermap.org/img/wn/01d@2x.png',
-        airQuality: 'https://openweathermap.org/img/wn/04d@2x.png',
-        poNumber: 'https://openweathermap.org/img/wn/09d@2x.png'
+        airQuality: 'https://openweathermap.org/img/wn/04d@2x.png'
       }
     });
   } catch (err) {
