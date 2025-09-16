@@ -65,30 +65,17 @@ router.get('/weather', async (req, res) => {
 });
 
 // ================= AUTH MIDDLEWARE =================
-function requireAuth(req, res, next) {
-  if (!req.session.userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'supersecret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 30 // 30 minutes cookie expiry
   }
-
-  const now = Date.now();
-  const idleLimit = 1000 * 60 * 5; // 5 minutes
-
-  // Agar lastActivity set hi nahi hua, to abhi set karo
-  if (!req.session.lastActivity) {
-  req.session.lastActivity = now;
-  return next();
-}
-
-  if (now - req.session.lastActivity > idleLimit) {
-    req.session.destroy(() => {
-      res.clearCookie('connect.sid');
-      return res.status(440).json({ message: 'Session expired due to inactivity' });
-    });
-  } else {
-    req.session.lastActivity = now;
-    next();
-  }
-}
+}));
 
 // ================= REGISTER =================
 router.post('/register', async (req, res) => {
