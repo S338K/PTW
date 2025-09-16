@@ -11,11 +11,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Validation rules
   function validateName(value) {
-    return /^[A-Za-z\s]{2,25}$/.test(value.trim());
-  }
-  function validateCompany(value) {
-    return /^[A-Za-z0-9\s]{2,25}$/.test(value.trim());
-  }
+  // Letters (A-Z, a-z) + accented letters + ñ/Ñ + spaces, 2–25 chars
+  return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,25}$/.test(value.trim());
+}
+
+function validateCompany(value) {
+  // Letters + numbers + accented letters + ñ/Ñ + spaces, 2–25 chars
+  return /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]{2,25}$/.test(value.trim());
+}
   function validateEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
