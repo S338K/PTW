@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
+  const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
 
   // ====== BACKEND SESSION CHECK ======
   async function checkSession() {
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         localStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
       }
 
-      resetIdleTimer(); // 🔹 reset timer after session check
+      resetIdleTimer(); // reset timer after session check
       return data.user;
     } catch (err) {
       console.warn('Session check failed:', err);
@@ -32,35 +33,45 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   await checkSession();
 
-  // ====== IDLE TIMEOUT (15 MINUTES) ======
+  // ====== LOGOUT FUNCTION ======
   function logoutUser() {
     localStorage.removeItem('fullName');
     localStorage.removeItem('email');
     localStorage.removeItem('company');
     localStorage.removeItem('lastLogin');
-    sessionStorage.removeItem('lastActivity');
+    localStorage.removeItem('lastActivity');
 
     fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
       .finally(() => window.location.href = 'index.html');
   }
 
+  // ====== MULTI-TAB IDLE TIMER ======
   function resetIdleTimer() {
-    sessionStorage.setItem('lastActivity', Date.now().toString());
+    const now = Date.now();
+    localStorage.setItem('lastActivity', now.toString());
   }
 
   function checkIdleTime() {
-    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 15 * 60 * 1000) { // 15 min
+    const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
+    if (!last || Date.now() - last > IDLE_LIMIT_MS) {
       logoutUser();
     }
   }
 
-  // Reset idle timer on user interaction
+  // Listen to user activity
   ['click','mousemove','keypress','scroll','focus','touchstart','touchmove']
     .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
 
-  setInterval(checkIdleTime, 30000); // check every 30 sec
-  resetIdleTimer(); // 🔹 reset immediately on page load
+  // Listen for activity in other tabs
+  window.addEventListener('storage', e => {
+    if (e.key === 'lastActivity') {
+      console.log('Activity detected in another tab');
+    }
+  });
+
+  // Run idle check every 30 seconds
+  setInterval(checkIdleTime, 30000);
+  resetIdleTimer();
 
   // ====== KEEP SESSION ALIVE (PING) ======
   setInterval(() => {
@@ -81,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitPTWBtn = document.getElementById('sbmtptw');
   if (submitPTWBtn) {
     submitPTWBtn.addEventListener('click', e => {
-      e.preventDefault(); // 🔹 prevent default form submission
+      e.preventDefault(); // prevent form submission if inside a form
       window.location.href = 'mainpage.html';
     });
   }
@@ -91,4 +102,18 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', logoutUser);
   }
+
+  // ====== VISUAL IDLE COUNTDOWN (optional) ======
+  const idleCountdownEl = document.getElementById('idleCountdown');
+  function updateIdleCountdown() {
+    const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
+    const remaining = Math.max(0, IDLE_LIMIT_MS - (Date.now() - last));
+    const minutes = String(Math.floor(remaining / 60000)).padStart(2, '0');
+    const seconds = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
+    if (idleCountdownEl) {
+      idleCountdownEl.textContent = `Idle time remaining: ${minutes}:${seconds}`;
+    }
+  }
+  setInterval(updateIdleCountdown, 1000);
+  updateIdleCountdown();
 });
