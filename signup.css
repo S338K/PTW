@@ -141,16 +141,15 @@ input:focus {
   position: absolute;
   left: 0;
   bottom: -18px;
-  background: rgba(217, 83, 79, 0.95);
-  color: #fff;
-  padding: 3px 8px;
-  border-radius: 4px;
+  color: var(--error-color);
+  padding: 0;
+  border-radius: 0;
   font-size: 0.8em;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 10;
 }
 
@@ -170,6 +169,13 @@ input.valid {
   box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
 }
 
+.terms-group .error-message {
+  bottom:-18px;
+  left:25px;
+  white-space: normal;
+  max-width:calc(100% -25px);
+}
+
 /* ===== Form-level Messages ===== */
 .form-message {
   margin-bottom: 15px;
@@ -180,13 +186,13 @@ input.valid {
 }
 
 .form-message.success {
-  background-color: #d4edda;
+  background-color: none;
   color: #155724;
-  border: 1px solid #c3e6cb;
+  border: none;
 }
 
 .form-message.error {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-colo: none;
+  color: var (--error-color);
   border: 1px solid #f5c6cb;
 }
