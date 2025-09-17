@@ -26,42 +26,56 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ===== HEADER: Weather Fetch ===== */
-  async function fetchWeather() {
-    if (!weatherEl) return;
-    const city = 'Doha';
-    try {
-      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
-        credentials: 'include'
-      });
+async function fetchWeather() {
+  if (!weatherEl) return;
+  const city = 'Doha';
+  try {
+    const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
+      credentials: 'include'
+    });
 
-      if (!res.ok) {
-        weatherEl.textContent = 'Weather unavailable';
-        return;
-      }
+    if (!res.ok) {
+      weatherEl.textContent = 'Weather unavailable';
+      return;
+    }
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.detailsLine) {
+    // If backend sends detailsLine, use it but also show icons
+    if (data.detailsLine) {
+      weatherEl.innerHTML = `
+        <div style="text-align:center; margin-top:5px; font-weight:bold;">
+          <img src="${data.icons?.condition || ''}" alt="${data.condition || ''}" style="vertical-align:middle; width:32px; height:32px; margin-right:5px;">
+          ${data.temperature}°C (Feels like ${data.feelsLike}) | ${data.condition}
+        </div>
+        <div style="text-align:center; font-size:0.9em; margin-top:2px;">
+          ${data.detailsLine}
+        </div>
+      `;
+    } else {
+      // Fallback if detailsLine not provided
+      const temp = data.temperature ?? data?.main?.temp;
+      const feels = data.feelsLike ?? data?.main?.feels_like;
+      const cond = data.condition ?? data?.weather?.[0]?.description;
+      const icon = data.icons?.condition ?? `https://openweathermap.org/img/wn/${data?.weather?.[0]?.icon}@2x.png`;
+
+      if (temp != null && cond) {
         weatherEl.innerHTML = `
           <div style="text-align:center; margin-top:5px; font-weight:bold;">
-            ${data.detailsLine}
+            <img src="${icon}" alt="${cond}" style="vertical-align:middle; width:32px; height:32px; margin-right:5px;">
+            ${temp}°C ${feels ? `(Feels like ${feels})` : ''} | ${cond}
           </div>
         `;
-      } else if (data.formatted) {
-        weatherEl.textContent = data.formatted;
       } else {
-        const temp = data.temperature ?? data?.main?.temp;
-        const cond = data.condition ?? data?.weather?.[0]?.description;
-        if (temp != null && cond) {
-          weatherEl.textContent = `${temp}°C | ${cond}`;
-        } else {
-          weatherEl.textContent = 'Weather unavailable';
-        }
+        weatherEl.textContent = 'Weather unavailable';
       }
-    } catch {
-      weatherEl.textContent = 'Weather fetch failed';
     }
+  } catch (err) {
+    console.error('Weather fetch error:', err);
+    weatherEl.textContent = 'Weather fetch failed';
   }
+}
+
   fetchWeather();
 
   /* ===== LOGIN FUNCTIONALITY ===== */
