@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Backend sends detailsLine without PO
       weatherEl.innerHTML = `
-      <div style="text-align:center; margin-top:5px; font-weight:bold;">
+      <div style="text-align:right; margin-top:5px; font-weight:bold;">
         ${data.detailsLine}
       </div>
     `;
