@@ -37,23 +37,20 @@ body {
   color: #000;
   background: #fff;
   padding: 1.2rem 1.5rem;
-  display: flex;
   justify-content: space-between;
-  /* pushes left and right apart */
   align-items: center;
-  /* vertically centers them */
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
-  font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font: 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   flex-wrap: wrap;
 }
 
 #dateTimeDisplay {
-  text-align: left;
+  text-align: center;
 }
 
 #tempDisplay {
-  text-align: right;
+  text-align: center;
 }
 
 
