@@ -129,59 +129,74 @@ router.get('/ping', requireAuth, (req, res) => {
 });
 
 // ===== WEATHER ROUTE =====
-const temp = Math.round(w.main.temp);
-const feelsLike = Math.round(w.main.feels_like);
-const humidity = Math.round(w.main.humidity);
-const windSpeed = Math.round(w.wind.speed);
-const visibility = Math.round((w.visibility || 0) / 1000);
-const pressure = w.main.pressure;
-const condition = w.weather[0].description;
-const conditionIcon = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
+// ===== WEATHER ROUTE =====
+router.get('/weather', async (req, res) => {
+  try {
+    const city = req.query.city || 'Doha';
+    const apiKey = process.env.WEATHER_API_KEY;
 
-// Detect PO (dust/sand whirls)
-let po = '';
-if (w.weather && w.weather.length > 0) {
-  const desc = w.weather[0].description.toLowerCase();
-  if (desc.includes('dust') || desc.includes('sand')) {
-    po = 'PO';
-  }
-}
+    // Current weather
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+    const weatherRes = await axios.get(weatherUrl);
+    const w = weatherRes.data;
 
-// Air quality index/status from your existing code
-const aqi = airRes.data.list[0].main.aqi;
-const aqiStatus = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
+    const temp = Math.round(w.main.temp);
+    const feelsLike = Math.round(w.main.feels_like);
+    const humidity = Math.round(w.main.humidity);
+    const windSpeed = Math.round(w.wind.speed);
+    const visibility = Math.round((w.visibility || 0) / 1000);
+    const pressure = w.main.pressure;
+    const condition = w.weather[0].description;
+    const conditionIcon = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
 
-// Build the exact details line
-const detailsLine = `Temperature: ${temp}°C (feels like ${feelsLike}°C) | Weather status: ${condition} | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | PO: ${po || '—'} | Quality: ${aqiStatus}`;
+    // Detect PO (dust/sand whirls)
+    let po = '';
+    if (w.weather && w.weather.length > 0) {
+      const desc = w.weather[0].description.toLowerCase();
+      if (desc.includes('dust') || desc.includes('sand')) {
+        po = 'PO';
+      }
+    }
 
-res.json({
-  detailsLine,
-  temperature: temp,
-  feelsLike: `${feelsLike}°C`,
-  humidity: `${humidity}%`,
-  visibility: `${visibility} km`,
-  windSpeed: `${windSpeed} m/s`,
-  pressure: `${pressure} hPa`,
-  airQualityIndex: aqi,
-  airQualityStatus: aqiStatus,
-  po,
-  condition,
-  icons: {
-    condition: conditionIcon,
-    temperature: conditionIcon,
-    feelsLike: conditionIcon,
-    humidity: 'https://openweathermap.org/img/wn/50d@2x.png',
-    windSpeed: 'https://openweathermap.org/img/wn/50n@2x.png',
-    visibility: 'https://openweathermap.org/img/wn/01d@2x.png',
-    airQuality: 'https://openweathermap.org/img/wn/04d@2x.png'
-  }
-});
+    // Air quality
+    const { lat, lon } = w.coord;
+    const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+    const airRes = await axios.get(airUrl);
+    const aqi = airRes.data.list[0].main.aqi;
+    const aqiStatus = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
 
+    // Build details line in requested format
+    const detailsLine = `Temperature: ${temp}°C (feels like ${feelsLike}°C) | Weather status: ${condition} | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | PO: ${po || '—'} | Quality: ${aqiStatus}`;
+
+    res.json({
+      formatted: `${temp}°C | ${condition}`,
+      detailsLine,
+      temperature: temp,
+      feelsLike: `${feelsLike}°C`,
+      humidity: `${humidity}%`,
+      visibility: `${visibility} km`,
+      windSpeed: `${windSpeed} m/s`,
+      pressure: `${pressure} hPa`,
+      airQualityIndex: aqi,
+      airQualityStatus: aqiStatus,
+      po,
+      condition,
+      icons: {
+        condition: conditionIcon,
+        temperature: conditionIcon,
+        feelsLike: conditionIcon,
+        humidity: 'https://openweathermap.org/img/wn/50d@2x.png',
+        windSpeed: 'https://openweathermap.org/img/wn/50n@2x.png',
+        visibility: 'https://openweathermap.org/img/wn/01d@2x.png',
+        airQuality: 'https://openweathermap.org/img/wn/04d@2x.png'
+      }
+    });
   } catch (err) {
     console.error('Weather fetch error:', err.message);
     res.status(500).json({ message: 'Unable to fetch weather' });
   }
 });
+
 
 // ===== PERMITS ROUTES =====
 
@@ -339,8 +354,7 @@ router.post('/forgot-password', async (req, res) => {
     res.json({ message: 'Password reset email sent successfully' });
   } catch (err) {
     console.error('Forgot password error:', err);
-    res.status(500).json({ message: err.message });
-
+    res.status(500).json({ message: 'Error generating reset token' });
   }
 });
 

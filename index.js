@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   /* ===== HEADER: Live Date/Time ===== */
-  /* ===== DATE/TIME DISPLAY ===== */
   function updateDateTime() {
     const dateTimeEl = document.getElementById('dateTimeDisplay');
     if (!dateTimeEl) return;
@@ -51,9 +50,8 @@ document.addEventListener('DOMContentLoaded', function () {
   setInterval(updateDateTime, 1000);
 
 
-  //=============================//
 
-  a/* ===== WEATHER DISPLAY ===== */
+  //* ===== WEATHER DISPLAY ===== */
   async function fetchWeather() {
     const weatherEl = document.getElementById('tempDisplay');
     if (!weatherEl) return;
@@ -73,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const data = await res.json();
 
-      // Use the backend's nicely formatted detailsLine
+      // Backend sends detailsLine in your exact format
       weatherEl.innerHTML = `
       <div style="text-align:center; margin-top:5px; font-weight:bold;">
         ${data.detailsLine}
@@ -85,16 +83,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Fetch weather on load and refresh every 10 minutes
+  // Run immediately and update every 10 minutes
   fetchWeather();
   setInterval(fetchWeather, 600000);
 
-  // Initial load + refresh every minute for weather, every second for time
-  updateHeader();
-  setInterval(updateHeader, 60000); // refresh weather + time every 60s
-
-
-  fetchWeather();
 
   /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');
