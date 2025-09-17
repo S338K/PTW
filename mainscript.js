@@ -1,31 +1,67 @@
 document.addEventListener('DOMContentLoaded', function () {
+  const API_BASE = 'https://ptw-yu8u.onrender.com';
+  const IDLE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+  const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes
+
   // ====== SESSION GUARD ======
-  const currentPage = window.location.pathname.split('/').pop(); // CHANGE: ensure currentPage is defined
-  if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
-    window.location.href = 'index.html';
-    return;
+  const currentPage = window.location.pathname.split('/').pop(); 
+
+  async function verifyBackendSession() {
+    try {
+      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Session invalid');
+      const data = await res.json();
+      if (data.user) {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('fullName', data.user.username || '');
+        sessionStorage.setItem('email', data.user.email || '');
+        sessionStorage.setItem('company', data.user.company || '');
+        sessionStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
+        localStorage.setItem('loginTime', Date.now().toString());
+        resetIdleTimer();
+        return true;
+      }
+    } catch (err) {
+      logoutUser();
+      return false;
+    }
   }
 
-  // ====== IDLE TIMEOUT (5 MINUTES) ======
+  if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
+    verifyBackendSession();
+  }
+
   function logoutUser() {
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = 'index.html';
+    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => window.location.href = 'index.html');
   }
+
   function resetIdleTimer() {
-    sessionStorage.setItem('lastActivity', Date.now().toString());
-  }
-  function checkIdleTime() {
-    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 5 * 60 * 1000) {
+    const now = Date.now();
+    sessionStorage.setItem('lastActivity', now.toString());
+    localStorage.setItem('lastActivity', now.toString());
+
+    // Refresh backend session TTL
+    fetch(`${API_BASE}/api/ping`, { credentials: 'include' }).catch(() => {
       logoutUser();
-    }
+    });
   }
+
+  function checkIdleTime() {
+    const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
+    const loginTime = parseInt(localStorage.getItem('loginTime') || '0', 10);
+
+    if (!last || Date.now() - last > IDLE_LIMIT_MS) logoutUser();
+    if (!loginTime || Date.now() - loginTime > LOGIN_TTL_MS) logoutUser();
+  }
+
   if (currentPage !== 'index.html') {
     ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
       document.addEventListener(evt, resetIdleTimer, { passive: true })
     );
-    setInterval(checkIdleTime, 30000);
+    setInterval(checkIdleTime, 30 * 1000); // check every 30 sec
     resetIdleTimer();
   }
 
@@ -35,18 +71,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const logoutBtn = document.getElementById('logoutBtn');
   const profileBtn = document.getElementById('profileBtn');
 
-  if (logoutBtn) logoutBtn.addEventListener('click', () => {
-    sessionStorage.clear();
-    window.location.href = 'index.html';
-  });
-
+  if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
   if (profileBtn) profileBtn.addEventListener('click', () => {
     window.location.href = 'profile.html';
   });
 
   // Set full name in nav bar
   const fullNameEl = document.getElementById('userFullName');
-  const storedName = sessionStorage.getItem('fullName');
+  const storedName = sessionStorage.getItem('fullName') || localStorage.getItem('fullName');
   if (fullNameEl && storedName) {
     fullNameEl.textContent = storedName;
   }
@@ -226,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
   setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
-    // =========================
+  // =========================
   // Date & time validation
   // =========================
   let fpStart = null;
@@ -291,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return valid;
   }
 
-  // =========================
+// =========================
   // File upload validation
   // =========================
   (function setupFileUploadValidation() {

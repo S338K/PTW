@@ -5,27 +5,28 @@
   <title>User Profile</title>
   <link rel="stylesheet" href="mainstyles.css">
   <link rel="stylesheet" href="profile.css">
-  </head>
+</head>
 <body style="margin:0; padding:0;">
 
   <nav class="profile-navbar">
-  <div class="nav-left">
-    <div id="profileWelcome">Welcome : </div>
-  </div>
-  <div class="nav-center">
-    <button class="profile-sbmtptw-btn" type="button" id="sbmtptw">Submit a PTW request</button>
-  </div>
-  <div class="nav-right">
-    <button class="profile-signout-btn" type="button" id="logoutBtn">Sign Out</button>
-  </div>
-</nav>
-
+    <div class="nav-left">
+      <div id="profileWelcome">Welcome : </div>
+    </div>
+    <div class="nav-center">
+      <button class="profile-sbmtptw-btn" type="button" id="sbmtptw">Submit a PTW request</button>
+    </div>
+    <div class="nav-right">
+      <button class="profile-signout-btn" type="button" id="logoutBtn">Sign Out</button>
+    </div>
+  </nav>
 
   <div style="padding: 0 20px; margin-top: 10px; color: #555;">
     <div id="profileLastLogin">Last login: -</div>
   </div>
 
   <div class="form-container profile-form-container">
+
+    <!-- Card 1: User Profile -->
     <div class="card" id="userProfileCard">
       <h3>User Profile Details</h3>
       <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
@@ -33,15 +34,25 @@
       <p><strong>Company:</strong> <span id="profileCompany"></span></p>
     </div>
 
-    <!-- Permit Details Section -->
-    <div class="card" id="permitCard">
-      <h3>Permit Details</h3>
-      <ul id="closedPermitsList">
-        <!-- Example static entries (replace with dynamic later) -->
-        <!-- <li>Permit #123 - Submitted</li>
-        <li>Permit #124 - Approved</li> -->
-      </ul>
+    <!-- Card 2: Submitted Permit Details -->
+    <div class="card" id="submittedPermitsCard">
+      <h3>Submitted Permit Details</h3>
+      <table id="permitTable">
+        <thead>
+          <tr>
+            <th>Serial No.</th>
+            <th>Submitted Date & Time</th>
+            <th>Permit Number</th>
+            <th>Title of Permit</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic rows will be injected via JS -->
+        </tbody>
+      </table>
     </div>
+
   </div>
 
   <script src="profile.js"></script>

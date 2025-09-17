@@ -1,7 +1,25 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
+  const IDLE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+  const PING_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-  // ====== BACKEND SESSION CHECK ======
+  // Skip session management on login/signup pages
+  if (window.location.pathname.includes('index.html') || window.location.pathname.includes('signup.html')) {
+    return;
+  }
+
+  function resetIdleTimer() {
+    const now = Date.now();
+    localStorage.setItem('lastActivity', now.toString());
+  }
+
+  function logoutUser() {
+    ['fullName','email','company','lastActivity'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('logoutEvent', Date.now()); // notify other tabs
+    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => window.location.href = 'index.html');
+  }
+
   async function checkSession() {
     try {
       const res = await fetch(`${API_BASE}/api/profile`, {
@@ -9,88 +27,82 @@ document.addEventListener('DOMContentLoaded', async function () {
         credentials: 'include'
       });
       if (!res.ok) {
-        window.location.href = 'index.html';
+        logoutUser();
         return null;
       }
       const data = await res.json();
-
       if (data.user) {
         localStorage.setItem('fullName', data.user.username || '');
         localStorage.setItem('email', data.user.email || '');
         localStorage.setItem('company', data.user.company || '');
         localStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
       }
+      resetIdleTimer();
       return data.user;
     } catch (err) {
       console.warn('Session check failed:', err);
-      window.location.href = 'index.html';
+      logoutUser();
       return null;
     }
   }
 
-  await checkSession();
-
-  // ====== IDLE TIMEOUT (5 MINUTES) ======
-  function logoutUser() {
-    localStorage.removeItem('fullName');
-    localStorage.removeItem('email');
-    localStorage.removeItem('company');
-    localStorage.removeItem('lastLogin');
-    sessionStorage.removeItem('lastActivity');
-
-    fetch(`${API_BASE}/api/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    }).finally(() => {
-      window.location.href = 'index.html';
-    });
-  }
-
-  function resetIdleTimer() {
-    sessionStorage.setItem('lastActivity', Date.now().toString());
-  }
-
-  function checkIdleTime() {
-    const last = parseInt(sessionStorage.getItem('lastActivity') || '0', 10);
-    if (!last || Date.now() - last > 5 * 60 * 1000) { // 5 minutes
-      logoutUser();
+  async function pingBackend() {
+    try {
+      await fetch(`${API_BASE}/api/ping`, { method: 'GET', credentials: 'include' });
+    } catch (err) {
+      console.warn('Ping failed:', err);
     }
   }
 
-  ['click', 'mousemove', 'keypress', 'keydown', 'scroll', 'touchstart', 'touchmove', 'focus']
-    .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
-
-  setInterval(checkIdleTime, 30000); // every 30 seconds
-  resetIdleTimer();
-
-  // ====== KEEP SESSION ALIVE ======
-  setInterval(() => {
-    fetch(`${API_BASE}/api/ping`, {
-      method: 'GET',
-      credentials: 'include'
-    })
-    .catch(err => console.warn('Ping failed:', err));
-  }, 2 * 60 * 1000); // every 2 minutes
-
-  // ====== SHOW PROFILE DETAILS ======
-  document.getElementById('profileWelcome').textContent = `Welcome : ${localStorage.getItem('fullName') || '-'}`;
-  document.getElementById('profileFullName').textContent = localStorage.getItem('fullName') || '-';
-  document.getElementById('profileEmail').textContent = localStorage.getItem('email') || '-';
-  document.getElementById('profileCompany').textContent = localStorage.getItem('company') || '-';
-  document.getElementById('profileLastLogin').textContent = `Last login: ${localStorage.getItem('lastLogin') || '-'}`;
-
-  // ====== GO TO MAINPAGE BUTTON ======
-  const submitPTWBtn = document.getElementById('sbmtptw');
-  if (submitPTWBtn) {
-    submitPTWBtn.addEventListener('click', e => {
-      e.preventDefault();
-      window.location.href = 'mainpage.html';
-    });
+  function checkIdleTime() {
+    const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
+    if (!last || Date.now() - last > IDLE_LIMIT_MS) logoutUser();
   }
 
-  // ====== LOGOUT BUTTON ======
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', logoutUser);
+  // Activity listeners
+  ['click','mousemove','keypress','scroll','focus','touchstart','touchmove']
+    .forEach(evt => document.addEventListener(evt, resetIdleTimer, { passive: true }));
+
+  // Multi-tab sync
+  window.addEventListener('storage', e => {
+    if (e.key === 'lastActivity') resetIdleTimer();
+    if (e.key === 'logoutEvent') logoutUser();
+  });
+
+  // Initial session check
+  await checkSession();
+
+  // Periodic idle and ping checks
+  setInterval(() => {
+    checkIdleTime();
+    pingBackend();
+  }, PING_INTERVAL_MS);
+
+  /* ===== Populate Submitted Permit Details table on profile.html ===== */
+  if (document.getElementById('permitTable')) {
+    try {
+      const res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include' });
+      if (res.ok) {
+        const permits = await res.json();
+        const tbody = document.querySelector('#permitTable tbody');
+        tbody.innerHTML = '';
+
+        permits.forEach((permit, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${new Date(permit.submittedAt).toLocaleString()}</td>
+            <td>${permit.permitNumber}</td>
+            <td>${permit.title}</td>
+            <td><span class="status ${permit.status.toLowerCase().replace(/\s+/g, '')}">${permit.status}</span></td>
+          `;
+          tbody.appendChild(row);
+        });
+      } else {
+        console.warn('Failed to load permits');
+      }
+    } catch (err) {
+      console.warn('Error fetching permits:', err);
+    }
   }
 });

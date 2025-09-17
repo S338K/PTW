@@ -26,4 +26,11 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+role: { 
+  type: String, 
+  enum: ['Requester', 'PreApprover', 'FinalApprover', 'Admin'], 
+  default: 'Requester' 
+}
+
+
 module.exports = mongoose.model('User', userSchema);

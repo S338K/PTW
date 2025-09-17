@@ -1,4 +1,3 @@
-/* Profile Page Specific Styles */
 /* ===== Navbar Buttons ===== */
 .profile-sbmtptw-btn,
 .profile-signout-btn {
@@ -32,9 +31,7 @@
   font-weight: 600;
 }
 
-
-
-/* Buttons */
+/* Buttons (duplicate selector kept for compatibility) */
 .profile-signout-btn,
 .profile-sbmtptw-btn {
   background: #fff;
@@ -52,12 +49,78 @@
   background-color: #e6e6e6;
 }
 
-/* Form container spacing */
+/* ===== Form container spacing ===== */
 .profile-form-container {
   margin-top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* space between cards */
 }
 
-/* Responsive adjustments */
+/* ===== Card Styling ===== */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+.card h3 {
+  margin-top: 0;
+  color: #273172;
+  border-bottom: 2px solid #273172;
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+}
+
+/* ===== Table Styling for Submitted Permits ===== */
+#permitTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+#permitTable th,
+#permitTable td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+#permitTable th {
+  background-color: #273172;
+  color: #fff;
+}
+
+/* ===== Status Badge Colors ===== */
+.status {
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.status.approved {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.status.pending {
+  background-color: orange;
+  color: #fff;
+}
+
+.status.verification {
+  background-color: #17a2b8;
+  color: #fff;
+}
+
+.status.closed {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+/* ===== Responsive adjustments ===== */
 @media (max-width: 600px) {
   .profile-navbar {
     flex-direction: column;

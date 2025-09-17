@@ -1,7 +1,7 @@
 // ================= IMPORTS =================
 const mongoose = require('mongoose');
 const multer = require('multer');
-const Permit = require('../models/permit');
+const PermitModel = require('../models/permit'); // renamed to avoid conflicts
 const upload = multer({ dest: 'uploads/' });
 const express = require('express');
 const router = express.Router();
@@ -16,8 +16,8 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
   const now = Date.now();
-  const maxInactivity = 1000 * 60 * 5; // 5 minutes
-  if (req.session.lastActivity && (now - req.session.lastActivity) > maxInactivity) {
+  const idleTimeout = 1000 * 60 * 15; // 15 minutes
+  if (req.session.lastActivity && (now - req.session.lastActivity) > idleTimeout) {
     req.session.destroy(() => {
       res.clearCookie('connect.sid');
       return res.status(401).json({ message: 'Session expired due to inactivity' });
@@ -28,104 +28,43 @@ function requireAuth(req, res, next) {
   }
 }
 
+// ===== SESSION INITIALIZATION =====
+function createSession(req, user) {
+  req.session.userId = user._id;
+  req.session.username = user.username;
+  req.session.lastActivity = Date.now();
+}
+
 // ================= ROUTES =================
-
-// ----- WEATHER -----
-router.get('/weather', async (req, res) => {
-  const city = req.query.city;
-  if (!city) return res.status(400).json({ message: "City is required" });
-
-  try {
-    const apiKey = process.env.WEATHER_API_KEY;
-    if (!apiKey) return res.status(500).json({ message: "API key not configured" });
-
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
-    const weatherResp = await axios.get(weatherUrl);
-    const weatherData = weatherResp.data;
-
-    if (!weatherData.main || !weatherData.weather) {
-      return res.status(500).json({ message: "Invalid weather data received" });
-    }
-
-    const temperature = Math.round(weatherData.main.temp ?? 0);
-    const feelsLike = Math.round(weatherData.main.feels_like ?? 0);
-    const humidity = Math.round(weatherData.main.humidity ?? 0);
-    const visibilityKm = weatherData.visibility ? (weatherData.visibility / 1000).toFixed(1) : '-';
-    const windGust = Math.round(weatherData.wind?.gust || weatherData.wind?.speed || 0);
-    const weatherStatus = weatherData.weather[0]?.main ?? '-';
-
-    const { lat, lon } = weatherData.coord || {};
-    let aqiIndex = null, aqiStatus = null, poValue = null;
-    if (lat && lon) {
-      const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
-      const aqiResp = await axios.get(aqiUrl);
-      const aqiData = aqiResp.data?.list?.[0];
-      aqiIndex = aqiData?.main?.aqi ?? null;
-      poValue = aqiData?.components?.co ?? null;
-
-      const aqiStatusMap = {
-        1: "Good",
-        2: "Fair",
-        3: "Moderate",
-        4: "Unhealthy for Sensitive Groups",
-        5: "Unhealthy"
-      };
-      aqiStatus = aqiStatusMap[aqiIndex] || "Unknown";
-    }
-
-    const formatted = `Temperature: ${temperature}°C (Feels like ${feelsLike}°C) | Sky Status: ${weatherStatus} | Humidity: ${humidity}% | Visibility: ${visibilityKm} km | Wind Gust: ${windGust} m/s | AQI: ${aqiIndex ?? '-'} | PO: ${poValue ?? '-'} | Air Quality: ${aqiStatus ?? '-'}`;
-    res.json({ formatted });
-  } catch (err) {
-    console.error("Weather API error:", err.message);
-    res.status(500).json({ message: "Error fetching weather data" });
-  }
-});
-
 // ----- REGISTER -----
 router.post('/register', async (req, res) => {
-  console.log('--- SIGNUP REQUEST RECEIVED ---');
-
   try {
-    const { username, company, email, password } = req.body;
-    if (!username || !email || !password) {
+    const { username, company, email, password, role } = req.body;
+    if (!username || !email || !password)
       return res.status(400).json({ message: 'All fields are required' });
-    }
 
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        message: 'Password must be at least 8 characters long and include at least one letter, one number, and one special character.'
-      });
-    }
+    if (!passwordRegex.test(password))
+      return res.status(400).json({ message: 'Password must be at least 8 characters long and include one letter, number, and special character.' });
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(409).json({ message: 'Email is already in use' });
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      username,
-      email,
-      password: hash,
-      company: company || '',
-      lastLogin: null
+    const user = await User.create({ 
+      username, 
+      email, 
+      password: hash, 
+      company: company || '', 
+      role: role || 'Requester', 
+      lastLogin: null 
     });
 
-    req.session.regenerate((err) => {
-      if (err) return res.status(500).json({ message: 'Session error' });
-      req.session.userId = user._id;
-      req.session.username = user.username;
-      req.session.lastActivity = Date.now();
+    createSession(req, user);
 
-      res.status(201).json({
-        message: 'Registration successful',
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          company: user.company,
-          lastLogin: user.lastLogin
-        }
-      });
+    res.status(201).json({
+      message: 'Registration successful',
+      user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: user.lastLogin }
     });
   } catch (err) {
     console.error('Registration error:', err);
@@ -135,8 +74,6 @@ router.post('/register', async (req, res) => {
 
 // ----- LOGIN -----
 router.post('/login', async (req, res) => {
-  console.log('--- LOGIN REQUEST RECEIVED ---');
-
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
@@ -151,23 +88,11 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    req.session.regenerate((err) => {
-      if (err) return res.status(500).json({ message: 'Session error' });
+    createSession(req, user);
 
-      req.session.userId = user._id;
-      req.session.username = user.username;
-      req.session.lastActivity = Date.now();
-
-      res.json({
-        message: 'Login successful',
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          company: user.company,
-          lastLogin: previousLogin || new Date()
-        }
-      });
+    res.json({
+      message: 'Login successful',
+      user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: previousLogin || new Date() }
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -175,47 +100,185 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ----- PROFILE -----
+// ----- PROFILE (Protected) -----
 router.get('/profile', requireAuth, async (req, res) => {
   const user = await User.findById(req.session.userId).select('-password');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
-  res.json({
-    user: {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      company: user.company,
-      lastLogin: user.lastLogin
-    }
-  });
+  res.json({ user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: user.lastLogin } });
 });
 
 // ----- LOGOUT -----
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.clearCookie('connect.sid');
-    res.json({ message: 'Logged out' });
-  });
+  if (req.session) {
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      res.json({ message: 'Logged out' });
+    });
+  } else {
+    res.json({ message: 'No active session' });
+  }
 });
 
-// ----- DB CHECK -----
-router.get('/db-check', (req, res) => {
+// ===== KEEP SESSION ALIVE =====
+router.get('/ping', requireAuth, (req, res) => {
+  req.session.lastActivity = Date.now();
+  res.json({ message: 'Session refreshed' });
+});
+
+// ===== WEATHER ROUTE =====
+router.get('/weather', async (req, res) => {
   try {
-    const dbName = mongoose.connection.name;
-    res.json({ connectedTo: dbName });
+    const city = req.query.city || 'Doha';
+    const apiKey = process.env.WEATHER_API_KEY;
+
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+    const weatherRes = await axios.get(weatherUrl);
+    const w = weatherRes.data;
+
+    const temp = Math.round(w.main.temp);
+    const feelsLike = Math.round(w.main.feels_like);
+    const humidity = Math.round(w.main.humidity);
+    const windSpeed = Math.round(w.wind.speed);
+    const visibility = Math.round((w.visibility || 0) / 1000);
+    const condition = w.weather[0].description;
+    const conditionIcon = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
+
+    const { lat, lon } = w.coord;
+    const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+    const airRes = await axios.get(airUrl);
+    const aqi = airRes.data.list[0].main.aqi;
+    const aqiStatus = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
+
+    const detailsLine = `Temperature: ${temp}°C | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | Quality: ${aqiStatus}`;
+
+    res.json({
+      formatted: `${temp}°C | ${condition}`,
+      detailsLine,
+      temperature: temp,
+      feelsLike: `${feelsLike}°C`,
+      humidity: `${humidity}%`,
+      windSpeed: `${windSpeed} m/s`,
+      visibility: `${visibility} km`,
+      airQualityIndex: aqi,
+      airQualityStatus: aqiStatus,
+      condition,
+      icons: {
+        condition: conditionIcon,
+        temperature: conditionIcon,
+        feelsLike: conditionIcon,
+        humidity: 'https://openweathermap.org/img/wn/50d@2x.png',
+        windSpeed: 'https://openweathermap.org/img/wn/50n@2x.png',
+        visibility: 'https://openweathermap.org/img/wn/01d@2x.png',
+        airQuality: 'https://openweathermap.org/img/wn/04d@2x.png'
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Weather fetch error:', err.message);
+    res.status(500).json({ message: 'Unable to fetch weather' });
   }
 });
-//======KEEP SESSION ALIVE======
-router.get('/ping', (req, res) => {
-  if (req.session) {
-    req.session.lastActivity = Date.now();
-    return res.json({ message: 'Session refreshed' });
-  } else {
-    res.status(401).json({ message: 'No active session' });
+
+// ===== PERMITS ROUTES =====
+
+// GET all permits for logged-in user
+router.get('/permits', requireAuth, async (req, res) => {
+  try {
+    const userPermits = await PermitModel.find({ userId: req.session.userId })
+      .sort({ submittedAt: -1 });
+
+    res.json(userPermits.map(p => ({
+      submittedAt: p.submittedAt,
+      permitNumber: p.permitNumber,
+      title: p.title,
+      status: p.status
+    })));
+  } catch (err) {
+    console.error('Error fetching permits:', err);
+    res.status(500).json({ message: 'Unable to fetch permits' });
   }
 });
-// ================= EXPORT =================
+
+// POST create a new permit
+router.post('/permits', requireAuth, async (req, res) => {
+  try {
+    const { permitNumber, title } = req.body;
+    if (!permitNumber || !title) {
+      return res.status(400).json({ message: 'Permit number and title are required' });
+    }
+
+    const permit = await PermitModel.create({
+      userId: req.session.userId,
+      permitNumber,
+      title,
+      status: 'Pending',
+      submittedAt: new Date()
+    });
+
+    res.status(201).json({ message: 'Permit submitted successfully', permit });
+  } catch (err) {
+    console.error('Error creating permit:', err);
+    res.status(500).json({ message: 'Unable to submit permit' });
+  }
+});
+
+// PATCH update permit status (with role checks)
+router.patch('/permits/:id/status', requireAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['Pending', 'In Progress', 'Approved'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.status(401).json({ message: 'User not found' });
+
+    // Role-based permissions
+    if (user.role === 'PreApprover' && status !== 'In Progress') {
+      return res.status(403).json({ message: 'Pre-Approver can only set status to In Progress' });
+    }
+    if (user.role === 'FinalApprover' && status !== 'Approved') {
+      return res.status(403).json({ message: 'Final Approver can only set status to Approved' });
+    }
+    if (user.role === 'Requester') {
+      return res.status(403).json({ message: 'Requester cannot change status' });
+    }
+    // Admin can set any status
+
+    const permit = await PermitModel.findById(req.params.id);
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    permit.status = status;
+    await permit.save();
+
+    res.json({ message: 'Status updated successfully', permit });
+  } catch (err) {
+    console.error('Error updating permit status:', err);
+    res.status(500).json({ message: 'Unable to update permit status' });
+  }
+});
+
+// (Optional) DELETE a permit
+router.delete('/permits/:id', requireAuth, async (req, res) => {
+  try {
+    const permit = await PermitModel.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.session.userId
+    });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found or not authorized' });
+    }
+
+    res.json({ message: 'Permit deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting permit:', err);
+    res.status(500).json({ message: 'Unable to delete permit' });
+  }
+});
+
 module.exports = router;
