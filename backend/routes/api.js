@@ -286,7 +286,7 @@ router.delete('/permits/:id', requireAuth, async (req, res) => {
 // ===== PASSWORD RESET ROUTES (secure hashed token) =====
 
 // Request password reset
-outer.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
