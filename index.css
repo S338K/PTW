@@ -46,6 +46,12 @@ body {
   text-align: center;
 }
 
+#dateTimeDisplay,
+#tempDisplay {
+  font-weight: bold;
+  margin: 4px 0;
+}
+
 /* ----------------------------------------
    Form Card Layout
 ---------------------------------------- */
