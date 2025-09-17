@@ -9,6 +9,7 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 // ================= AUTH MIDDLEWARE =================
@@ -285,7 +286,7 @@ router.delete('/permits/:id', requireAuth, async (req, res) => {
 // ===== PASSWORD RESET ROUTES (secure hashed token) =====
 
 // Request password reset
-router.post('/forgot-password', async (req, res) => {
+outer.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
@@ -295,15 +296,45 @@ router.post('/forgot-password', async (req, res) => {
 
     // Generate raw token
     const rawToken = crypto.randomBytes(20).toString('hex');
-    // Hash token for DB storage
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
+    // Save hashed token + expiry in DB
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min expiry
     await user.save();
 
-    // For now: return raw token for testing (replace with email send in production)
-    res.json({ message: 'Password reset token generated', token: rawToken });
+    // Create reset link (point this to your frontend reset page)
+    const resetLink = `https://your-frontend-domain.com/reset-password?token=${rawToken}`;
+
+    // Configure Outlook SMTP
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.office365.com',
+      port: 587,
+      secure: false, // STARTTLS
+      auth: {
+        user: process.env.OUTLOOK_USER, // Outlook email
+        pass: process.env.OUTLOOK_PASS  // Outlook password or app password
+      }
+    });
+
+    // Email content
+    const mailOptions = {
+      from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
+      to: email,
+      subject: 'Password Reset Request',
+      html: `
+        <p>Hello ${user.username || ''},</p>
+        <p>You requested a password reset. Click the link below to reset your password:</p>
+        <p><a href="${resetLink}">${resetLink}</a></p>
+        <p>This link will expire in 15 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      `
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: 'Password reset email sent successfully' });
   } catch (err) {
     console.error('Forgot password error:', err);
     res.status(500).json({ message: 'Error generating reset token' });
@@ -311,23 +342,36 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // Reset password
+// ===== RESET PASSWORD =====
 router.post('/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
+
     if (!token || !newPassword) {
       return res.status(400).json({ message: 'Token and new password are required' });
     }
 
-    // Hash incoming token to compare with DB
+    // ✅ Strong password regex: min 8 chars, uppercase, lowercase, number, special char
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!strongPasswordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+      });
+    }
+
+    // Hash the token to compare with DB
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
     });
-    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
 
-    // With pre-save hook in model, this will be hashed automatically
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Update password
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
@@ -339,5 +383,6 @@ router.post('/reset-password', async (req, res) => {
     res.status(500).json({ message: 'Error resetting password' });
   }
 });
+
 
 module.exports = router;
