@@ -35,9 +35,12 @@ body {
 ---------------------------------------- */
 .header-container {
   display: flex;
-  justify-content: space-between; /* left/right alignment */
-  align-items: center;            /* vertical centering */
-  flex-wrap: wrap;
+  flex-direction: column;
+  /* stack vertically */
+  align-items: center;
+  /* center horizontally */
+  justify-content: center;
+  /* center vertically if header has height */
   background: #fff;
   padding: 1.2rem 1.5rem;
   box-shadow: 0 3px 3px rgb(59, 4, 102);
@@ -45,12 +48,11 @@ body {
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-#dateTimeDisplay {
-  text-align: left;
-}
-
+#dateTimeDisplay,
 #tempDisplay {
-  text-align: right;
+  text-align: center;
+  font-weight: regular;
+  margin: 4px 0;
 }
 
 
