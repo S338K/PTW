@@ -39,7 +39,7 @@ function createSession(req, user) {
 // ----- REGISTER -----
 router.post('/register', async (req, res) => {
   try {
-    const { username, company, email, password } = req.body;
+    const { username, company, email, password, role } = req.body;
     if (!username || !email || !password)
       return res.status(400).json({ message: 'All fields are required' });
 
@@ -51,13 +51,20 @@ router.post('/register', async (req, res) => {
     if (exists) return res.status(409).json({ message: 'Email is already in use' });
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, email, password: hash, company: company || '', lastLogin: null });
+    const user = await User.create({ 
+      username, 
+      email, 
+      password: hash, 
+      company: company || '', 
+      role: role || 'Requester', 
+      lastLogin: null 
+    });
 
     createSession(req, user);
 
     res.status(201).json({
       message: 'Registration successful',
-      user: { id: user._id, username: user.username, email: user.email, company: user.company, lastLogin: user.lastLogin }
+      user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: user.lastLogin }
     });
   } catch (err) {
     console.error('Registration error:', err);
@@ -85,7 +92,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       message: 'Login successful',
-      user: { id: user._id, username: user.username, email: user.email, company: user.company, lastLogin: previousLogin || new Date() }
+      user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: previousLogin || new Date() }
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -98,7 +105,7 @@ router.get('/profile', requireAuth, async (req, res) => {
   const user = await User.findById(req.session.userId).select('-password');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
-  res.json({ user: { id: user._id, username: user.username, email: user.email, company: user.company, lastLogin: user.lastLogin } });
+  res.json({ user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: user.lastLogin } });
 });
 
 // ----- LOGOUT -----
@@ -184,7 +191,7 @@ router.get('/permits', requireAuth, async (req, res) => {
       submittedAt: p.submittedAt,
       permitNumber: p.permitNumber,
       title: p.title,
-      status: p.status // from DB
+      status: p.status
     })));
   } catch (err) {
     console.error('Error fetching permits:', err);
@@ -204,7 +211,7 @@ router.post('/permits', requireAuth, async (req, res) => {
       userId: req.session.userId,
       permitNumber,
       title,
-      status: 'Pending', // default
+      status: 'Pending',
       submittedAt: new Date()
     });
 
@@ -215,7 +222,7 @@ router.post('/permits', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH update permit status (for approvers)
+// PATCH update permit status (with role checks)
 router.patch('/permits/:id/status', requireAuth, async (req, res) => {
   try {
     const { status } = req.body;
@@ -225,12 +232,26 @@ router.patch('/permits/:id/status', requireAuth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.status(401).json({ message: 'User not found' });
+
+    // Role-based permissions
+    if (user.role === 'PreApprover' && status !== 'In Progress') {
+      return res.status(403).json({ message: 'Pre-Approver can only set status to In Progress' });
+    }
+    if (user.role === 'FinalApprover' && status !== 'Approved') {
+      return res.status(403).json({ message: 'Final Approver can only set status to Approved' });
+    }
+    if (user.role === 'Requester') {
+      return res.status(403).json({ message: 'Requester cannot change status' });
+    }
+    // Admin can set any status
+
     const permit = await PermitModel.findById(req.params.id);
     if (!permit) {
       return res.status(404).json({ message: 'Permit not found' });
     }
 
-    // TODO: Add role-based checks here so only approvers can change status
     permit.status = status;
     await permit.save();
 
