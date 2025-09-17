@@ -74,8 +74,8 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
   dbName: 'PTW'
 })
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log(err));
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.log(err));
 
 // ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
