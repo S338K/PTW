@@ -72,11 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await res.json();
 
       // Backend sends detailsLine without PO
-      weatherEl.innerHTML = `
-      <div style="text-align:right; margin-top:5px; font-weight:bold;">
-        ${data.detailsLine}
-      </div>
-    `;
+      weatherEl.innerHTML = `${data.detailsLine}`;
     } catch (err) {
       console.error('Weather fetch error:', err);
       weatherEl.textContent = 'Weather fetch failed';
