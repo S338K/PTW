@@ -49,6 +49,7 @@ body {
 #dateTimeDisplay,
 #tempDisplay {
   font-weight: bold;
+  text-align: center;
   margin: 4px 0;
 }
 
