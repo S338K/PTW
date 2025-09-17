@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (dateTimeEl) {
       dateTimeEl.innerHTML = `
-        <div style="text-align:center; font-weight:bold;">
+        <div style="text-align:left; font-weight:bold;">
           ${dateStr} &nbsp;||&nbsp; ${timeStr}
         </div>
       `;
