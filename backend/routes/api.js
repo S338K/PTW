@@ -1,7 +1,7 @@
 // ================= IMPORTS =================
 const mongoose = require('mongoose');
 const multer = require('multer');
-const Permit = require('../models/permit');
+const PermitModel = require('../models/permit'); // renamed to avoid conflicts
 const upload = multer({ dest: 'uploads/' });
 const express = require('express');
 const router = express.Router();
@@ -125,7 +125,6 @@ router.get('/weather', async (req, res) => {
     const city = req.query.city || 'Doha';
     const apiKey = process.env.WEATHER_API_KEY;
 
-    // Get weather data
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
     const weatherRes = await axios.get(weatherUrl);
     const w = weatherRes.data;
@@ -134,29 +133,21 @@ router.get('/weather', async (req, res) => {
     const feelsLike = Math.round(w.main.feels_like);
     const humidity = Math.round(w.main.humidity);
     const windSpeed = Math.round(w.wind.speed);
-    const visibility = Math.round((w.visibility || 0) / 1000); // km
+    const visibility = Math.round((w.visibility || 0) / 1000);
     const condition = w.weather[0].description;
     const conditionIcon = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
 
-    // Get air quality data
     const { lat, lon } = w.coord;
     const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
     const airRes = await axios.get(airUrl);
     const aqi = airRes.data.list[0].main.aqi;
-    const aqiStatus = {
-      1: 'Good',
-      2: 'Fair',
-      3: 'Moderate',
-      4: 'Poor',
-      5: 'Very Poor'
-    }[aqi] || 'Unknown';
+    const aqiStatus = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
 
-    // Build the exact format string
     const detailsLine = `Temperature: ${temp}°C | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | Quality: ${aqiStatus}`;
 
     res.json({
       formatted: `${temp}°C | ${condition}`,
-      detailsLine: detailsLine,
+      detailsLine,
       temperature: temp,
       feelsLike: `${feelsLike}°C`,
       humidity: `${humidity}%`,
@@ -164,7 +155,7 @@ router.get('/weather', async (req, res) => {
       visibility: `${visibility} km`,
       airQualityIndex: aqi,
       airQualityStatus: aqiStatus,
-      condition: condition,
+      condition,
       icons: {
         condition: conditionIcon,
         temperature: conditionIcon,
@@ -178,6 +169,94 @@ router.get('/weather', async (req, res) => {
   } catch (err) {
     console.error('Weather fetch error:', err.message);
     res.status(500).json({ message: 'Unable to fetch weather' });
+  }
+});
+
+// ===== PERMITS ROUTES =====
+
+// GET all permits for logged-in user
+router.get('/permits', requireAuth, async (req, res) => {
+  try {
+    const userPermits = await PermitModel.find({ userId: req.session.userId })
+      .sort({ submittedAt: -1 });
+
+    res.json(userPermits.map(p => ({
+      submittedAt: p.submittedAt,
+      permitNumber: p.permitNumber,
+      title: p.title,
+      status: p.status // from DB
+    })));
+  } catch (err) {
+    console.error('Error fetching permits:', err);
+    res.status(500).json({ message: 'Unable to fetch permits' });
+  }
+});
+
+// POST create a new permit
+router.post('/permits', requireAuth, async (req, res) => {
+  try {
+    const { permitNumber, title } = req.body;
+    if (!permitNumber || !title) {
+      return res.status(400).json({ message: 'Permit number and title are required' });
+    }
+
+    const permit = await PermitModel.create({
+      userId: req.session.userId,
+      permitNumber,
+      title,
+      status: 'Pending', // default
+      submittedAt: new Date()
+    });
+
+    res.status(201).json({ message: 'Permit submitted successfully', permit });
+  } catch (err) {
+    console.error('Error creating permit:', err);
+    res.status(500).json({ message: 'Unable to submit permit' });
+  }
+});
+
+// PATCH update permit status (for approvers)
+router.patch('/permits/:id/status', requireAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['Pending', 'In Progress', 'Approved'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const permit = await PermitModel.findById(req.params.id);
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found' });
+    }
+
+    // TODO: Add role-based checks here so only approvers can change status
+    permit.status = status;
+    await permit.save();
+
+    res.json({ message: 'Status updated successfully', permit });
+  } catch (err) {
+    console.error('Error updating permit status:', err);
+    res.status(500).json({ message: 'Unable to update permit status' });
+  }
+});
+
+// (Optional) DELETE a permit
+router.delete('/permits/:id', requireAuth, async (req, res) => {
+  try {
+    const permit = await PermitModel.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.session.userId
+    });
+
+    if (!permit) {
+      return res.status(404).json({ message: 'Permit not found or not authorized' });
+    }
+
+    res.json({ message: 'Permit deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting permit:', err);
+    res.status(500).json({ message: 'Unable to delete permit' });
   }
 });
 
