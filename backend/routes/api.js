@@ -286,42 +286,38 @@ router.delete('/permits/:id', requireAuth, async (req, res) => {
 // ===== PASSWORD RESET ROUTES (secure hashed token) =====
 
 // Request password reset
-// Request password reset
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    console.log('Step 1: Looking up user...');
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'No account with that email' });
 
-    console.log('Step 2: Generating token...');
+    // Generate raw token
     const rawToken = crypto.randomBytes(20).toString('hex');
-
-    console.log('Step 3: Hashing token...');
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    console.log('Step 4: Saving user...');
+    // Save hashed token + expiry in DB
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min expiry
     await user.save();
 
-    console.log('Step 5: Creating reset link...');
+    // Create reset link (point this to your frontend reset page)
     const resetLink = `https://your-frontend-domain.com/reset-password?token=${rawToken}`;
 
-    console.log('Step 6: Creating transporter...');
+    // Configure Outlook SMTP
     const transporter = nodemailer.createTransport({
       host: 'smtp.office365.com',
       port: 587,
       secure: false, // STARTTLS
       auth: {
-        user: process.env.OUTLOOK_USER,
-        pass: process.env.OUTLOOK_PASS
+        user: process.env.OUTLOOK_USER, // Outlook email
+        pass: process.env.OUTLOOK_PASS  // Outlook password or app password
       }
     });
 
-    console.log('Step 7: Sending email...');
+    // Email content
     const mailOptions = {
       from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
       to: email,
@@ -334,17 +330,17 @@ router.post('/forgot-password', async (req, res) => {
         <p>If you did not request this, please ignore this email.</p>
       `
     };
+
+    // Send email
     await transporter.sendMail(mailOptions);
 
-    console.log('Step 8: Done!');
     res.json({ message: 'Password reset email sent successfully' });
-
   } catch (err) {
     console.error('Forgot password error:', err);
     res.status(500).json({ message: err.message });
+
   }
 });
-
 
 // Reset password
 // ===== RESET PASSWORD =====
