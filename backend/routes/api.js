@@ -149,15 +149,6 @@ router.get('/weather', async (req, res) => {
     const condition = w.weather[0].description;
     const conditionIcon = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
 
-    // Detect PO (dust/sand whirls)
-    let po = '';
-    if (w.weather && w.weather.length > 0) {
-      const desc = w.weather[0].description.toLowerCase();
-      if (desc.includes('dust') || desc.includes('sand')) {
-        po = 'PO';
-      }
-    }
-
     // Air quality
     const { lat, lon } = w.coord;
     const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
@@ -166,7 +157,7 @@ router.get('/weather', async (req, res) => {
     const aqiStatus = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
 
     // Build details line in requested format
-    const detailsLine = `Temperature: ${temp}°C (feels like ${feelsLike}°C) | Weather status: ${condition} | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | PO: ${po || '—'} | Quality: ${aqiStatus}`;
+    const detailsLine = `Temperature: ${temp}°C (feels like ${feelsLike}°C) | Weather status: ${condition} | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | Quality: ${aqiStatus}`;
 
     res.json({
       formatted: `${temp}°C | ${condition}`,
