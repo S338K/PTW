@@ -4,7 +4,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
   /* ===== HEADER: Live Date/Time ===== */
+  // Date/time updater
   function updateDateTime() {
+    const dateTimeEl = document.getElementById('dateTimeDisplay');
+    if (!dateTimeEl) return;
+
     const now = new Date();
     const month = now.toLocaleString('en-US', { month: 'long' });
     const day = String(now.getDate()).padStart(2, '0');
@@ -12,18 +16,40 @@ document.addEventListener('DOMContentLoaded', function () {
     const dateStr = `${month} ${day}, ${year}`;
     const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
 
-    if (dateTimeEl) {
-      dateTimeEl.innerHTML = `
-        <div style="text-align:cenre; font-weight:bold;">
-          ${dateStr} &nbsp;||&nbsp; ${timeStr}
-        </div>
-      `;
+    dateTimeEl.textContent = `${dateStr} | ${timeStr}`;
+  }
+
+  // Weather updater
+  async function fetchWeather() {
+    const weatherEl = document.getElementById('tempDisplay');
+    if (!weatherEl) return;
+
+    const API_BASE = 'https://ptw-yu8u.onrender.com';
+    const city = 'Doha';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        weatherEl.textContent = 'Weather unavailable';
+        return;
+      }
+
+      const data = await res.json();
+      weatherEl.textContent = data.detailsLine;
+    } catch (err) {
+      console.error('Weather fetch error:', err);
+      weatherEl.textContent = 'Weather fetch failed';
     }
   }
-  if (dateTimeEl) {
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
-  }
+
+  // Run them
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  fetchWeather();
+  setInterval(fetchWeather, 600000);
 
   /* ===== WEATHER DISPLAY ===== */
   async function fetchWeather() {

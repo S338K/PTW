@@ -34,23 +34,23 @@ body {
    Header Container
 ---------------------------------------- */
 .header-container {
-  color: #000;
+  display: flex;
+  justify-content: space-between; /* left/right alignment */
+  align-items: center;            /* vertical centering */
+  flex-wrap: wrap;
   background: #fff;
   padding: 1.2rem 1.5rem;
-  justify-content: space-between;
-  align-items: center;
   box-shadow: 0 3px 3px rgb(59, 4, 102);
   margin-bottom: 1.2rem;
-  font: 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  flex-wrap: wrap;
+  font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #dateTimeDisplay {
-  text-align: center;
+  text-align: left;
 }
 
 #tempDisplay {
-  text-align: center;
+  text-align: right;
 }
 
 
