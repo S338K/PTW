@@ -25,31 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(updateDateTime, 1000);
   }
 
-
-  /* ===== HEADER: Live Date/Time ===== */
-  function updateDateTime() {
-    const dateTimeEl = document.getElementById('dateTimeDisplay');
-    if (!dateTimeEl) return;
-
-    const now = new Date();
-    const month = now.toLocaleString('en-US', { month: 'long' });
-    const day = String(now.getDate()).padStart(2, '0');
-    const year = now.getFullYear();
-    const dateStr = `${month} ${day}, ${year}`;
-    const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
-
-    dateTimeEl.innerHTML = `
-          ${dateStr} | ${timeStr}
-  `;
-  }
-
-  // Start clock
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
-
-
-
-  //* ===== WEATHER DISPLAY ===== */
+  /* ===== WEATHER DISPLAY ===== */
   async function fetchWeather() {
     const weatherEl = document.getElementById('tempDisplay');
     if (!weatherEl) return;
@@ -69,9 +45,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const data = await res.json();
 
-      // Backend sends detailsLine in your exact format
+      // Backend sends detailsLine without PO
       weatherEl.innerHTML = `
+      <div style="text-align:center; margin-top:5px; font-weight:bold;">
         ${data.detailsLine}
+      </div>
     `;
     } catch (err) {
       console.error('Weather fetch error:', err);

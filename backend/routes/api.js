@@ -128,7 +128,7 @@ router.get('/ping', requireAuth, (req, res) => {
   res.json({ message: 'Session refreshed' });
 });
 
-// ===== WEATHER ROUTE =====
+
 // ===== WEATHER ROUTE =====
 router.get('/weather', async (req, res) => {
   try {
@@ -156,7 +156,7 @@ router.get('/weather', async (req, res) => {
     const aqi = airRes.data.list[0].main.aqi;
     const aqiStatus = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
 
-    // Build details line in requested format
+    // Build details line (no PO)
     const detailsLine = `Temperature: ${temp}°C (feels like ${feelsLike}°C) | Weather status: ${condition} | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | Quality: ${aqiStatus}`;
 
     res.json({
@@ -170,7 +170,6 @@ router.get('/weather', async (req, res) => {
       pressure: `${pressure} hPa`,
       airQualityIndex: aqi,
       airQualityStatus: aqiStatus,
-      po,
       condition,
       icons: {
         condition: conditionIcon,
@@ -183,8 +182,8 @@ router.get('/weather', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Weather fetch error:', err.message);
-    res.status(500).json({ message: 'Unable to fetch weather' });
+    console.error('Weather fetch error:', err.response?.data || err.message);
+    res.status(500).json({ message: 'Unable to fetch weather', error: err.response?.data || err.message });
   }
 });
 
