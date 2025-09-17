@@ -39,9 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
 
     dateTimeEl.innerHTML = `
-    <div style="text-align:center; font-weight:bold;">
-      ${dateStr} | ${timeStr}
-    </div>
+          ${dateStr} | ${timeStr}
   `;
   }
 
@@ -73,9 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Backend sends detailsLine in your exact format
       weatherEl.innerHTML = `
-      <div style="text-align:center; margin-top:5px; font-weight:bold;">
         ${data.detailsLine}
-      </div>
     `;
     } catch (err) {
       console.error('Weather fetch error:', err);
