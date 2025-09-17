@@ -2,11 +2,12 @@
    1. Reset & Base Styles
 ---------------------------------------- */
 body {
-  background-color: #fff;
+  background-color: lightgray;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
 }
+
 * {
   box-sizing: border-box;
 }
@@ -32,7 +33,7 @@ body {
    Header Container
 ---------------------------------------- */
 .header-container {
-  color: #273172;
+  color: #000;
   background: #fff;
   padding: 1.2rem 1.5rem;
   display: flex;
@@ -49,25 +50,22 @@ body {
    Form Card Layout
 ---------------------------------------- */
 .form-container {
-  width: auto;
-  height: auto;
-  margin: auto;
+  width: 95%;
+  margin: 30px auto;
   background: #fff;
-  padding: 30px;
+  padding: 50px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.fieldset {
-  border: 2px solid #273172;
+fieldset {
+  border: 2px solid var(--text-primary);
   border-radius: 8px;
   padding: 20px;
-  color : #1E235E;
-  font-size: larger;
-  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.legend {
+legend {
   font-size: 1.2em;
   font-weight: bold;
   padding: 0 10px;
@@ -75,16 +73,16 @@ body {
 }
 
 .form-group {
-  margin-bottom: 30px; /* extra space for floating error */
+  margin-bottom: 30px;
+  /* extra space for floating error */
   width: 90%;
-  position: relative; /* for floating error positioning */
+  position: relative;
+  /* for floating error positioning */
 }
 
 label {
   display: block;
   margin-bottom: 8px;
-  font-weight: normal;
-  color: #1a245a;
 }
 
 input[type="email"],
@@ -143,7 +141,7 @@ input.valid {
    Button Styling
 ---------------------------------------- */
 #loginBtn {
-  width: 90%;
+  width: 15%;
   padding: 12px;
   background-color: var(--button-bg);
   border-radius: 25px;
@@ -166,18 +164,36 @@ input.valid {
 }
 
 /* ----------------------------------------
-   Footer Link
+   Sign-Up-Link
 ---------------------------------------- */
-.form-footer {
-  color: #273172;
-  text-decoration: none;
-  font-weight: 600;
+.sign-up-link {
+  text-align: left;
+  font-weight: 700;
 }
 
-.form-footer:hover {
+.sign-up-link a {
+  color: #273172;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.sign-up-link:hover a {
   text-decoration: underline;
-  text-shadow: 0 0 5px #d9534f;
-  color: var(--error-color);
+}
+
+.forgot-password-link {
+  text-align: right;
+  font-weight: 700;
+}
+
+.forgot-password-link a {
+  font-weight: 400;
+  color: #273172;
+  text-decoration: none;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
 }
 
 /* ----------------------------------------
@@ -200,11 +216,13 @@ input.valid {
 }
 
 @media (max-width: 480px) {
+
   input[type="email"],
   input[type="password"] {
     padding: 12px;
     font-size: 14px;
   }
+
   #loginBtn {
     font-size: 14px;
     padding: 10px;

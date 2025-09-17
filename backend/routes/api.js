@@ -8,6 +8,7 @@ const router = express.Router();
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
+const crypto = require('crypto'); // added for secure token generation
 require('dotenv').config();
 
 // ================= AUTH MIDDLEWARE =================
@@ -51,13 +52,13 @@ router.post('/register', async (req, res) => {
     if (exists) return res.status(409).json({ message: 'Email is already in use' });
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ 
-      username, 
-      email, 
-      password: hash, 
-      company: company || '', 
-      role: role || 'Requester', 
-      lastLogin: null 
+    const user = await User.create({
+      username,
+      email,
+      password: hash,
+      company: company || '',
+      role: role || 'Requester',
+      lastLogin: null
     });
 
     createSession(req, user);
@@ -278,6 +279,64 @@ router.delete('/permits/:id', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error deleting permit:', err);
     res.status(500).json({ message: 'Unable to delete permit' });
+  }
+});
+
+// ===== PASSWORD RESET ROUTES (secure hashed token) =====
+
+// Request password reset
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'No account with that email' });
+
+    // Generate raw token
+    const rawToken = crypto.randomBytes(20).toString('hex');
+    // Hash token for DB storage
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min expiry
+    await user.save();
+
+    // For now: return raw token for testing (replace with email send in production)
+    res.json({ message: 'Password reset token generated', token: rawToken });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ message: 'Error generating reset token' });
+  }
+});
+
+// Reset password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    // Hash incoming token to compare with DB
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+
+    // With pre-save hook in model, this will be hashed automatically
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ message: 'Error resetting password' });
   }
 });
 

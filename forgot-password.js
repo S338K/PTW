@@ -1,19 +1,21 @@
-// forgot-password.js
 document.addEventListener('DOMContentLoaded', () => {
-  const forgotLink = document.getElementById('forgot-link');
-  const popup = document.getElementById('reset-popup');
   const sendTokenBtn = document.getElementById('send-token');
-  const tokenSection = document.getElementById('token-section');
   const updatePasswordBtn = document.getElementById('update-password');
+  const tokenSection = document.getElementById('token-section');
+  const msgBox = document.getElementById('msg-box');
 
-  forgotLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    popup.style.display = 'block';
-  });
+  // Utility: Show messages
+  function showMessage(msg, type) {
+    msgBox.textContent = msg;
+    msgBox.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+    msgBox.style.color = type === 'success' ? '#155724' : '#721c24';
+    msgBox.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+  }
 
+  // Step 1: Request reset token
   sendTokenBtn.addEventListener('click', async () => {
     const email = document.getElementById('reset-email').value.trim();
-    if (!email) return alert('Please enter your email');
+    if (!email) return showMessage('Please enter your email', 'error');
 
     try {
       const res = await fetch('/api/forgot-password', {
@@ -22,22 +24,34 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ email })
       });
       const data = await res.json();
+
       if (res.ok) {
-        alert('Token generated: ' + data.token); // For testing only
-        tokenSection.style.display = 'block';
+        showMessage('Reset token generated. Check your email (or see alert for testing).', 'success');
+        alert('Token (testing only): ' + data.token); // REMOVE in production
+        tokenSection.classList.remove('hidden');
       } else {
-        alert(data.message);
+        showMessage(data.message || 'Error generating token', 'error');
       }
     } catch (err) {
       console.error('Error sending token:', err);
-      alert('Error sending token');
+      showMessage('Server error while generating token', 'error');
     }
   });
 
+  // Step 2: Reset password
   updatePasswordBtn.addEventListener('click', async () => {
     const token = document.getElementById('reset-token').value.trim();
     const newPassword = document.getElementById('new-password').value.trim();
-    if (!token || !newPassword) return alert('Please fill in all fields');
+
+    if (!token || !newPassword) {
+      return showMessage('Please fill in all fields', 'error');
+    }
+
+    // Optional: Password strength check
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return showMessage('Password must be at least 8 characters long and include a letter, number, and special character.', 'error');
+    }
 
     try {
       const res = await fetch('/api/reset-password', {
@@ -46,13 +60,53 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ token, newPassword })
       });
       const data = await res.json();
-      alert(data.message);
-      if (res.ok) {
-        popup.style.display = 'none';
+
+if (res.ok) {
+  const container = document.querySelector('.container'); // main wrapper
+  container.style.transition = 'opacity 0.8s ease';
+  container.style.opacity = '0'; // fade out form
+
+  setTimeout(() => {
+    let countdown = 10; // seconds before close
+
+    // Replace content with success message + countdown
+    container.innerHTML = `
+      <div class="success-message">
+        <h2>Password Reset Successful ✅</h2>
+        <p>You can now log in with your new password.</p>
+        <p>This window will close automatically in <span id="countdown">${countdown}</span> seconds...</p>
+      </div>
+    `;
+
+    container.style.opacity = '0';
+    container.offsetHeight; // force reflow
+    container.style.opacity = '1'; // fade in message
+
+    // Countdown timer
+    const countdownEl = document.getElementById('countdown');
+    const timer = setInterval(() => {
+      countdown--;
+      countdownEl.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(timer);
+        if (window.opener) {
+          window.opener.location.reload(); // refresh login page
+        }
+        window.close();
       }
-    } catch (err) {
+    }, 1000);
+  }, 800); // wait for fade-out to finish
+}
+
+  else{
+    howMessage(data.message || 'Error updating password', 'error');
+  }
+
+}
+
+  catch (err) {
       console.error('Error updating password:', err);
-      alert('Error updating password');
+      showMessage('Someting went wrong while updating password, try again later', 'error');
     }
   });
 });

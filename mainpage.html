@@ -371,15 +371,5 @@
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="mainscript.js"></script>
-  <script>
-    // Set full name in nav bar from sessionStorage
-    document.addEventListener('DOMContentLoaded', () => {
-      const fullNameEl = document.getElementById('userFullName');
-      const storedName = sessionStorage.getItem('fullName');
-      if (fullNameEl && storedName) {
-        fullNameEl.textContent = storedName;
-      }
-    });
-  </script>
 </body>
 </html>

@@ -196,4 +196,16 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+    //Forgot Password Link//
+const forgotLink = document.getElementById('forgotPasswordLink');
+if (forgotLink) {
+  forgotLink.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.open(
+      'forgot-password.html', // URL of your reset page
+      'ForgotPassword',       // Window name
+      'width=500,height=600,top=100,left=100,resizable=yes,scrollbars=yes'
+    );
+  });
+}
 });

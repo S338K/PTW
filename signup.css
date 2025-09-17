@@ -21,26 +21,15 @@ body {
 
 /* ===== App Title Banner ===== */
 .app-title {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
   text-align: center;
-  color: #fff;
-  background-color: var(--text-primary);
+  color: #273172;
+  background-color: lightcyan;
   box-shadow: 0 4px 10px rgba(2, 6, 47, 0.807);
-<<<<<<< HEAD
-  margin: auto;
-  width: auto;
-  height: auto;
-  padding: auto;
-=======
-  padding: 15px 10px;
->>>>>>> d3501e2fb61c28f2a43132cee9696cbdb3015189
 }
 
 /* ===== Form Container with 3D Effect ===== */
 .form-container {
-  max-width: 100%;
+  width: 95%;
   margin: 30px auto;
   background: #fff;
   padding: 30px;
@@ -66,9 +55,11 @@ legend {
 }
 
 .form-group {
-  margin-bottom: 30px; /* extra space for floating error */
+  margin-bottom: 30px;
+  /* extra space for floating error */
   width: 90%;
-  position: relative; /* for floating error positioning */
+  position: relative;
+  /* for floating error positioning */
 }
 
 label {
@@ -98,17 +89,20 @@ input:focus {
 }
 
 .terms-group label {
-  font-size: 0.95em;
+  font-size: 1em;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
 .terms-group a {
   color: var(--text-primary);
-  text-decoration: underline;
+  font-weight: 400;
+  text-decoration: none;
 }
 
 .terms-group a:hover {
   color: var(--button-hover-bg);
+  text-decoration: underline;
 }
 
 /* Floating error for checkbox */
@@ -121,7 +115,7 @@ input:focus {
 
 /* ===== Button Styling ===== */
 #signupBtn {
-  width: 90%;
+  width: fit-content;
   padding: 12px;
   background-color: var(--button-bg);
   border-radius: 25px;
@@ -142,6 +136,24 @@ input:focus {
 #signupBtn:active {
   transform: translateY(0);
 }
+
+.form-footer {
+  text-align: left;
+  font-weight: 700;
+  margin-top: 30px;
+}
+
+.form-footer a {
+  font-weight: 400;
+  color: #273172;
+  text-decoration: none;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
+  color: #d9534f;
+}
+
 
 /* ===== Floating Error Messages ===== */
 .error-message {
@@ -177,9 +189,8 @@ input.valid {
 }
 
 .terms-group .error-message {
-  bottom:-18px;
-  left:25px;
+  bottom: -18px;
+  left: 25px;
   white-space: normal;
-  max-width:calc(100% -25px);
+  max-width: calc(100% -25px);
 }
-
