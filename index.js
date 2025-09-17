@@ -25,56 +25,74 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(updateDateTime, 1000);
   }
 
-  /* ===== HEADER: Weather Fetch ===== */
-async function fetchWeather() {
-  if (!weatherEl) return;
-  const city = 'Doha';
-  try {
-    const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
-      credentials: 'include'
-    });
 
-    if (!res.ok) {
-      weatherEl.textContent = 'Weather unavailable';
-      return;
-    }
+  /* ===== HEADER: Live Date/Time ===== */
+  /* ===== DATE/TIME DISPLAY ===== */
+  function updateDateTime() {
+    const dateTimeEl = document.getElementById('dateTimeDisplay');
+    if (!dateTimeEl) return;
 
-    const data = await res.json();
+    const now = new Date();
+    const month = now.toLocaleString('en-US', { month: 'long' });
+    const day = String(now.getDate()).padStart(2, '0');
+    const year = now.getFullYear();
+    const dateStr = `${month} ${day}, ${year}`;
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
 
-    // If backend sends detailsLine, use it but also show icons
-    if (data.detailsLine) {
-      weatherEl.innerHTML = `
-        <div style="text-align:center; margin-top:5px; font-weight:bold;">
-          <img src="${data.icons?.condition || ''}" alt="${data.condition || ''}" style="vertical-align:middle; width:32px; height:32px; margin-right:5px;">
-          ${data.temperature}°C (Feels like ${data.feelsLike}) | ${data.condition}
-        </div>
-        <div style="text-align:center; font-size:0.9em; margin-top:2px;">
-          ${data.detailsLine}
-        </div>
-      `;
-    } else {
-      // Fallback if detailsLine not provided
-      const temp = data.temperature ?? data?.main?.temp;
-      const feels = data.feelsLike ?? data?.main?.feels_like;
-      const cond = data.condition ?? data?.weather?.[0]?.description;
-      const icon = data.icons?.condition ?? `https://openweathermap.org/img/wn/${data?.weather?.[0]?.icon}@2x.png`;
-
-      if (temp != null && cond) {
-        weatherEl.innerHTML = `
-          <div style="text-align:center; margin-top:5px; font-weight:bold;">
-            <img src="${icon}" alt="${cond}" style="vertical-align:middle; width:32px; height:32px; margin-right:5px;">
-            ${temp}°C ${feels ? `(Feels like ${feels})` : ''} | ${cond}
-          </div>
-        `;
-      } else {
-        weatherEl.textContent = 'Weather unavailable';
-      }
-    }
-  } catch (err) {
-    console.error('Weather fetch error:', err);
-    weatherEl.textContent = 'Weather fetch failed';
+    dateTimeEl.innerHTML = `
+    <div style="text-align:center; font-weight:bold;">
+      ${dateStr} | ${timeStr}
+    </div>
+  `;
   }
-}
+
+  // Start clock
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+
+
+  //=============================//
+
+  a/* ===== WEATHER DISPLAY ===== */
+  async function fetchWeather() {
+    const weatherEl = document.getElementById('tempDisplay');
+    if (!weatherEl) return;
+
+    const API_BASE = 'https://ptw-yu8u.onrender.com';
+    const city = 'Doha';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        weatherEl.textContent = 'Weather unavailable';
+        return;
+      }
+
+      const data = await res.json();
+
+      // Use the backend's nicely formatted detailsLine
+      weatherEl.innerHTML = `
+      <div style="text-align:center; margin-top:5px; font-weight:bold;">
+        ${data.detailsLine}
+      </div>
+    `;
+    } catch (err) {
+      console.error('Weather fetch error:', err);
+      weatherEl.textContent = 'Weather fetch failed';
+    }
+  }
+
+  // Fetch weather on load and refresh every 10 minutes
+  fetchWeather();
+  setInterval(fetchWeather, 600000);
+
+  // Initial load + refresh every minute for weather, every second for time
+  updateHeader();
+  setInterval(updateHeader, 60000); // refresh weather + time every 60s
+
 
   fetchWeather();
 
@@ -210,16 +228,16 @@ async function fetchWeather() {
       }
     });
   }
-    //Forgot Password Link//
-const forgotLink = document.getElementById('forgotPasswordLink');
-if (forgotLink) {
-  forgotLink.addEventListener('click', function (e) {
-    e.preventDefault();
-    window.open(
-      'forgot-password.html', // URL of your reset page
-      'ForgotPassword',       // Window name
-      'width=500,height=600,top=100,left=100,resizable=yes,scrollbars=yes'
-    );
-  });
-}
+  //Forgot Password Link//
+  const forgotLink = document.getElementById('forgotPasswordLink');
+  if (forgotLink) {
+    forgotLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.open(
+        'forgot-password.html', // URL of your reset page
+        'ForgotPassword',       // Window name
+        'width=500,height=600,top=100,left=100,resizable=yes,scrollbars=yes'
+      );
+    });
+  }
 });
