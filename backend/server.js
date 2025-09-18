@@ -10,9 +10,11 @@ const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
 const isProd = process.env.NODE_ENV === 'production';
 
+// ================= APP INIT =================
+const app = express();
+
 // ================= MIDDLEWARE =================
-// Body parsers
-//app.use(express.json());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== CORS Setup =====
@@ -33,7 +35,6 @@ app.use(cors({
 }));
 
 // ================= ROUTES =================
-// Root test route
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
@@ -50,16 +51,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-const app = express();
-const router = require('./api'); // your routes file
-
-// Middleware
-app.use(express.json());
-
-// Mount your routes
-app.use('/api', router);
-
-// ✅ Global error handler goes here — after all routes
+// ✅ Global error handler
 app.use((err, req, res, next) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] ${req.method} ${req.originalUrl}`);
@@ -72,12 +64,6 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
-
-// Start server
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
-});
-
 
 // ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
