@@ -51,7 +51,6 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-const express = require('express');
 const app = express();
 const router = require('./api'); // your routes file
 
