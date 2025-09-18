@@ -60,8 +60,8 @@ const sessionOptions = {
   }),
   cookie: {
     httpOnly: true,
-    secure: isProd, // HTTPS only in production
-    sameSite: isProd ? 'none' : 'lax', // 'none' with secure for cross-site cookies, else 'lax' for dev
+    secure: true, // HTTPS only in production
+    sameSite: 'none', // 'none' with secure for cross-site cookies
     maxAge: 2 * 60 * 60 * 1000 // 2 hours in ms
   }
 };
