@@ -20,22 +20,24 @@ const isProd = process.env.NODE_ENV === 'production';
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 // ===== CORS Setup =====
-// ===== CORS Setup =====
-const allowedOrigins = ['https://s338k.github.io']; // ✅ Explicitly allow GitHub Pages
+const allowedOrigins = process.env.ALLOWED_ORIGIN
+  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
+  : [];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (e.g. curl or mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
-  credentials: true // ✅ Required to allow cookies to be sent and received
+  credentials: true
 }));
+
 
 
 // ===== TRUST PROXY SETUP =====
@@ -60,8 +62,8 @@ const sessionOptions = {
   }),
   cookie: {
     httpOnly: true,
-    secure: true, // HTTPS only in production
-    sameSite: 'none', // 'none' with secure for cross-site cookies
+    secure: isProd, // HTTPS only in production
+    sameSite: isProd ? 'none' : 'lax', // 'none' with secure for cross-site cookies
     maxAge: 2 * 60 * 60 * 1000 // 2 hours in ms
   }
 };
