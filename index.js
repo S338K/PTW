@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const email = emailEl.value.trim();
       const password = passwordEl.value.trim();
-      console.log('Logging in with:', { email, password });
 
 
       try {

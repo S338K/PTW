@@ -62,37 +62,55 @@ function createSession(req, user) {
 router.post('/register', async (req, res) => {
   try {
     const { username, company, email, password, role } = req.body;
-    if (!username || !email || !password)
+
+    if (!username || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
+    }
 
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password))
-      return res.status(400).json({ message: 'Password must be at least 8 characters long and include one letter, number, and special character.' });
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long and include one letter, number, and special character.'
+      });
+    }
 
     const exists = await User.findOne({ email });
-    if (exists) return res.status(409).json({ message: 'Email is already in use' });
+    if (exists) {
+      return res.status(409).json({ message: 'Email is already in use' });
+    }
 
-    const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({
+    // 🔹 Let the pre-save hook hash the password
+    const user = new User({
       username,
       email,
-      password: hash,
+      password, // plain password, will be hashed in schema
       company: company || '',
       role: role || 'Requester',
       lastLogin: null
     });
 
-    createSession(req, user);
+    await user.save(); // 🔹 triggers pre('save') hook for hashing
+
+    createSession(req, user); // your existing session logic
 
     res.status(201).json({
       message: 'Registration successful',
-      user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: user.lastLogin }
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        company: user.company,
+        role: user.role,
+        lastLogin: user.lastLogin
+      }
     });
+
   } catch (err) {
     console.error('Registration error:', err);
     res.status(500).json({ message: 'Something went wrong', error: err.message });
   }
 });
+
 
 // ----- LOGIN -----
 router.post('/login', async (req, res) => {
@@ -107,7 +125,7 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       console.log('❌ No user found for email:', email); // 👈 Log if user is not found
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid username' });
     }
 
     console.log('✅ User found. Stored hash:', user.password); // 👈 Log stored hash
@@ -116,7 +134,7 @@ router.post('/login', async (req, res) => {
 
     console.log('🔍 Password match result:', ok); // 👈 Log the result of the password check
 
-    if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!ok) return res.status(400).json({ message: 'Invalid password' });
 
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
