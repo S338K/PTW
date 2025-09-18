@@ -1,25 +1,21 @@
 // ================= IMPORTS & CONFIG =================
 require('dotenv').config();
+
 console.log('MONGO_URI from env:', process.env.MONGO_URI);
 
 const express = require('express');
 const mongoose = require('mongoose');
-const session = require('express-session');
 const cors = require('cors');
-const MongoStore = require('connect-mongo');
-
 const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
 
 const app = express();
-
 const isProd = process.env.NODE_ENV === 'production';
 
 // ================= MIDDLEWARE =================
 // Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // ===== CORS Setup =====
 const allowedOrigins = process.env.ALLOWED_ORIGIN
@@ -38,52 +34,10 @@ app.use(cors({
   credentials: true
 }));
 
-
-
-// ===== TRUST PROXY SETUP =====
-// Add this so that secure cookies and protocol detection work behind proxy if needed
-if (isProd && process.env.BEHIND_PROXY === 'true') {
-  app.set('trust proxy', 1);
-  console.log('Trusting first proxy headers');
-} else {
-  console.log('Not trusting proxy headers');
-}
-
-// ===== SESSION SETUP =====
-const sessionOptions = {
-  secret: process.env.SESSION_SECRET || 'supersecret',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    dbName: 'PTW',
-    collectionName: 'sessions',
-    ttl: 2 * 60 * 60 // 2 hours in seconds
-  }),
-  cookie: {
-    httpOnly: true,
-    secure: isProd, // HTTPS only in production
-    sameSite: isProd ? 'none' : 'lax', // 'none' with secure for cross-site cookies
-    maxAge: 2 * 60 * 60 * 1000 // 2 hours in ms
-  }
-};
-
-// Attach session middleware BEFORE your routes, and for ALL routes (not only /api)
-app.use(session(sessionOptions));
-
 // ================= ROUTES =================
 // Root test route
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
-});
-
-// Session check endpoint
-app.get('/api/session-check', (req, res) => {
-  if (req.session && req.session.userId) {
-    res.json({ message: 'Session active', userId: req.session.userId, username: req.session.username });
-  } else {
-    res.status(401).json({ message: 'No active session' });
-  }
 });
 
 app.use('/mainpage', mainPageRoutes);

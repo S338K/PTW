@@ -25,17 +25,6 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
-  // 🔹 NEW: Track last activity for idle timeout
-  lastActivity: {
-    type: Date,
-    default: Date.now
-  },
-  // 🔹 NEW: Track session start for absolute timeout
-  sessionStart: {
-    type: Date,
-    default: Date.now
-  },
-
   role: {
     type: String,
     enum: ['Requester', 'PreApprover', 'FinalApprover', 'Admin'],

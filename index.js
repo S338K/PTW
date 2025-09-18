@@ -5,35 +5,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ===== HEADER: Live Date/Time ===== */
   function updateDateTime() {
-    const dateTimeEl = document.getElementById('dateTimeDisplay');
     if (!dateTimeEl) return;
-
     const now = new Date();
     const month = now.toLocaleString('en-US', { month: 'long' });
     const day = String(now.getDate()).padStart(2, '0');
     const year = now.getFullYear();
     const dateStr = `${month} ${day}, ${year}`;
     const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
-
     dateTimeEl.textContent = `${dateStr} | ${timeStr}`;
   }
 
   async function fetchWeather() {
-    const weatherEl = document.getElementById('tempDisplay');
     if (!weatherEl) return;
-
     const city = 'Doha';
-
     try {
-      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
-        credentials: 'include'
-      });
-
+      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`);
       if (!res.ok) {
         weatherEl.textContent = 'Weather unavailable';
         return;
       }
-
       const data = await res.json();
       weatherEl.innerHTML = `${data.detailsLine}`;
     } catch (err) {
@@ -110,7 +100,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
       if (!validateForm()) {
         const firstInvalid = form.querySelector('.invalid');
         if (firstInvalid) firstInvalid.focus();
@@ -123,7 +112,6 @@ document.addEventListener('DOMContentLoaded', function () {
       try {
         const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
-          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
@@ -141,16 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('lastActivity', Date.now().toString());
-        sessionStorage.setItem('loginTime', Date.now().toString());
-
-        if (data.user) {
-          localStorage.setItem('fullName', data.user.username || '');
-          localStorage.setItem('email', data.user.email || '');
-          localStorage.setItem('company', data.user.company || '');
-          localStorage.setItem('lastLogin', data.user.lastLogin || '');
-        }
+        // No storage — purely in-memory login
+        // You can pass data.user or data.token to the next page via query params if needed
 
         loginBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
         loginBtn.textContent = 'Logged in Successfully';

@@ -1,86 +1,14 @@
 document.addEventListener('DOMContentLoaded', function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
-  const IDLE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
-  const LOGIN_TTL_MS = 60 * 60 * 1000; // 60 minutes
-
-  // ====== SESSION GUARD ======
-  const currentPage = window.location.pathname.split('/').pop(); 
-
-  async function verifyBackendSession() {
-    try {
-      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Session invalid');
-      const data = await res.json();
-      if (data.user) {
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('fullName', data.user.username || '');
-        sessionStorage.setItem('email', data.user.email || '');
-        sessionStorage.setItem('company', data.user.company || '');
-        sessionStorage.setItem('lastLogin', new Date(data.user.lastLogin).toLocaleString() || '');
-        localStorage.setItem('loginTime', Date.now().toString());
-        resetIdleTimer();
-        return true;
-      }
-    } catch (err) {
-      logoutUser();
-      return false;
-    }
-  }
-
-  if (currentPage !== 'index.html' && !sessionStorage.getItem('isLoggedIn')) {
-    verifyBackendSession();
-  }
-
-  function logoutUser() {
-    localStorage.clear();
-    sessionStorage.clear();
-    fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' })
-      .finally(() => window.location.href = 'index.html');
-  }
-
-  function resetIdleTimer() {
-    const now = Date.now();
-    sessionStorage.setItem('lastActivity', now.toString());
-    localStorage.setItem('lastActivity', now.toString());
-
-    // Refresh backend session TTL
-    fetch(`${API_BASE}/api/ping`, { credentials: 'include' }).catch(() => {
-      logoutUser();
-    });
-  }
-
-  function checkIdleTime() {
-    const last = parseInt(localStorage.getItem('lastActivity') || '0', 10);
-    const loginTime = parseInt(localStorage.getItem('loginTime') || '0', 10);
-
-    if (!last || Date.now() - last > IDLE_LIMIT_MS) logoutUser();
-    if (!loginTime || Date.now() - loginTime > LOGIN_TTL_MS) logoutUser();
-  }
-
-  if (currentPage !== 'index.html') {
-    ['click', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'].forEach(evt =>
-      document.addEventListener(evt, resetIdleTimer, { passive: true })
-    );
-    setInterval(checkIdleTime, 30 * 1000); // check every 30 sec
-    resetIdleTimer();
-  }
 
   // =========================
   // Navbar buttons
   // =========================
-  const logoutBtn = document.getElementById('logoutBtn');
   const profileBtn = document.getElementById('profileBtn');
-
-  if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
-  if (profileBtn) profileBtn.addEventListener('click', () => {
-    window.location.href = 'profile.html';
-  });
-
-  // Set full name in nav bar
-  const fullNameEl = document.getElementById('userFullName');
-  const storedName = sessionStorage.getItem('fullName') || localStorage.getItem('fullName');
-  if (fullNameEl && storedName) {
-    fullNameEl.textContent = storedName;
+  if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
   }
 
   // =========================
@@ -226,242 +154,244 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+});
 
-  // =========================
-  // Required Documents fix
-  // =========================
-  function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
-    const yesRadio = document.getElementById(radioYesId);
-    const noRadio = document.getElementById(radioNoId);
-    const container = document.getElementById(containerId);
-    const input = document.getElementById(inputId);
-
-    if (yesRadio && noRadio && container && input) {
-      yesRadio.addEventListener('change', () => {
-        if (yesRadio.checked) {
-          container.classList.add('hidden');
-          input.removeAttribute('required');
-          input.value = '';
-        }
-      });
-      noRadio.addEventListener('change', () => {
-        if (noRadio.checked) {
-          container.classList.remove('hidden');
-          input.setAttribute('required', 'required');
-        }
-      });
-    }
-  }
-
-  setupDocToggle('ePermitYes', 'ePermitNo', 'ePermitDetails', 'ePermitReason');
-  setupDocToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr', 'noFmmWorkorder');
-  setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
-  setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
-
-  // =========================
-  // Date & time validation
-  // =========================
-  let fpStart = null;
-  let fpEnd = null;
-
-  if (typeof flatpickr !== 'undefined') {
-    fpStart = flatpickr('#startDateTime', {
-      enableTime: true,
-      dateFormat: 'Y-m-d H:i',
-      minDate: 'today',
-      time_24hr: true,
-      onChange: function (selectedDates) {
-        if (selectedDates && selectedDates[0] && fpEnd) {
-          fpEnd.set('minDate', selectedDates[0]);
-        }
-      }
-    });
-
-    fpEnd = flatpickr('#endDateTime', {
-      enableTime: true,
-      dateFormat: 'Y-m-d H:i',
-      minDate: 'today',
-      time_24hr: true
-    });
-  }
-
-  function validateDateTime() {
-    const startEl = document.getElementById('startDateTime');
-    const endEl = document.getElementById('endDateTime');
-    const now = new Date();
-
-    let startDate = fpStart?.selectedDates?.[0] || (startEl?.value ? new Date(startEl.value) : null);
-    let endDate = fpEnd?.selectedDates?.[0] || (endEl?.value ? new Date(endEl.value) : null);
-
-    let valid = true;
-
-    if (!startDate || isNaN(startDate.getTime())) {
-      showErrorMessage(startEl, 'Please select a valid start date and time');
-      valid = false;
-    } else if (startDate <= now) {
-      showErrorMessage(startEl, 'Start date/time must be in the future');
-      valid = false;
-    } else {
-      hideErrorMessage(startEl);
-    }
-
-    if (!endDate || isNaN(endDate.getTime())) {
-      showErrorMessage(endEl, 'Please select a valid end date and time');
-      valid = false;
-    } else if (endDate <= now) {
-      showErrorMessage(endEl, 'End date/time must be in the future');
-      valid = false;
-    } else {
-      hideErrorMessage(endEl);
-    }
-
-    if (startDate && endDate && endDate <= startDate) {
-      showErrorMessage(endEl, 'End date/time must be after start date/time');
-      valid = false;
-    }
-
-    return valid;
-  }
 
 // =========================
-  // File upload validation
-  // =========================
-  (function setupFileUploadValidation() {
-    const fileInput = document.getElementById('fileUpload');
-    const typeMsg = document.getElementById('fileTypeMessage');
-    const list = document.getElementById('uploadedFiles');
-    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg'];
-    const maxSize = 3 * 1024 * 1024; // CHANGE: 3 MB size limit
+// Required Documents fix
+// =========================
+function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
+  const yesRadio = document.getElementById(radioYesId);
+  const noRadio = document.getElementById(radioNoId);
+  const container = document.getElementById(containerId);
+  const input = document.getElementById(inputId);
 
-    if (!fileInput) return;
+  if (yesRadio && noRadio && container && input) {
+    yesRadio.addEventListener('change', () => {
+      if (yesRadio.checked) {
+        container.classList.add('hidden');
+        input.removeAttribute('required');
+        input.value = '';
+      }
+    });
+    noRadio.addEventListener('change', () => {
+      if (noRadio.checked) {
+        container.classList.remove('hidden');
+        input.setAttribute('required', 'required');
+      }
+    });
+  }
+}
 
-    function validateFiles() {
-      if (!fileInput.files || fileInput.files.length === 0) {
-        if (typeMsg) typeMsg.textContent = '';
-        if (list) list.innerHTML = '';
-        hideErrorMessage(fileInput);
-        return true;
+setupDocToggle('ePermitYes', 'ePermitNo', 'ePermitDetails', 'ePermitReason');
+setupDocToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr', 'noFmmWorkorder');
+setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
+setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
+
+// =========================
+// Date & time validation
+// =========================
+let fpStart = null;
+let fpEnd = null;
+
+if (typeof flatpickr !== 'undefined') {
+  fpStart = flatpickr('#startDateTime', {
+    enableTime: true,
+    dateFormat: 'Y-m-d H:i',
+    minDate: 'today',
+    time_24hr: true,
+    onChange: function (selectedDates) {
+      if (selectedDates && selectedDates[0] && fpEnd) {
+        fpEnd.set('minDate', selectedDates[0]);
       }
-      for (const file of fileInput.files) {
-        if (!allowed.includes(file.type)) {
-          showErrorMessage(fileInput, 'Only PDF or JPG/JPEG files are allowed');
-          if (typeMsg) typeMsg.textContent = 'Only PDF or JPG/JPEG files are allowed.';
-          return false;
-        }
-        if (file.size > maxSize) { // CHANGE: size check
-          showErrorMessage(fileInput, 'File size must not exceed 3 MB');
-          if (typeMsg) typeMsg.textContent = 'File size must not exceed 3 MB.';
-          return false;
-        }
-      }
-      hideErrorMessage(fileInput);
+    }
+  });
+
+  fpEnd = flatpickr('#endDateTime', {
+    enableTime: true,
+    dateFormat: 'Y-m-d H:i',
+    minDate: 'today',
+    time_24hr: true
+  });
+}
+
+function validateDateTime() {
+  const startEl = document.getElementById('startDateTime');
+  const endEl = document.getElementById('endDateTime');
+  const now = new Date();
+
+  let startDate = fpStart?.selectedDates?.[0] || (startEl?.value ? new Date(startEl.value) : null);
+  let endDate = fpEnd?.selectedDates?.[0] || (endEl?.value ? new Date(endEl.value) : null);
+
+  let valid = true;
+
+  if (!startDate || isNaN(startDate.getTime())) {
+    showErrorMessage(startEl, 'Please select a valid start date and time');
+    valid = false;
+  } else if (startDate <= now) {
+    showErrorMessage(startEl, 'Start date/time must be in the future');
+    valid = false;
+  } else {
+    hideErrorMessage(startEl);
+  }
+
+  if (!endDate || isNaN(endDate.getTime())) {
+    showErrorMessage(endEl, 'Please select a valid end date and time');
+    valid = false;
+  } else if (endDate <= now) {
+    showErrorMessage(endEl, 'End date/time must be in the future');
+    valid = false;
+  } else {
+    hideErrorMessage(endEl);
+  }
+
+  if (startDate && endDate && endDate <= startDate) {
+    showErrorMessage(endEl, 'End date/time must be after start date/time');
+    valid = false;
+  }
+
+  return valid;
+}
+
+// =========================
+// File upload validation
+// =========================
+(function setupFileUploadValidation() {
+  const fileInput = document.getElementById('fileUpload');
+  const typeMsg = document.getElementById('fileTypeMessage');
+  const list = document.getElementById('uploadedFiles');
+  const allowed = ['application/pdf', 'image/jpeg', 'image/jpg'];
+  const maxSize = 3 * 1024 * 1024; // CHANGE: 3 MB size limit
+
+  if (!fileInput) return;
+
+  function validateFiles() {
+    if (!fileInput.files || fileInput.files.length === 0) {
       if (typeMsg) typeMsg.textContent = '';
+      if (list) list.innerHTML = '';
+      hideErrorMessage(fileInput);
       return true;
     }
-
-    function renderList() {
-      if (!list) return;
-      list.innerHTML = '';
-      Array.from(fileInput.files).forEach(f => {
-        const li = document.createElement('li');
-        li.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
-
-        // CHANGE: Preview option
-        if (f.type === 'application/pdf') {
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(f);
-          link.target = '_blank';
-          link.textContent = ' View';
-          li.appendChild(link);
-        } else if (f.type.startsWith('image/')) {
-          const imgLink = document.createElement('a');
-          imgLink.href = URL.createObjectURL(f);
-          imgLink.target = '_blank';
-          imgLink.textContent = ' Preview';
-          li.appendChild(imgLink);
-        }
-
-        list.appendChild(li);
-      });
+    for (const file of fileInput.files) {
+      if (!allowed.includes(file.type)) {
+        showErrorMessage(fileInput, 'Only PDF or JPG/JPEG files are allowed');
+        if (typeMsg) typeMsg.textContent = 'Only PDF or JPG/JPEG files are allowed.';
+        return false;
+      }
+      if (file.size > maxSize) { // CHANGE: size check
+        showErrorMessage(fileInput, 'File size must not exceed 3 MB');
+        if (typeMsg) typeMsg.textContent = 'File size must not exceed 3 MB.';
+        return false;
+      }
     }
-
-    fileInput.addEventListener('change', () => {
-      const ok = validateFiles();
-      if (ok) renderList();
-    });
-
-    window.__validateFileUpload = validateFiles;
-  })();
-
-  function validateFileUpload() {
-    return typeof window.__validateFileUpload === 'function'
-      ? window.__validateFileUpload()
-      : true;
-  }
-  // =========================
-  // Signature defaults + auto-fill from full name
-  // =========================
-  (function fillSignatureDefaults() {
-    const signDate = document.getElementById('signDate');
-    const signTime = document.getElementById('signTime');
-    const now = new Date();
-    if (signDate && !signDate.value) {
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      signDate.value = `${y}-${m}-${d}`;
-    }
-    if (signTime && !signTime.value) {
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      signTime.value = `${hh}:${mm}`;
-    }
-  })();
-
-  const fullNameInput = document.getElementById('fullNameMD');
-  const signNameInput = document.getElementById('signName');
-  if (fullNameInput && signNameInput) {
-    const sync = () => { signNameInput.value = fullNameInput.value; };
-    fullNameInput.addEventListener('input', sync);
-    sync();
-  }
-
-  // =========================
-  // Conditions validation
-  // =========================
-  function validateConditions() {
-    const checkbox = document.getElementById('confirmConditions');
-    if (!checkbox) return true;
-    if (!checkbox.checked) {
-      alert('You must agree to the conditions before submitting.');
-      return false;
-    }
+    hideErrorMessage(fileInput);
+    if (typeMsg) typeMsg.textContent = '';
     return true;
   }
 
-  // =========================
-  // Signature validation
-  // =========================
-  function validateSignature() {
-    const fields = ['signName', 'signDate', 'signTime', 'designation'];
-    let ok = true;
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (!el.value || !el.value.toString().trim()) {
-        showErrorMessage(el, 'This field is required');
-        ok = false;
-      } else {
-        hideErrorMessage(el);
+  function renderList() {
+    if (!list) return;
+    list.innerHTML = '';
+    Array.from(fileInput.files).forEach(f => {
+      const li = document.createElement('li');
+      li.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
+
+      // CHANGE: Preview option
+      if (f.type === 'application/pdf') {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(f);
+        link.target = '_blank';
+        link.textContent = ' View';
+        li.appendChild(link);
+      } else if (f.type.startsWith('image/')) {
+        const imgLink = document.createElement('a');
+        imgLink.href = URL.createObjectURL(f);
+        imgLink.target = '_blank';
+        imgLink.textContent = ' Preview';
+        li.appendChild(imgLink);
       }
+
+      list.appendChild(li);
     });
-    return ok;
   }
 
-  // =========================
-  // Form submit handler
-  // =========================
-  const form = document.getElementById('permitForm');
+  fileInput.addEventListener('change', () => {
+    const ok = validateFiles();
+    if (ok) renderList();
+  });
+
+  window.__validateFileUpload = validateFiles;
+})();
+
+function validateFileUpload() {
+  return typeof window.__validateFileUpload === 'function'
+    ? window.__validateFileUpload()
+    : true;
+}
+// =========================
+// Signature defaults + auto-fill from full name
+// =========================
+(function fillSignatureDefaults() {
+  const signDate = document.getElementById('signDate');
+  const signTime = document.getElementById('signTime');
+  const now = new Date();
+  if (signDate && !signDate.value) {
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    signDate.value = `${y}-${m}-${d}`;
+  }
+  if (signTime && !signTime.value) {
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    signTime.value = `${hh}:${mm}`;
+  }
+})();
+
+const fullNameInput = document.getElementById('fullNameMD');
+const signNameInput = document.getElementById('signName');
+if (fullNameInput && signNameInput) {
+  const sync = () => { signNameInput.value = fullNameInput.value; };
+  fullNameInput.addEventListener('input', sync);
+  sync();
+}
+
+// =========================
+// Conditions validation
+// =========================
+function validateConditions() {
+  const checkbox = document.getElementById('confirmConditions');
+  if (!checkbox) return true;
+  if (!checkbox.checked) {
+    alert('You must agree to the conditions before submitting.');
+    return false;
+  }
+  return true;
+}
+
+// =========================
+// Signature validation
+// =========================
+function validateSignature() {
+  const fields = ['signName', 'signDate', 'signTime', 'designation'];
+  let ok = true;
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!el.value || !el.value.toString().trim()) {
+      showErrorMessage(el, 'This field is required');
+      ok = false;
+    } else {
+      hideErrorMessage(el);
+    }
+  });
+  return ok;
+}
+
+// =========================
+// Form submit handler
+// =========================
+const form = document.getElementById('permitForm');
 const submitBtn = document.getElementById('submitBtn');
 
 if (submitBtn && form) {
@@ -539,4 +469,3 @@ if (submitBtn && form) {
     }
   });
 }
-});
