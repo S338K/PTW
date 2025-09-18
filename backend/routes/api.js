@@ -14,7 +14,9 @@ require('dotenv').config();
 
 // ================= AUTH MIDDLEWARE =================
 function requireAuth(req, res, next) {
+  console.log('--- requireAuth Middleware ---');
   if (!req.session || !req.session.userId) {
+    console.log('No session or userId found. Unauthorized.');
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
@@ -22,27 +24,40 @@ function requireAuth(req, res, next) {
   const idleTimeout = 1000 * 60 * 15; // 15 minutes
   const absoluteTimeout = 1000 * 60 * 60 * 2; // 2 hours
 
+  console.log('Session info:', {
+    sessionStart: req.session.sessionStart,
+    lastActivity: req.session.lastActivity,
+    now,
+    idleDiff: now - (req.session.lastActivity || 0),
+    absoluteDiff: now - (req.session.sessionStart || 0)
+  });
+
   // Absolute timeout
   if (req.session.sessionStart && (now - req.session.sessionStart) > absoluteTimeout) {
+    console.log('Session expired (absolute timeout). Destroying session...');
     req.session.destroy(() => {
+      console.log('Session destroyed due to absolute timeout');
       res.clearCookie('connect.sid');
       return res.status(401).json({ message: 'Session expired (absolute timeout)' });
     });
+    
     return;
   }
 
   // Idle timeout
   if (req.session.lastActivity && (now - req.session.lastActivity) > idleTimeout) {
+    console.log('Session expired due to inactivity. Destroying session...');
     req.session.destroy(() => {
+      console.log('Session destroyed due to inactivity');
       res.clearCookie('connect.sid');
       return res.status(401).json({ message: 'Session expired due to inactivity' });
     });
     return;
   }
 
-
   // Update last activity
   req.session.lastActivity = now;
+  console.log('Session lastActivity updated to', now);
   next();
 }
 

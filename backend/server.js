@@ -23,6 +23,16 @@ app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
 
+// Session check endpoint
+app.get('/api/session-check', (req, res) => {
+  if (req.session && req.session.userId) {
+    res.json({ message: 'Session active', userId: req.session.userId, username: req.session.username });
+  } else {
+    res.status(401).json({ message: 'No active session' });
+  }
+});
+
+
 // ===== CORS Setup =====
 const allowedOrigins = process.env.ALLOWED_ORIGIN
   ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
@@ -40,8 +50,11 @@ app.use(cors({
   credentials: true
 }));
 
+
 // ===== SESSION SETUP =====
-// TTL in MongoDB matches absolute timeout: 2 hours
+
+const isProd = process.env.NODE_ENV === 'production';
+
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
@@ -54,8 +67,8 @@ const sessionOptions = {
   }),
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 2 * 60 * 60 * 1000 // 2 hours in milliseconds
   }
 };
