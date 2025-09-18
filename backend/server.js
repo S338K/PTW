@@ -15,15 +15,6 @@ const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
 
-// ===== TRUST PROXY SETUP =====
-// Add this so that secure cookies and protocol detection work behind proxy if needed
-if (isProd && process.env.BEHIND_PROXY === 'true') {
-  app.set('trust proxy', 1);
-  console.log('Trusting first proxy headers');
-} else {
-  console.log('Not trusting proxy headers');
-}
-
 // ================= MIDDLEWARE =================
 // Body parsers
 app.use(express.json());
@@ -46,6 +37,15 @@ app.use(cors({
   },
   credentials: true // important for cookie/session sending across domains
 }));
+
+// ===== TRUST PROXY SETUP =====
+// Add this so that secure cookies and protocol detection work behind proxy if needed
+if (isProd && process.env.BEHIND_PROXY === 'true') {
+  app.set('trust proxy', 1);
+  console.log('Trusting first proxy headers');
+} else {
+  console.log('Not trusting proxy headers');
+}
 
 // ===== SESSION SETUP =====
 const sessionOptions = {
