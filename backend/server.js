@@ -13,11 +13,63 @@ const apiRoutes = require('./routes/api');
 
 const app = express();
 
+const isProd = process.env.NODE_ENV === 'production';
+
+// ===== TRUST PROXY SETUP =====
+// Add this so that secure cookies and protocol detection work behind proxy if needed
+if (isProd && process.env.BEHIND_PROXY === 'true') {
+  app.set('trust proxy', 1);
+  console.log('Trusting first proxy headers');
+} else {
+  console.log('Not trusting proxy headers');
+}
+
 // ================= MIDDLEWARE =================
 // Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ===== CORS Setup =====
+const allowedOrigins = process.env.ALLOWED_ORIGIN
+  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
+  : [];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
+  credentials: true // important for cookie/session sending across domains
+}));
+
+// ===== SESSION SETUP =====
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET || 'supersecret',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    dbName: 'PTW',
+    collectionName: 'sessions',
+    ttl: 2 * 60 * 60 // 2 hours in seconds
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: isProd, // HTTPS only in production
+    sameSite: isProd ? 'none' : 'lax', // 'none' with secure for cross-site cookies, else 'lax' for dev
+    maxAge: 2 * 60 * 60 * 1000 // 2 hours in ms
+  }
+};
+
+// Attach session middleware BEFORE your routes, and for ALL routes (not only /api)
+app.use(session(sessionOptions));
+
+// ================= ROUTES =================
 // Root test route
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
@@ -32,51 +84,6 @@ app.get('/api/session-check', (req, res) => {
   }
 });
 
-
-// ===== CORS Setup =====
-const allowedOrigins = process.env.ALLOWED_ORIGIN
-  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
-  : [];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
-    }
-  },
-  credentials: true
-}));
-
-
-// ===== SESSION SETUP =====
-
-const isProd = process.env.NODE_ENV === 'production';
-
-const sessionOptions = {
-  secret: process.env.SESSION_SECRET || 'supersecret',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    dbName: 'PTW',
-    collectionName: 'sessions',
-    ttl: 2 * 60 * 60 // 2 hours in seconds
-  }),
-  cookie: {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    maxAge: 2 * 60 * 60 * 1000 // 2 hours in milliseconds
-  }
-};
-
-// Attach session middleware to /api routes only
-app.use('/api', session(sessionOptions));
-
-// ================= ROUTES =================
 app.use('/mainpage', mainPageRoutes);
 app.use('/api', apiRoutes);
 
