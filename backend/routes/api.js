@@ -101,10 +101,10 @@ router.post('/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) return res.status(400).json({ message: 'Invalid email id' });
 
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!ok) return res.status(400).json({ message: 'Invalid password' });
 
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
