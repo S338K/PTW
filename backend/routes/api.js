@@ -84,15 +84,15 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      console.log('❌ No user found for email:', email);
+      console.log('User does not exist for email:', email);
       return res.status(400).json({ message: 'Invalid username' });
     }
 
-    console.log('✅ User found. Stored hash:', user.password);
+    console.log('User found. Stored hash:', user.password);
 
     const ok = await bcrypt.compare(password, user.password);
 
-    console.log('🔍 Password match result:', ok);
+    console.log('Password match result:', ok);
 
     if (!ok) return res.status(400).json({ message: 'Invalid password' });
 
@@ -173,7 +173,7 @@ router.get('/weather', async (req, res) => {
       feelsLike: `${feelsLike}°C`,
       humidity: `${humidity}%`,
       visibility: `${visibility} km`,
-      windSpeed: `${windSpeed} m/s`,
+      windSpeed: `${windSpeed} M/s`,
       pressure: `${pressure} hPa`,
       airQualityIndex: aqi,
       airQualityStatus: aqiStatus,
@@ -235,26 +235,41 @@ router.delete('/permits/:id', async (req, res) => {
 
 // ===== PASSWORD RESET ROUTES (secure hashed token) =====
 
-// Request password reset
+// ===== REQUEST PASSWORD RESET =====
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email is required' });
+    console.log('[Forgot Password] Incoming request for:', email);
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'No account with that email' });
+    if (!user) {
+      return res.status(404).json({ message: 'No account with that email' });
+    }
 
-    // Generate raw token
+    console.log('[Forgot Password] User found:', user.email);
+
+    // Generate raw + hashed token
     const rawToken = crypto.randomBytes(20).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    // Save hashed token + expiry in DB
+    // Save token + expiry
     user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min expiry
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min
     await user.save();
+    console.log('[Forgot Password] Token saved to DB');
 
-    // Create reset link (point this to your frontend reset page)
+    // Create reset link
     const resetLink = `https://your-frontend-domain.com/reset-password?token=${rawToken}`;
+    console.log('[Forgot Password] Reset link:', resetLink);
+
+    // Check SMTP credentials
+    if (!process.env.OUTLOOK_USER || !process.env.OUTLOOK_PASS) {
+      throw new Error('SMTP credentials are missing in environment variables');
+    }
 
     // Configure Outlook SMTP
     const transporter = nodemailer.createTransport({
@@ -274,7 +289,7 @@ router.post('/forgot-password', async (req, res) => {
       subject: 'Password Reset Request',
       html: `
         <p>Hello ${user.username || ''},</p>
-        <p>You request to reset the password has been initiated. Please click the link below to reset your password:</p>
+        <p>You requested to reset your password. Click the link below to reset it:</p>
         <p><a href="${resetLink}">${resetLink}</a></p>
         <p>This link will expire in 15 minutes.</p>
         <p>If you did not request this, please ignore this email.</p>
@@ -284,13 +299,22 @@ router.post('/forgot-password', async (req, res) => {
 
     // Send email
     await transporter.sendMail(mailOptions);
+    console.log('[Forgot Password] Email sent successfully');
 
     res.json({ message: 'Password reset email sent successfully' });
+
   } catch (err) {
-    console.error('Forgot password error:', err);
-    res.status(500).json({ message: 'Error generating reset token' });
+    console.error('[Forgot Password] Error:', err);
+
+    // More descriptive error in development
+    res.status(500).json({
+      message: process.env.NODE_ENV === 'production'
+        ? 'Error generating reset token'
+        : `Error: ${err.message}`
+    });
   }
 });
+
 
 // ===== RESET PASSWORD =====
 router.post('/reset-password', async (req, res) => {

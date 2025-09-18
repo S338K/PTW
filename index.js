@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
           } else if (data.message && data.message.toLowerCase().includes('password')) {
             showError(passwordEl, data.message);
           } else {
-            showError(passwordEl, data.message || 'Login failed.');
+            showError(emailEl, data.message || 'Login failed.');
           }
           return;
         }

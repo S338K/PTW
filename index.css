@@ -177,8 +177,15 @@ input.valid {
 /* ----------------------------------------
    Sign-Up-Link
 ---------------------------------------- */
+.login-signup-container {
+  display: flex;
+  justify-content: space-between;
+  /* pushes them to opposite ends */
+  align-items: center;
+  /* vertical alignment */
+}
+
 .sign-up-link {
-  text-align: left;
   font-weight: 700;
 }
 
@@ -193,7 +200,6 @@ input.valid {
 }
 
 .forgot-password-link {
-  text-align: right;
   font-weight: 700;
 }
 
@@ -206,6 +212,7 @@ input.valid {
 .forgot-password-link a:hover {
   text-decoration: underline;
 }
+
 
 /* ----------------------------------------
    App Title

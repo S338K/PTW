@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Success state: change button text, color, disable, animate
         signupBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
-        signupBtn.textContent = 'Form submitted successfully';
+        signupBtn.textContent = 'Registration Successful.';
         signupBtn.style.backgroundColor = '#28a745';
         signupBtn.style.borderColor = '#28a745';
         signupBtn.style.color = '#fff';
