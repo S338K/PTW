@@ -296,6 +296,8 @@ router.post('/forgot-password', async (req, res, next) => {
 
   router.post('/reset-password', async (req, res) => {
     try {
+      console.log('[Reset Password] Incoming:', req.body, 'Origin:', req.headers.origin);
+
       const { token, newPassword } = req.body;
 
       if (!token || !newPassword) {
