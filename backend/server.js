@@ -12,7 +12,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 // ================= MIDDLEWARE =================
 // Body parsers
-app.use(express.json());
+//app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== CORS Setup =====
