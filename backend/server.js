@@ -50,13 +50,13 @@ const sessionOptions = {
     mongoUrl: process.env.MONGO_URI,
     dbName: 'PTW',
     collectionName: 'sessions',
-    ttl: 2 * 60 * 60 // 2 hours
+    ttl: 2 * 60 * 60 // 2 hours in seconds
   }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    // maxAge will be dynamically set in createSession() for Remember Me
+    maxAge: 2 * 60 * 60 * 1000 // 2 hours in milliseconds
   }
 };
 

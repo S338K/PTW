@@ -35,11 +35,7 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // 🔹 NEW: Remember-me flag
-  rememberMe: {
-    type: Boolean,
-    default: false
-  },
+
   role: {
     type: String,
     enum: ['Requester', 'PreApprover', 'FinalApprover', 'Admin'],

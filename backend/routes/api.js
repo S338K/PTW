@@ -31,8 +31,8 @@ function requireAuth(req, res, next) {
     return;
   }
 
-  // Idle timeout (only for non-Remember Me sessions)
-  if (!req.session.rememberMe && req.session.lastActivity && (now - req.session.lastActivity) > idleTimeout) {
+  // Idle timeout
+  if (req.session.lastActivity && (now - req.session.lastActivity) > idleTimeout) {
     req.session.destroy(() => {
       res.clearCookie('connect.sid');
       return res.status(401).json({ message: 'Session expired due to inactivity' });
@@ -40,32 +40,28 @@ function requireAuth(req, res, next) {
     return;
   }
 
+
   // Update last activity
   req.session.lastActivity = now;
   next();
 }
 
 // ===== SESSION INITIALIZATION =====
-function createSession(req, user, rememberMe = false) {
+function createSession(req, user) {
   req.session.userId = user._id;
   req.session.username = user.username;
   req.session.lastActivity = Date.now();
   req.session.sessionStart = Date.now();
-  req.session.rememberMe = rememberMe;
 
-  // Cookie handling based on Remember Me
-  if (rememberMe) {
-    req.session.cookie.maxAge = 1000 * 60 * 60 * 3; // 3 hours
-  } else {
-    req.session.cookie.expires = false; // session cookie (deleted on browser close)
-  }
+  // Session cookie expires on browser close
+  req.session.cookie.expires = false;
 }
 
 // ================= ROUTES =================
 // ----- REGISTER -----
 router.post('/register', async (req, res) => {
   try {
-    const { username, company, email, password, role, rememberMe } = req.body;
+    const { username, company, email, password, role } = req.body;
     if (!username || !email || !password)
       return res.status(400).json({ message: 'All fields are required' });
 
@@ -86,7 +82,7 @@ router.post('/register', async (req, res) => {
       lastLogin: null
     });
 
-    createSession(req, user, rememberMe); // pass Remember Me flag
+    createSession(req, user);
 
     res.status(201).json({
       message: 'Registration successful',
@@ -101,7 +97,7 @@ router.post('/register', async (req, res) => {
 // ----- LOGIN -----
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
     const user = await User.findOne({ email });
@@ -114,7 +110,7 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    createSession(req, user, rememberMe); // pass Remember Me flag
+    createSession(req, user);
 
     res.json({
       message: 'Login successful',
