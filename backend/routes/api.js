@@ -290,61 +290,59 @@ router.post('/forgot-password', async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error('[Forgot Password] Error:', err);
-    next(err); // now safe because we added `next` to params
+    console.error('[Forgot Password] Full error:', err); // full object
+    res.status(500).json({ message: err.message, stack: err.stack });
   }
-});
 
+  router.post('/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
 
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token and new password are required' });
+      }
 
-router.post('/reset-password', async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
+      // Strong password check
+      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+      if (!strongPasswordRegex.test(newPassword)) {
+        return res.status(400).json({
+          message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+        });
+      }
 
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: 'Token and new password are required' });
-    }
+      // Hash the incoming token for lookup
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Strong password check
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-    if (!strongPasswordRegex.test(newPassword)) {
-      return res.status(400).json({
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+      // Find user with matching token and valid expiry
+      const user = await User.findOne({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: { $gt: Date.now() }
       });
-    }
 
-    // Hash the incoming token for lookup
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired token' });
+      }
 
-    // Find user with matching token and valid expiry
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
+      // Hash the new password before saving
+      const bcrypt = require('bcryptjs');
+      user.password = await bcrypt.hash(newPassword, 10);
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
-    }
+      // Clear reset token fields
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
 
-    // Hash the new password before saving
-    const bcrypt = require('bcryptjs');
-    user.password = await bcrypt.hash(newPassword, 10);
+      await user.save();
 
-    // Clear reset token fields
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
-
-    res.json({ message: 'Password updated successfully' });
-  } catch (err) {
-    console.error('[Reset Password] Error:', err);
-    res.status(500).json({
+      res.json({ message: 'Password updated successfully' });
+    } catch (err) {
+      console.error('[Reset Password] Error:', err);
+      res.status(500).json.json({ message: err.message, stack: err.stack });
       message: process.env.NODE_ENV === 'production'
         ? 'Error resetting password'
         : err.message
-    });
-  }
+    }
+  })
 });
+
 
 module.exports = router;
