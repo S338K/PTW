@@ -21,22 +21,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== CORS Setup =====
-const allowedOrigins = process.env.ALLOWED_ORIGIN
-  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
-  : [];
+// ===== CORS Setup =====
+const allowedOrigins = ['https://s338k.github.io']; // ✅ Explicitly allow GitHub Pages
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (e.g. curl or mobile apps)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
-  credentials: true // important for cookie/session sending across domains
+  credentials: true // ✅ Required to allow cookies to be sent and received
 }));
+
 
 // ===== TRUST PROXY SETUP =====
 // Add this so that secure cookies and protocol detection work behind proxy if needed
