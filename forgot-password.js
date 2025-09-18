@@ -47,10 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return showMessage('Please fill in all fields', 'error');
     }
 
-    // Optional: Password strength check
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
     if (!passwordRegex.test(newPassword)) {
-      return showMessage('Password must be at least 8 characters long and include a letter, number, and special character.', 'error');
+      return showMessage(
+        'Password must be at least 8 characters long and include a letter, number, and special character.',
+        'error'
+      );
     }
 
     try {
@@ -61,52 +63,44 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
 
-if (res.ok) {
-  const container = document.querySelector('.container'); // main wrapper
-  container.style.transition = 'opacity 0.8s ease';
-  container.style.opacity = '0'; // fade out form
+      if (res.ok) {
+        const container = document.querySelector('.container');
+        container.style.transition = 'opacity 0.8s ease';
+        container.style.opacity = '0';
 
-  setTimeout(() => {
-    let countdown = 10; // seconds before close
+        setTimeout(() => {
+          let countdown = 10;
+          container.innerHTML = `
+          <div class="success-message">
+            <h2>Password Reset Successful ✅</h2>
+            <p>You can now log in with your new password.</p>
+            <p>This window will close automatically in <span id="countdown">${countdown}</span> seconds...</p>
+          </div>
+        `;
 
-    // Replace content with success message + countdown
-    container.innerHTML = `
-      <div class="success-message">
-        <h2>Password Reset Successful ✅</h2>
-        <p>You can now log in with your new password.</p>
-        <p>This window will close automatically in <span id="countdown">${countdown}</span> seconds...</p>
-      </div>
-    `;
+          container.style.opacity = '0';
+          container.offsetHeight; // force reflow
+          container.style.opacity = '1';
 
-    container.style.opacity = '0';
-    container.offsetHeight; // force reflow
-    container.style.opacity = '1'; // fade in message
-
-    // Countdown timer
-    const countdownEl = document.getElementById('countdown');
-    const timer = setInterval(() => {
-      countdown--;
-      countdownEl.textContent = countdown;
-      if (countdown <= 0) {
-        clearInterval(timer);
-        if (window.opener) {
-          window.opener.location.reload(); // refresh login page
-        }
-        window.close();
+          const countdownEl = document.getElementById('countdown');
+          const timer = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            if (countdown <= 0) {
+              clearInterval(timer);
+              if (window.opener) {
+                window.opener.location.reload();
+              }
+              window.close();
+            }
+          }, 1000);
+        }, 800);
+      } else {
+        showMessage(data.message || 'Error updating password', 'error');
       }
-    }, 1000);
-  }, 800); // wait for fade-out to finish
-}
-
-  else{
-    howMessage(data.message || 'Error updating password', 'error');
-  }
-
-}
-
-  catch (err) {
+    } catch (err) {
       console.error('Error updating password:', err);
-      showMessage('Someting went wrong while updating password, try again later', 'error');
+      showMessage('Something went wrong while updating password, try again later', 'error');
     }
   });
 });

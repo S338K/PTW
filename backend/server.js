@@ -52,6 +52,36 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
+const express = require('express');
+const app = express();
+const router = require('./api'); // your routes file
+
+// Middleware
+app.use(express.json());
+
+// Mount your routes
+app.use('/api', router);
+
+// ✅ Global error handler goes here — after all routes
+app.use((err, req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.error(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+  console.error('Error stack:', err.stack);
+
+  res.status(err.status || 500).json({
+    message: process.env.NODE_ENV === 'production'
+      ? 'An unexpected error occurred'
+      : err.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+  });
+});
+
+// Start server
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+
+
 // ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
