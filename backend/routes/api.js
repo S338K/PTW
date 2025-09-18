@@ -234,89 +234,69 @@ router.delete('/permits/:id', async (req, res) => {
 });
 
 /// ===== REQUEST PASSWORD RESET =====
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req, res, next) => {
   try {
     const { email } = req.body;
-    console.log('[Forgot Password] Incoming request for:', email);
-
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
+    if (!email) return res.status(400).json({ message: 'Email is required' });
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'No account with that email' });
-    }
+    if (!user) return res.status(404).json({ message: 'No account with that email' });
 
-    console.log('[Forgot Password] User found:', user.email);
-
-    // Generate raw + hashed token
     const rawToken = crypto.randomBytes(20).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    // Save token + expiry
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min
     await user.save();
-    console.log('[Forgot Password] Token saved to DB');
 
-    // Create reset link
     const resetLink = `https://your-frontend-domain.com/reset-password?token=${rawToken}`;
-    console.log('[Forgot Password] Reset link:', resetLink);
 
-    // Check SMTP credentials
-    if (!process.env.OUTLOOK_USER || !process.env.OUTLOOK_PASS) {
-      throw new Error('SMTP credentials are missing in environment variables');
+    // Only enforce SMTP creds in production
+    if (process.env.NODE_ENV === 'production') {
+      if (!process.env.OUTLOOK_USER || !process.env.OUTLOOK_PASS) {
+        return res.status(500).json({ message: 'SMTP credentials missing' });
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.office365.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.OUTLOOK_USER,
+          pass: process.env.OUTLOOK_PASS
+        }
+      });
+
+      await transporter.sendMail({
+        from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
+        to: email,
+        subject: 'Password Reset Request',
+        html: `
+          <p>Hello ${user.username || ''},</p>
+          <p>You requested to reset your password. Click the link below to reset it:</p>
+          <p><a href="${resetLink}">${resetLink}</a></p>
+          <p>This link will expire in 15 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        `
+      });
+    } else {
+      console.log('[DEV MODE] Reset link:', resetLink);
     }
 
-    // Configure Outlook SMTP
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.office365.com',
-      port: 587,
-      secure: false, // STARTTLS
-      auth: {
-        user: process.env.OUTLOOK_USER,
-        pass: process.env.OUTLOOK_PASS
-      }
+    // Send token in dev for testing
+    res.json({
+      message: 'Password reset email sent successfully',
+      ...(process.env.NODE_ENV !== 'production' && { token: rawToken })
     });
-
-    // Email content
-    const mailOptions = {
-      from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
-      to: email,
-      subject: 'Password Reset Request',
-      html: `
-        <p>Hello ${user.username || ''},</p>
-        <p>You requested to reset your password. Click the link below to reset it:</p>
-        <p><a href="${resetLink}">${resetLink}</a></p>
-        <p>This link will expire in 15 minutes.</p>
-        <p>If you did not request this, please ignore this email.</p>
-        <p>Best regards,<br/>HIA Baggage Handling Team</p>
-      `
-    };
-
-    // Send email
-    await transporter.sendMail(mailOptions);
-    console.log('[Forgot Password] Email sent successfully');
-
-    res.json({ message: 'Password reset email sent successfully' });
 
   } catch (err) {
     console.error('[Forgot Password] Error:', err);
-    next(err);
-
-    // More descriptive error in development
-    res.status(500).json({
-      message: process.env.NODE_ENV === 'production'
-        ? 'Error generating reset token'
-        : `Error: ${err.message}`
-    });
+    next(err); // now safe because we added `next` to params
   }
 });
 
 
 
-// ===== RESET PASSWORD =====
 router.post('/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -325,6 +305,7 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Token and new password are required' });
     }
 
+    // Strong password check
     const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
     if (!strongPasswordRegex.test(newPassword)) {
       return res.status(400).json({
@@ -332,8 +313,10 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
+    // Hash the incoming token for lookup
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
+    // Find user with matching token and valid expiry
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
@@ -343,16 +326,24 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired token' });
     }
 
-    // Update password
-    user.password = newPassword;
+    // Hash the new password before saving
+    const bcrypt = require('bcryptjs');
+    user.password = await bcrypt.hash(newPassword, 10);
+
+    // Clear reset token fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+
     await user.save();
 
     res.json({ message: 'Password updated successfully' });
   } catch (err) {
-    console.error('Reset password error:', err);
-    res.status(500).json({ message: 'Error resetting password' });
+    console.error('[Reset Password] Error:', err);
+    res.status(500).json({
+      message: process.env.NODE_ENV === 'production'
+        ? 'Error resetting password'
+        : err.message
+    });
   }
 });
 
