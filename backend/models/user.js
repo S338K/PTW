@@ -2,39 +2,54 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  username: { 
-    type: String, 
-    required: true, 
-    trim: true 
+  username: {
+    type: String,
+    required: true,
+    trim: true
   },
-  company: { 
-    type: String, 
-    trim: true 
+  company: {
+    type: String,
+    trim: true
   },
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    lowercase: true, 
-    trim: true 
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
   },
-  password: { 
-    type: String, 
-    required: true 
+  password: {
+    type: String,
+    required: true
   },
-  lastLogin: { 
-    type: Date 
+  lastLogin: {
+    type: Date
   },
-  role: { 
-    type: String, 
-    enum: ['Requester', 'PreApprover', 'FinalApprover', 'Admin'], 
-    default: 'Requester' 
+  // 🔹 NEW: Track last activity for idle timeout
+  lastActivity: {
+    type: Date,
+    default: Date.now
   },
-  resetPasswordToken: { 
-    type: String 
+  // 🔹 NEW: Track session start for absolute timeout
+  sessionStart: {
+    type: Date,
+    default: Date.now
   },
-  resetPasswordExpires: { 
-    type: Date, 
+  // 🔹 NEW: Remember-me flag
+  rememberMe: {
+    type: Boolean,
+    default: false
+  },
+  role: {
+    type: String,
+    enum: ['Requester', 'PreApprover', 'FinalApprover', 'Admin'],
+    default: 'Requester'
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date,
     index: true // optional index for faster lookups
   }
 }, { timestamps: true });

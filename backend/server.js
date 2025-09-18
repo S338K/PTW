@@ -41,8 +41,7 @@ app.use(cors({
 }));
 
 // ===== SESSION SETUP =====
-// Only initialize session after login, so we use a "lazy session" setup
-// TTL in MongoDB is 30 minutes
+// TTL in MongoDB matches absolute timeout: 2 hours
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
@@ -51,17 +50,17 @@ const sessionOptions = {
     mongoUrl: process.env.MONGO_URI,
     dbName: 'PTW',
     collectionName: 'sessions',
-    ttl: 30 * 60 // 30 minutes
+    ttl: 2 * 60 * 60 // 2 hours
   }),
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 30 * 60 * 1000 // 30 minutes
+    // maxAge will be dynamically set in createSession() for Remember Me
   }
 };
 
-// We will attach this middleware only for routes after login
+// Attach session middleware to /api routes only
 app.use('/api', session(sessionOptions));
 
 // ================= ROUTES =================

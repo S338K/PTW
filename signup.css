@@ -21,10 +21,20 @@ body {
 
 /* ===== App Title Banner ===== */
 .app-title {
+  width: 100%;
+  background: #fff;
   text-align: center;
-  color: #273172;
-  background-color: lightcyan;
-  box-shadow: 0 4px 10px rgba(2, 6, 47, 0.807);
+  color: #1E245E;
+  background-color: cyan;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Push page content down so it’s not hidden under the fixed bar */
+body {
+  padding-top: 70px;
+  /* adjust to match .app-title height */
 }
 
 /* ===== Form Container with 3D Effect ===== */

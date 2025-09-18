@@ -1,4 +1,7 @@
 {
-    "editor.fontSize": 15,
-    "workbench.colorTheme": "Default High Contrast"
+    "editor.fontSize": 18,
+    "workbench.colorTheme": "Default High Contrast",
+    "window.autoDetectColorScheme": false,
+    "editor.formatOnSave": true,
+    "files.autoSave": "afterDelay"
 }
