@@ -29,21 +29,18 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  // ===== Redirect to mainpage.html when user is on profile page =====
-  if (window.location.pathname === '/profile.html') {
-    const redirectToMainPageButton = document.getElementById('sbmtptw');
-    if (redirectToMainPageButton) {
-      redirectToMainPageButton.addEventListener('click', function () {
-        window.location.href = 'mainpage.html';
-      });
-    }
+  // ===== Redirect to mainpage.html =====
+  const submitPtw = document.getElementById('sbmtptw');
+  if (submitPtw) {
+    submitPtw.addEventListener('click', function () {
+      window.location.href = 'mainpage.html';
+    });
   }
 
   // ===== Logout and redirect to index.html =====
   const logoutButton = document.getElementById('logoutBtn');
   if (logoutButton) {
     logoutButton.addEventListener('click', function () {
-      // Add any logout logic here if needed, like clearing sessionStorage or localStorage
       window.location.href = 'index.html';
     });
   }
