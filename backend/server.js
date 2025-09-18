@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
-
+const app = express();
 const isProd = process.env.NODE_ENV === 'production';
 
 // ================= MIDDLEWARE =================
@@ -51,7 +51,6 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-const app = express();
 const router = require('./api'); // your routes file
 
 // Middleware
