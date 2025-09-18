@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
   /* ===== HEADER: Live Date/Time ===== */
-  // Date/time updater
   function updateDateTime() {
     const dateTimeEl = document.getElementById('dateTimeDisplay');
     if (!dateTimeEl) return;
@@ -19,12 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
     dateTimeEl.textContent = `${dateStr} | ${timeStr}`;
   }
 
-  // Weather updater
   async function fetchWeather() {
     const weatherEl = document.getElementById('tempDisplay');
     if (!weatherEl) return;
 
-    const API_BASE = 'https://ptw-yu8u.onrender.com';
     const city = 'Doha';
 
     try {
@@ -38,40 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       const data = await res.json();
-      weatherEl.textContent = data.detailsLine;
-    } catch (err) {
-      console.error('Weather fetch error:', err);
-      weatherEl.textContent = 'Weather fetch failed';
-    }
-  }
-
-  // Run them
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
-  fetchWeather();
-  setInterval(fetchWeather, 600000);
-
-  /* ===== WEATHER DISPLAY ===== */
-  async function fetchWeather() {
-    const weatherEl = document.getElementById('tempDisplay');
-    if (!weatherEl) return;
-
-    const API_BASE = 'https://ptw-yu8u.onrender.com';
-    const city = 'Doha';
-
-    try {
-      const res = await fetch(`${API_BASE}/api/weather?city=${encodeURIComponent(city)}`, {
-        credentials: 'include'
-      });
-
-      if (!res.ok) {
-        weatherEl.textContent = 'Weather unavailable';
-        return;
-      }
-
-      const data = await res.json();
-
-      // Backend sends detailsLine without PO
       weatherEl.innerHTML = `${data.detailsLine}`;
     } catch (err) {
       console.error('Weather fetch error:', err);
@@ -79,10 +42,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Run immediately and update every 10 minutes
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
   fetchWeather();
-  setInterval(fetchWeather, 600000);
-
+  setInterval(fetchWeather, 600000); // every 10 minutes
 
   /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');
@@ -157,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const email = emailEl.value.trim();
       const password = passwordEl.value.trim();
 
-
       try {
         const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
@@ -179,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        // Store session + user details
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('lastActivity', Date.now().toString());
         sessionStorage.setItem('loginTime', Date.now().toString());
@@ -191,7 +152,6 @@ document.addEventListener('DOMContentLoaded', function () {
           localStorage.setItem('lastLogin', data.user.lastLogin || '');
         }
 
-        // Success button animation
         loginBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
         loginBtn.textContent = 'Logged in Successfully';
         loginBtn.style.backgroundColor = '#28a745';
@@ -211,20 +171,20 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => {
           window.location.href = 'profile.html';
         }, 2000);
-
       } catch {
         showError(passwordEl, 'Network error. Please try again.');
       }
     });
   }
-  //Forgot Password Link//
+
+  /* ===== Forgot Password Link ===== */
   const forgotLink = document.getElementById('forgotPasswordLink');
   if (forgotLink) {
     forgotLink.addEventListener('click', function (e) {
       e.preventDefault();
       window.open(
-        'forgot-password.html', // URL of your reset page
-        'ForgotPassword',       // Window name
+        'forgot-password.html',
+        'ForgotPassword',
         'width=500,height=600,top=100,left=100,resizable=yes,scrollbars=yes'
       );
     });
