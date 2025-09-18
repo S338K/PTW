@@ -54,7 +54,7 @@ function createSession(req, user) {
   req.session.sessionStart = Date.now();
 
   // Session cookie expires on browser close
-  req.session.cookie.expires = false;
+  //req.session.cookie.expires = false;
 }
 
 // ================= ROUTES =================
