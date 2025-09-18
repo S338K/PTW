@@ -233,9 +233,7 @@ router.delete('/permits/:id', async (req, res) => {
   */
 });
 
-// ===== PASSWORD RESET ROUTES (secure hashed token) =====
-
-// ===== REQUEST PASSWORD RESET =====
+/// ===== REQUEST PASSWORD RESET =====
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -305,6 +303,7 @@ router.post('/forgot-password', async (req, res) => {
 
   } catch (err) {
     console.error('[Forgot Password] Error:', err);
+    next(err);
 
     // More descriptive error in development
     res.status(500).json({
@@ -314,6 +313,7 @@ router.post('/forgot-password', async (req, res) => {
     });
   }
 });
+
 
 
 // ===== RESET PASSWORD =====
