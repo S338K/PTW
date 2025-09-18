@@ -98,13 +98,25 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    console.log('Login attempt:', email, password); // 👈 Log incoming email & password
+
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid email id' });
+
+    if (!user) {
+      console.log('❌ No user found for email:', email); // 👈 Log if user is not found
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    console.log('✅ User found. Stored hash:', user.password); // 👈 Log stored hash
 
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ message: 'Invalid password' });
+
+    console.log('🔍 Password match result:', ok); // 👈 Log the result of the password check
+
+    if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
 
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
@@ -114,13 +126,21 @@ router.post('/login', async (req, res) => {
 
     res.json({
       message: 'Login successful',
-      user: { id: user._id, username: user.username, email: user.email, company: user.company, role: user.role, lastLogin: previousLogin || new Date() }
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        company: user.company,
+        role: user.role,
+        lastLogin: previousLogin || new Date()
+      }
     });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Something went wrong during login', error: err.message });
   }
 });
+
 
 // ----- PROFILE (Protected) -----
 router.get('/profile', requireAuth, async (req, res) => {
