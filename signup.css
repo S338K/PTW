@@ -3,6 +3,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
+  width: 100%;
 }
 
 :root {
@@ -20,46 +21,50 @@ body {
 }
 
 /* ===== App Title Banner ===== */
-.app-title {
-  width: 100%;
-  background: #fff;
-  text-align: center;
-  color: #1E245E;
-  background-color: cyan;
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* Push page content down so it’s not hidden under the fixed bar */
-body {
-  padding-top: 70px;
-  /* adjust to match .app-title height */
+.page-header {
+  .page-header {
+    position: fixed;
+    /* Sticks to the top */
+    top: 0;
+    /* Center horizontally */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #273172;
+    font-weight: 500;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 15px 25px;
+    max-width: 95%;
+    z-index: 1000;
+    /* Keep it above other elements */
+  }
 }
 
 /* ===== Form Container with 3D Effect ===== */
 .form-container {
-  width: 95%;
-  margin: 30px auto;
-  background: #fff;
+  width: 90%;
+  background: #f9f9f9;
   padding: 30px;
   border-radius: 8px;
   border: 2px solid var(--text-primary);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 8px 20px rgba(0, 0, 0, 0.15);
+  margin: 0 auto;
+  box-shadow: 0 8px 8px rgba(39, 49, 114, 0.1);
 }
 
 fieldset {
-  border: 2px solid var(--text-primary);
-  border-radius: 8px;
+  border: 1px solid var(--text-primary);
+  border-radius: 10px;
   padding: 20px;
   color: var(--text-primary);
 }
 
 legend {
-  font-size: 1.2em;
-  font-weight: bold;
+  font-size: 1.0em;
+  font-weight: regular;
   padding: 0 10px;
   color: var(--text-primary);
 }
@@ -125,41 +130,41 @@ input:focus {
 
 /* ===== Button Styling ===== */
 #signupBtn {
-  width: fit-content;
-  padding: 12px;
-  background-color: var(--button-bg);
-  border-radius: 25px;
-  font-size: 16px;
-  cursor: pointer;
+  background-color: #273172;
   color: #fff;
-  border: none;
+  border: 2px solid #273172;
+  padding: 12px 24px;
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 #signupBtn:hover {
-  background-color: var(--button-hover-bg);
-  transform: translateY(-2px);
+  background-color: goldenrod;
+  color: #273172;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  transform: translateY(-5px);
 }
 
 #signupBtn:active {
   transform: translateY(0);
 }
 
-.form-footer {
+.log-in-link {
   text-align: left;
   font-weight: 700;
   margin-top: 30px;
 }
 
-.form-footer a {
+.log-in-link a {
   font-weight: 400;
   color: #273172;
   text-decoration: none;
 }
 
-.form-footer a:hover {
+.log-in-link a:hover {
   text-decoration: underline;
   color: #d9534f;
 }

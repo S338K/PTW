@@ -196,7 +196,6 @@ router.get('/weather', async (req, res) => {
 
 // ===== PERMITS ROUTES =====
 router.get('/permits', async (req, res) => {
-  // Auth removed — replace with token-based auth later
   return res.status(401).json({ message: 'Unauthorized - no session system in place' });
 });
 

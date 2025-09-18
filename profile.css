@@ -1,21 +1,29 @@
+body {
+  background-color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
 /* ===== Navbar Buttons ===== */
-.profile-sbmtptw-btn,
-.profile-signout-btn {
-  background-color: #273172;   /* dark blue */
-  color: #fff;                 /* white text */
-  border: none;
+.profile-navbar .nav-center button,
+.profile-navbar .nav-right button {
+  background-color: #273172;
+  /* dark blue */
+  color: #fff;
+  /* white text */
   border-radius: 6px;
   padding: 10px 18px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.profile-sbmtptw-btn:hover,
-.profile-signout-btn:hover {
-  background-color: goldenrod; /* gold hover */
-  color: #273172;              /* text flips to blue */
+.profile-navbar .nav-center button:hover,
+.profile-navbar .nav-right button:hover {
+  background-color: goldenrod;
+  color: #273172;
   border-radius: 25px;
 }
 
@@ -26,9 +34,18 @@
   align-items: center;
   background: #fff;
   padding: 12px 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   color: #273172;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.profile-navbar .nav-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #273172;
 }
 
 /* Buttons (duplicate selector kept for compatibility) */
@@ -51,18 +68,26 @@
 
 /* ===== Form container spacing ===== */
 .profile-form-container {
-  margin-top: 90px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* space between cards */
+  /* space between cards */
+  background-color: #273172;
+  width: 95%;
+  margin: 0 auto;
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 10px;
 }
 
 /* ===== Card Styling ===== */
 .card {
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
+  width: 95%;
+  margin: 0 auto;
+  margin-top: 20px;
 }
 
 .card h3 {
@@ -71,6 +96,14 @@
   border-bottom: 2px solid #273172;
   padding-bottom: 8px;
   margin-bottom: 15px;
+}
+
+.card:hover {
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 12px rgba(39, 49, 114, 0.2);
+  background-color: #edffed;
+  transform: scale(1.01);
+  /* Slight zoom-in effect */
 }
 
 /* ===== Table Styling for Submitted Permits ===== */
@@ -126,6 +159,7 @@
     flex-direction: column;
     align-items: stretch;
   }
+
   .profile-navbar .nav-left,
   .profile-navbar .nav-center,
   .profile-navbar .nav-right {

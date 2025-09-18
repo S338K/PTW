@@ -11,6 +11,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ===== Logout and redirect to index.html =====
+  const logoutButton = document.getElementById('logoutBtn');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', function () {
+      window.location.href = 'index.html';
+    });
+  }
+
   // =========================
   // Utilities for validation
   // =========================
@@ -129,33 +137,47 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // =========================
-  // Impact on Operation fix
+  // Impact on Operation fix (updated for Level of Impact + Equipment)
   // =========================
   const impactEl = document.getElementById('impact');
   if (impactEl) {
     impactEl.addEventListener('change', function () {
+      const levelImpactContainer = document.getElementById('levelOfImpactContainer');
       const eqType = document.getElementById('equipmentType');
       const impactDetails = document.getElementById('impactDetails');
+
+      const levelImpactInput = document.getElementById('levelOfImpact');
       const eqInput = document.getElementById('equipmentTypeInput');
       const impactInput = document.getElementById('impactDetailsInput');
 
       if (this.value === 'Yes') {
+        levelImpactContainer.classList.remove('hidden');
         eqType.classList.remove('hidden');
         impactDetails.classList.remove('hidden');
+
+        levelImpactInput.setAttribute('required', 'required');
         eqInput.setAttribute('required', 'required');
         impactInput.setAttribute('required', 'required');
       } else {
+        levelImpactContainer.classList.add('hidden');
         eqType.classList.add('hidden');
         impactDetails.classList.add('hidden');
+
+        levelImpactInput.removeAttribute('required');
         eqInput.removeAttribute('required');
         impactInput.removeAttribute('required');
+
+        levelImpactInput.value = '';
         eqInput.value = '';
         impactInput.value = '';
       }
     });
   }
-});
 
+  // Always require Nature of Work and Work Description
+  document.getElementById('natureOfWork')?.setAttribute('required', 'required');
+  document.getElementById('workDescription')?.setAttribute('required', 'required');
+});
 
 // =========================
 // Required Documents fix
@@ -261,66 +283,94 @@ function validateDateTime() {
   const typeMsg = document.getElementById('fileTypeMessage');
   const list = document.getElementById('uploadedFiles');
   const allowed = ['application/pdf', 'image/jpeg', 'image/jpg'];
-  const maxSize = 3 * 1024 * 1024; // CHANGE: 3 MB size limit
+  const maxTotalSize = 3 * 1024 * 1024; // 3MB total
+
+  // Store all selected files across multiple selections
+  let selectedFiles = [];
 
   if (!fileInput) return;
 
-  function validateFiles() {
-    if (!fileInput.files || fileInput.files.length === 0) {
-      if (typeMsg) typeMsg.textContent = '';
-      if (list) list.innerHTML = '';
-      hideErrorMessage(fileInput);
-      return true;
-    }
-    for (const file of fileInput.files) {
-      if (!allowed.includes(file.type)) {
-        showErrorMessage(fileInput, 'Only PDF or JPG/JPEG files are allowed');
-        if (typeMsg) typeMsg.textContent = 'Only PDF or JPG/JPEG files are allowed.';
-        return false;
-      }
-      if (file.size > maxSize) { // CHANGE: size check
-        showErrorMessage(fileInput, 'File size must not exceed 3 MB');
-        if (typeMsg) typeMsg.textContent = 'File size must not exceed 3 MB.';
-        return false;
-      }
-    }
-    hideErrorMessage(fileInput);
+  function showErrorMessage(message) {
+    if (typeMsg) typeMsg.textContent = message;
+    // Optional: add error styling to icon label
+    const label = document.querySelector(`label[for="${fileInput.id}"]`);
+    if (label) label.classList.add('upload-error');
+  }
+
+  function hideErrorMessage() {
     if (typeMsg) typeMsg.textContent = '';
+    const label = document.querySelector(`label[for="${fileInput.id}"]`);
+    if (label) label.classList.remove('upload-error');
+  }
+
+  function validateFiles(newFiles) {
+    let totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+
+    for (const file of newFiles) {
+      // Check duplicates (by name + size)
+      const isDuplicate = selectedFiles.some(
+        f => f.name === file.name && f.size === file.size
+      );
+      if (isDuplicate) {
+        showErrorMessage(`Duplicate file skipped: ${file.name}`);
+        return false;
+      }
+
+      // Check type
+      if (!allowed.includes(file.type)) {
+        showErrorMessage('Only PDF or JPG/JPEG files are allowed.');
+        return false;
+      }
+
+      // Check total size limit
+      if (totalSize + file.size > maxTotalSize) {
+        showErrorMessage('Total file size must not exceed 3 MB.');
+        return false;
+      }
+
+      totalSize += file.size;
+    }
+
+    hideErrorMessage();
     return true;
   }
 
   function renderList() {
     if (!list) return;
     list.innerHTML = '';
-    Array.from(fileInput.files).forEach(f => {
-      const li = document.createElement('li');
-      li.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
 
-      // CHANGE: Preview option
-      if (f.type === 'application/pdf') {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(f);
-        link.target = '_blank';
-        link.textContent = ' View';
-        li.appendChild(link);
-      } else if (f.type.startsWith('image/')) {
-        const imgLink = document.createElement('a');
-        imgLink.href = URL.createObjectURL(f);
-        imgLink.target = '_blank';
-        imgLink.textContent = ' Preview';
-        li.appendChild(imgLink);
-      }
+    selectedFiles.forEach(file => {
+      const li = document.createElement('li');
+      li.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(file);
+      link.target = '_blank';
+      link.textContent = file.type === 'application/pdf' ? ' View' : ' Preview';
+      link.style.marginLeft = '5px';
+      li.appendChild(link);
 
       list.appendChild(li);
     });
   }
 
   fileInput.addEventListener('change', () => {
-    const ok = validateFiles();
-    if (ok) renderList();
+    const newFiles = Array.from(fileInput.files);
+
+    if (validateFiles(newFiles)) {
+      // Add new files to the list
+      selectedFiles = [...selectedFiles, ...newFiles];
+      renderList();
+    }
+
+    // Reset input so the same file can be re-selected if removed
+    fileInput.value = '';
   });
 
-  window.__validateFileUpload = validateFiles;
+  // Expose for form-wide validation
+  window.__validateFileUpload = function () {
+    return selectedFiles.length > 0 && typeMsg.textContent === '';
+  };
 })();
 
 function validateFileUpload() {
@@ -328,6 +378,7 @@ function validateFileUpload() {
     ? window.__validateFileUpload()
     : true;
 }
+
 // =========================
 // Signature defaults + auto-fill from full name
 // =========================
@@ -406,11 +457,10 @@ if (submitBtn && form) {
       validateConditions();
 
     if (ok) {
-      // === NEW: Send form data to backend API ===
       const formData = new FormData(form);
 
       try {
-        const res = await fetch('http://localhost:5000/api/permits', {
+        const res = await fetch(`${API_BASE}/api/permit`, {
           method: 'POST',
           body: formData
         });
@@ -419,7 +469,6 @@ if (submitBtn && form) {
           alert('Form submitted successfully!');
           form.reset();
 
-          // Re-apply defaults
           const now = new Date();
           const signDate = document.getElementById('signDate');
           const signTime = document.getElementById('signTime');
@@ -451,8 +500,11 @@ if (submitBtn && form) {
 
           const equipmentTypeSection = document.getElementById('equipmentType');
           const impactDetailsSection = document.getElementById('impactDetails');
+          const levelImpactSection = document.getElementById('levelOfImpactContainer');
+
           if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
           if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
+          if (levelImpactSection) levelImpactSection.classList.add('hidden');
 
           document.querySelectorAll('.error-message').forEach(n => n.remove());
           document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
@@ -469,3 +521,4 @@ if (submitBtn && form) {
     }
   });
 }
+

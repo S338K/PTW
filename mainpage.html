@@ -7,56 +7,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   <link rel="stylesheet" href="mainstyles.css">
-  <style>
-    /* ===== NavBar Styling ===== */
-    .profile-navbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: #273172;
-      color: #fff;
-      padding: 10px 20px;
-      flex-wrap: wrap;
-    }
-    .profile-navbar .nav-left,
-    .profile-navbar .nav-center,
-    .profile-navbar .nav-right {
-      display: flex;
-      align-items: center;
-      flex: 1;
-    }
-    .profile-navbar .nav-left { justify-content: flex-start; }
-    .profile-navbar .nav-center { justify-content: center; }
-    .profile-navbar .nav-right { justify-content: flex-end; }
-    .profile-navbar button {
-      background-color: #fff;
-      color: #273172;
-      border: none;
-      padding: 8px 14px;
-      font-weight: 600;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    .profile-navbar button:hover {
-      background-color: #e6e6e6;
-    }
-    @media (max-width: 600px) {
-      .profile-navbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .profile-navbar .nav-left,
-      .profile-navbar .nav-center,
-      .profile-navbar .nav-right {
-        justify-content: center;
-        margin: 5px 0;
-      }
-    }
-  </style>
 </head>
-<body>
 
+<body>
   <!-- Navigation Bar -->
   <nav class="profile-navbar" id="navigationBar">
     <div class="nav-left">
@@ -159,79 +112,124 @@
         </fieldset>
       </section>
 
-      <!-- Work Details -->
-      <section class="card">
-        <fieldset>
-          <legend><h3>Work Details</h3></legend>
-          <div class="form-group">
-            <div class="md-input">
-              <select id="terminal" name="terminal" required>
-                <option value="" disabled selected>Select the Terminal</option>
-                <option value="PTC">PTC</option>
-                <option value="RTBF">RTBF</option>
-                <option value="QROC">QROC</option>
-                <option value="Other">Other</option>
-              </select>
-              <label for="terminal">Terminal</label>
-            </div>
-          </div>
+     <!-- Work Details -->
+<section class="card">
+  <fieldset>
+    <legend><h3>Work Details</h3></legend>
 
-          <div id="facilityContainer" class="form-group hidden">
-            <div class="md-input">
-              <select id="facility" name="facility">
-                <option value="" disabled selected>Select the Facility</option>
-              </select>
-              <label for="facility">Facility</label>
-            </div>
-          </div>
+    <!-- Terminal -->
+    <div class="form-group">
+      <div class="md-input">
+        <select id="terminal" name="terminal" required>
+          <option value="" disabled selected>Select the Terminal</option>
+          <option value="PTC">PTC</option>
+          <option value="RTBF">RTBF</option>
+          <option value="QROC">QROC</option>
+          <option value="Other">Other</option>
+        </select>
+        <label for="terminal">Terminal</label>
+      </div>
+    </div>
 
-          <div id="specifyTerminalContainer" class="form-group hidden">
-            <div class="md-input">
-              <input type="text" id="specifyTerminal" name="specifyTerminal" placeholder=" " />
-              <label for="specifyTerminal">Specify Terminal</label>
-            </div>
-          </div>
+    <!-- Facility -->
+    <div id="facilityContainer" class="form-group hidden">
+      <div class="md-input">
+        <select id="facility" name="facility">
+          <option value="" disabled selected>Select the Facility</option>
+        </select>
+        <label for="facility">Facility</label>
+      </div>
+    </div>
 
-          <div id="specifyFacilityContainer" class="form-group hidden">
-            <div class="md-input">
-              <input type="text" id="specifyFacility" name="specifyFacility" placeholder=" " />
-                            <label for="specifyFacility">Specify Facility</label>
-            </div>
-          </div>
+    <!-- Specify Terminal -->
+    <div id="specifyTerminalContainer" class="form-group hidden">
+      <div class="md-input">
+        <input type="text" id="specifyTerminal" name="specifyTerminal" placeholder=" " />
+        <label for="specifyTerminal">Specify Terminal</label>
+      </div>
+    </div>
 
-          <div class="form-group">
-            <div class="md-input">
-              <textarea id="workDescription" name="workDescription" placeholder=" "></textarea>
-              <label for="workDescription">Work Description</label>
-            </div>
-          </div>
+    <!-- Specify Facility -->
+    <div id="specifyFacilityContainer" class="form-group hidden">
+      <div class="md-input">
+        <input type="text" id="specifyFacility" name="specifyFacility" placeholder=" " />
+        <label for="specifyFacility">Specify Facility</label>
+      </div>
+    </div>
 
-          <div class="form-group">
-            <div class="md-input">
-              <select id="impact" name="impact" required>
-                <option value="" disabled selected>Will the work impact any equipment?</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-              <label for="impact">Impact on Equipment</label>
-            </div>
-          </div>
+    <!-- Impact on Operation -->
+    <div class="form-group">
+      <div class="md-input">
+        <select id="impact" name="impact" required>
+          <option value="" disabled selected>Will the work impact any equipment?</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+        <label for="impact">Impact on Equipment</label>
+      </div>
+    </div>
 
-          <div id="equipmentType" class="form-group hidden">
-            <div class="md-input">
-              <input type="text" id="equipmentTypeInput" name="equipmentTypeInput" placeholder=" " />
-              <label for="equipmentTypeInput">Equipment Type</label>
-            </div>
-          </div>
+    <!-- Level of Impact -->
+    <div id="levelOfImpactContainer" class="form-group hidden">
+      <div class="md-input">
+        <select id="levelOfImpact" name="levelOfImpact">
+          <option value="" disabled selected>Select Level of Impact</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+          <option value="Critical">Critical</option>
+        </select>
+        <label for="levelOfImpact">Level of Impact</label>
+      </div>
+    </div>
 
-          <div id="impactDetails" class="form-group hidden">
-            <div class="md-input">
-              <textarea id="impactDetailsInput" name="impactDetailsInput" placeholder=" "></textarea>
-              <label for="impactDetailsInput">Impact Details</label>
-            </div>
-          </div>
-        </fieldset>
-      </section>
+    <!-- Type of Affected Equipment -->
+    <div id="equipmentType" class="form-group hidden">
+      <div class="md-input">
+        <select id="equipmentTypeInput" name="equipmentTypeInput">
+          <option value="" disabled selected>Select Equipment Type</option>
+          <option value="BHS">BHS</option>
+          <option value="PLB">PLB - Passenger Loading Bridge</option>
+          <option value="VDGS">VDGS - Visual Docking Guidance System</option>
+          <option value="HighSpeedShutterDoor">High Speed Shutter Door</option>
+        </select>
+        <label for="equipmentTypeInput">Type of Affected Equipment</label>
+      </div>
+    </div>
+
+    <!-- Affected Equipment Details -->
+    <div id="impactDetails" class="form-group hidden">
+      <div class="md-input">
+        <textarea id="impactDetailsInput" name="impactDetailsInput" placeholder=" "></textarea>
+        <label for="impactDetailsInput">Affected Equipment Details</label>
+      </div>
+    </div>
+
+    <!-- Nature of Work -->
+    <div class="form-group">
+      <div class="md-input">
+        <select id="natureOfWork" name="natureOfWork" required>
+          <option value="" disabled selected>Select Nature of Work</option>
+          <option value="Project">Project</option>
+          <option value="Fault">Fault</option>
+          <option value="Preventive Maintenance">Preventive Maintenance</option>
+          <option value="Corrective Maintenance">Corrective Maintenance</option>
+          <option value="Snag Work">Snag Work</option>
+        </select>
+        <label for="natureOfWork">Nature of Work</label>
+      </div>
+    </div>
+
+    <!-- Work Description -->
+    <div class="form-group">
+      <div class="md-input">
+        <textarea id="workDescription" name="workDescription" placeholder=" "></textarea>
+        <label for="workDescription">Work Description</label>
+      </div>
+    </div>
+
+  </fieldset>
+</section>
 
       <!-- Required Documents -->
       <section class="card">
@@ -285,8 +283,31 @@
               </div>
             </div>
           </div>
-        </fieldset>
-      </section>
+
+    <fieldset>
+<legend><h3>File Upload</h3></legend>
+<div id="fileUploadSection">
+  <div class="form-group file-upload">
+    <!-- Clickable custom icon -->
+    <label for="fileUpload" class="upload-icon">
+      <i class="fas fa-folder-open" style="font-size: 28px; margin-right: 8px;"></i>
+      <span>Upload the files </span>
+    </label>
+
+    <!-- Hidden native file input -->
+    <input type="file" id="fileUpload" name="fileUpload" multiple />
+
+    <!-- Error message -->
+    <p id="fileTypeMessage" class="upload-msg"></p>
+
+    <!-- File list -->
+    <ul id="uploadedFiles"></ul>
+  </div>
+</div>
+
+  </fieldset>
+</fieldset>
+</section>
 
       <!-- Date & Time -->
       <section class="card">
@@ -307,37 +328,25 @@
         </fieldset>
       </section>
 
-      <!-- File Upload -->
-      <section class="card">
-        <fieldset>
-          <legend><h3>File Upload</h3></legend>
-          <div class="form-group">
-            <input type="file" id="fileUpload" name="fileUpload" multiple />
-            <p id="fileTypeMessage" style="color:red;"></p>
-            <ul id="uploadedFiles"></ul>
-          </div>
-        </fieldset>
-      </section>
-
       <!-- Signature -->
       <section class="card">
         <fieldset>
           <legend><h3>Signature</h3></legend>
           <div class="form-group">
             <div class="md-input">
-              <input type="text" id="signName" name="signName" placeholder=" " required />
+              <input type="text" id="signName" name="signName" placeholder="hidden " readonly />
               <label for="signName">Name</label>
             </div>
           </div>
           <div class="form-group">
             <div class="md-input">
-              <input type="date" id="signDate" name="signDate" placeholder=" " required />
+              <input type="date" id="signDate" name="signDate" placeholder=" " readonly/>
               <label for="signDate">Date</label>
             </div>
           </div>
           <div class="form-group">
             <div class="md-input">
-              <input type="time" id="signTime" name="signTime" placeholder=" " required />
+              <input type="time" id="signTime" name="signTime" placeholder="hidden " readonly/>
               <label for="signTime">Time</label>
             </div>
           </div>
@@ -360,14 +369,12 @@
           </div>
         </fieldset>
       </section>
+      </form>
 
       <!-- Submit Button -->
       <div class="form-group">
         <button type="submit" id="submitBtn">Submit</button>
       </div>
-
-    </form>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="mainscript.js"></script>
