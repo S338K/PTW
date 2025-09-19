@@ -18,17 +18,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== CORS Setup =====
-const allowedOrigins = process.env.ALLOWED_ORIGIN
-  ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
-  : [];
+const allowedOrigins = process.env.ALLOWED_ORIGIN.split(',');
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
@@ -52,7 +49,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch(err => console.log(err));
 
 // ✅ Global error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] ${req.method} ${req.originalUrl}`);
   console.error('Error stack:', err.stack);

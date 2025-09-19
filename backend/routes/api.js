@@ -290,7 +290,9 @@ router.post('/forgot-password', async (req, res, next) => {
         });
 
         console.log('[Forgot Password] Email sent:', info.messageId, info.response);
+
       } catch (mailErr) {
+        // Log full SMTP error details to the server console
         console.error('[Forgot Password] sendMail error:', {
           name: mailErr.name,
           code: mailErr.code,
@@ -298,11 +300,35 @@ router.post('/forgot-password', async (req, res, next) => {
           response: mailErr.response,
           message: mailErr.message
         });
+
+        // In non-production, also send error details to the browser for debugging
+        if (process.env.NODE_ENV !== 'production') {
+          return res.status(500).json({
+            message: 'Email delivery failed',
+            error: {
+              name: mailErr.name,
+              code: mailErr.code,
+              command: mailErr.command,
+              response: mailErr.response,
+              message: mailErr.message
+            }
+          });
+        }
+
+        // In production, keep the error generic for security
         return res.status(500).json({ message: 'Email delivery failed' });
+
       }
+
     } else {
       console.log('[DEV MODE] Reset link:', resetLink);
+      // Also send the reset link in the response for easy testing in dev
+      return res.json({
+        message: 'Password reset link (dev mode)',
+        resetLink
+      });
     }
+
 
     // Send token in dev for testing
     res.json({
