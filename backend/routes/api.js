@@ -11,6 +11,17 @@ const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const crypto = require('crypto');
+
+
+// Mailgun client (HTTPS, works on Render free tier)
+const FormData = require('form-data');
+const Mailgun = require('mailgun.js');
+const mailgun = new Mailgun(FormData);
+const mg = mailgun.client({
+  username: 'api',
+  key: process.env.MAILGUN_API_KEY
+});
 
 // ================= AUTH MIDDLEWARE =================
 function requireAuth(req, res, next) {
@@ -233,165 +244,108 @@ router.delete('/permits/:id', async (req, res) => {
   */
 });
 
-/// ===== REQUEST PASSWORD RESET =====
+// ===== REQUEST PASSWORD RESET =====
 router.post('/forgot-password', async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
+    const genericOk = { message: 'If the email exists, a reset link will be sent' };
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'No account with that email' });
+    if (!user) return res.status(200).json(genericOk);
 
     const rawToken = crypto.randomBytes(20).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
     user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
     await user.save();
 
-    const resetLink = `https://s338k.github.io/PTW/reset-password.html?token=${rawToken}`;
+    const frontendBase = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
+    const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
 
-    // Only enforce SMTP creds in production
-    if (process.env.NODE_ENV === 'production') {
-      if (!process.env.OUTLOOK_USER || !process.env.OUTLOOK_PASS) {
-        return res.status(500).json({ message: 'SMTP credentials missing' });
-      }
-
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.office365.com',
-        port: 587,
-        secure: false, // STARTTLS
-        auth: {
-          user: process.env.OUTLOOK_USER,
-          pass: process.env.OUTLOOK_PASS
-        },
-        tls: {
-          ciphers: 'TLSv1.2',
-          rejectUnauthorized: true
-        }
-      });
-
-      try {
-        // Optional: verify connection before sending
-        await transporter.verify();
-        console.log('[SMTP] Connection verified, ready to send');
-
-        const info = await transporter.sendMail({
-          from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
-          to: email,
-          subject: 'Password Reset Request',
-          html: `
-        <p>Hello ${user.username || ''},</p>
-        <p>You requested to reset your password. Click the link below to reset it:</p>
-        <p><a href="${resetLink}">${resetLink}</a></p>
-        <p>This link will expire in 15 minutes.</p>
-        <p>If you did not request this, please ignore this email.</p>
-      `
-        });
-
-        console.log('[Forgot Password] Email sent:', info.messageId, info.response);
-
-      } catch (mailErr) {
-        // Log full SMTP error details to the server console
-        console.error('[Forgot Password] sendMail error:', {
-          name: mailErr.name,
-          code: mailErr.code,
-          command: mailErr.command,
-          response: mailErr.response,
-          message: mailErr.message
-        });
-
-        // In non-production, also send error details to the browser for debugging
-        if (process.env.NODE_ENV !== 'production') {
-          return res.status(500).json({
-            message: 'Email delivery failed',
-            error: {
-              name: mailErr.name,
-              code: mailErr.code,
-              command: mailErr.command,
-              response: mailErr.response,
-              message: mailErr.message
-            }
-          });
-        }
-
-        // In production, keep the error generic for security
-        return res.status(500).json({ message: 'Email delivery failed' });
-
-      }
-
-    } else {
+    if (process.env.NODE_ENV !== 'production') {
       console.log('[DEV MODE] Reset link:', resetLink);
-      // Also send the reset link in the response for easy testing in dev
-      return res.json({
+      return res.status(200).json({
         message: 'Password reset link (dev mode)',
-        resetLink
+        resetLink,
+        token: rawToken
       });
     }
 
-
-    // Send token in dev for testing
-    res.json({
-      message: 'Password reset email sent successfully',
-      ...(process.env.NODE_ENV !== 'production' && { token: rawToken })
-    });
-
-  } catch (err) {
-    console.error('[Forgot Password] Full error:', err); // full object
-    res.status(500).json({ message: err.message, stack: err.stack });
-  }
-
-  router.post('/reset-password', async (req, res) => {
     try {
-      console.log('[Reset Password] Incoming:', req.body, 'Origin:', req.headers.origin);
+      const msgData = {
+        from: process.env.MAILGUN_FROM,
+        to: email,
+        subject: 'Password Reset Request',
+        text: `Click the link to reset your password: ${resetLink}`,
+        html: `
+          <p>Hello${user.username ? ' ' + user.username : ''},</p>
+          <p>You requested to reset your password. Click the link below to reset it:</p>
+          <p><a href="${resetLink}">${resetLink}</a></p>
+          <p>This link will expire in 15 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        `
+      };
 
-      const { token, newPassword } = req.body;
-
-      if (!token || !newPassword) {
-        return res.status(400).json({ message: 'Token and new password are required' });
-      }
-
-      // Strong password check
-      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-      if (!strongPasswordRegex.test(newPassword)) {
-        return res.status(400).json({
-          message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
-        });
-      }
-
-      // Hash the incoming token for lookup
-      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
-      // Find user with matching token and valid expiry
-      const user = await User.findOne({
-        resetPasswordToken: hashedToken,
-        resetPasswordExpires: { $gt: Date.now() }
-      });
-
-      if (!user) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
-      }
-
-      // Hash the new password before saving
-      const bcrypt = require('bcryptjs');
-      user.password = await bcrypt.hash(newPassword, 10);
-
-      // Clear reset token fields
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-
-      await user.save();
-
-      res.json({ message: 'Password updated successfully' });
-    } catch (err) {
-      console.error('[Reset Password] Error:', err);
-      res.status(500).json.json({ message: err.message, stack: err.stack });
-      message: process.env.NODE_ENV === 'production'
-        ? 'Error resetting password'
-        : err.message
+      const mgRes = await mg.messages.create(process.env.MAILGUN_DOMAIN, msgData);
+      console.log('[Forgot Password] Email sent via Mailgun:', mgRes.id);
+      return res.status(200).json(genericOk);
+    } catch (mailErr) {
+      console.error('[Forgot Password] Mailgun error:', mailErr);
+      return res.status(200).json(genericOk);
     }
-  })
+  } catch (err) {
+    next(err);
+  }
 });
 
+// ===== RESET PASSWORD =====
+router.post('/reset-password', async (req, res) => {
+  try {
+    console.log('[Reset Password] Incoming:', req.body, 'Origin:', req.headers.origin);
+
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!strongPasswordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+      });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    const bcrypt = require('bcryptjs');
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('[Reset Password] Error:', err);
+    res.status(500).json({
+      message: process.env.NODE_ENV === 'production'
+        ? 'Error resetting password'
+        : err.message,
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
+  }
+});
 
 module.exports = router;
