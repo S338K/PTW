@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!email) return showMessage('Please enter your email', 'error');
 
     try {
-      const res = await fetch('/api/forgot-password', {
+      const res = await fetch('https://dpt-yudu.onrender.com/api/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
