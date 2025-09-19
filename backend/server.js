@@ -1,4 +1,3 @@
-// ================= IMPORTS & CONFIG =================
 require('dotenv').config();
 
 console.log('MONGO_URI from env:', process.env.MONGO_URI);
@@ -10,18 +9,16 @@ const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
 const isProd = process.env.NODE_ENV === 'production';
 
-// ================= APP INIT =================
 const app = express();
 
-// ================= MIDDLEWARE =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== CORS Setup =====
-const allowedOrigins = process.env.ALLOWED_ORIGIN.split(',');
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
 app.use(cors({
-  origin: function (origin, callback) {
+  origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -31,7 +28,9 @@ app.use(cors({
   credentials: true
 }));
 
-// ================= ROUTES =================
+// Handle preflight requests explicitly (optional but safe)
+app.options('*', cors());
+
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
@@ -39,7 +38,6 @@ app.get("/", (req, res) => {
 app.use('/mainpage', mainPageRoutes);
 app.use('/api', apiRoutes);
 
-// ================= MONGODB CONNECT =================
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -48,8 +46,8 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-// ✅ Global error handler
-app.use((err, req, res) => {
+// ✅ Global error handler — must have 4 params
+app.use((err, req, res, next) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] ${req.method} ${req.originalUrl}`);
   console.error('Error stack:', err.stack);
@@ -62,7 +60,6 @@ app.use((err, req, res) => {
   });
 });
 
-// ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

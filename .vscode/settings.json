@@ -1,5 +1,5 @@
 {
-    "editor.fontSize": 18,
+    "editor.fontSize": 16,
     "workbench.colorTheme": "Default Dark+",
     "window.autoDetectColorScheme": false,
     "editor.formatOnSave": true,
