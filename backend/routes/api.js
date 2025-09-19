@@ -249,7 +249,7 @@ router.post('/forgot-password', async (req, res, next) => {
     user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 min
     await user.save();
 
-    const resetLink = `https://your-frontend-domain.com/reset-password?token=${rawToken}`;
+    const resetLink = `https://s338k.github.io/PTW/reset-password.html?token=${rawToken}`;
 
     // Only enforce SMTP creds in production
     if (process.env.NODE_ENV === 'production') {
@@ -260,25 +260,46 @@ router.post('/forgot-password', async (req, res, next) => {
       const transporter = nodemailer.createTransport({
         host: 'smtp.office365.com',
         port: 587,
-        secure: false,
+        secure: false, // STARTTLS
         auth: {
           user: process.env.OUTLOOK_USER,
           pass: process.env.OUTLOOK_PASS
+        },
+        tls: {
+          ciphers: 'TLSv1.2',
+          rejectUnauthorized: true
         }
       });
 
-      await transporter.sendMail({
-        from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
-        to: email,
-        subject: 'Password Reset Request',
-        html: `
-          <p>Hello ${user.username || ''},</p>
-          <p>You requested to reset your password. Click the link below to reset it:</p>
-          <p><a href="${resetLink}">${resetLink}</a></p>
-          <p>This link will expire in 15 minutes.</p>
-          <p>If you did not request this, please ignore this email.</p>
-        `
-      });
+      try {
+        // Optional: verify connection before sending
+        await transporter.verify();
+        console.log('[SMTP] Connection verified, ready to send');
+
+        const info = await transporter.sendMail({
+          from: `"PTW Support" <${process.env.OUTLOOK_USER}>`,
+          to: email,
+          subject: 'Password Reset Request',
+          html: `
+        <p>Hello ${user.username || ''},</p>
+        <p>You requested to reset your password. Click the link below to reset it:</p>
+        <p><a href="${resetLink}">${resetLink}</a></p>
+        <p>This link will expire in 15 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      `
+        });
+
+        console.log('[Forgot Password] Email sent:', info.messageId, info.response);
+      } catch (mailErr) {
+        console.error('[Forgot Password] sendMail error:', {
+          name: mailErr.name,
+          code: mailErr.code,
+          command: mailErr.command,
+          response: mailErr.response,
+          message: mailErr.message
+        });
+        return res.status(500).json({ message: 'Email delivery failed' });
+      }
     } else {
       console.log('[DEV MODE] Reset link:', resetLink);
     }
