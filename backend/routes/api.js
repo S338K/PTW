@@ -208,8 +208,6 @@ router.post('/forgot-password', async (req, res, next) => {
       console.log('[DEV MODE] Reset link:', resetLink);
       return res.status(200).json({ message: 'Password reset link (dev mode)', resetLink, token: rawToken });
     }
-
-    // In production: no Mailgun, so just return OK
     return res.status(200).json(genericOk);
 
   } catch (err) {
