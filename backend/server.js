@@ -31,6 +31,51 @@ app.use(cors({
 // Handle preflight requests explicitly (optional but safe)
 app.options('*', cors());
 
+// === SESSION AND COOKIE SETUP START ===
+// Added for login sessions, idle timeout, and cookie management
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+
+app.use(session({
+  name: 'sid', // cookie name
+  secret: process.env.SESSION_SECRET, // add to .env
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: 'sessions'
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: isProd, // true if using https
+    maxAge: 1000 * 60 * 60 * 2 // 2 hours
+  }
+}));
+
+// Idle timeout middleware
+app.use((req, res, next) => {
+  // Skip login and signup routes
+  if (req.path === '/api/login' || req.path === '/api/signup') return next();
+
+  if (!req.session.userId) return next(); // no session yet
+
+  const now = Date.now();
+  const maxIdle = 10 * 60 * 1000; // 10 minutes
+
+  if (req.session.lastActivity && now - req.session.lastActivity > maxIdle) {
+    // Inactivity timeout
+    req.session.destroy(err => {
+      if (err) console.error('Session destroy error:', err);
+      res.clearCookie('sid');
+      return res.status(440).json({ message: 'Session expired due to inactivity' });
+    });
+  } else {
+    req.session.lastActivity = now; // update last activity timestamp
+    next();
+  }
+});
+// === SESSION AND COOKIE SETUP END ===
+
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
