@@ -35,7 +35,7 @@ app.options('*', cors());
 
 // ===== SESSION SETUP =====
 app.use(session({
-  name: 'sessionId', 
+  name: 'sessionId',
   secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
   saveUninitialized: false,
@@ -47,8 +47,8 @@ app.use(session({
   cookie: {
     maxAge: 2 * 60 * 60 * 1000, // 2 hours
     httpOnly: true,
-    sameSite: isProd ? 'none' : 'lax', // 'none' for cross-site in production
-    secure: isProd,                    // true only on HTTPS
+    sameSite: 'none', // 'none' for cross-site in production
+    secure: true,                    // true only on HTTPS
   }
 }));
 
