@@ -11,7 +11,6 @@ const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
 
 const isProd = process.env.NODE_ENV === 'production';
-
 const app = express();
 
 app.use(express.json());
@@ -19,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ===== CORS Setup =====
 const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -35,16 +35,20 @@ app.options('*', cors());
 
 // ===== SESSION SETUP =====
 app.use(session({
-  name: 'sessionId', // cookie name
-  secret: process.env.SESSION_SECRET || 'supersecret', // strong secret recommended
+  name: 'sessionId', 
+  secret: process.env.SESSION_SECRET || 'supersecret',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI, dbName: 'PTW' }),
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    dbName: 'PTW',
+    ttl: 2 * 60 * 60 // 2 hours in seconds
+  }),
   cookie: {
     maxAge: 2 * 60 * 60 * 1000, // 2 hours
     httpOnly: true,
     sameSite: isProd ? 'none' : 'lax', // 'none' for cross-site in production
-    secure: isProd,                    // true on HTTPS
+    secure: isProd,                    // true only on HTTPS
   }
 }));
 
