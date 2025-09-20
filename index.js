@@ -113,7 +113,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const res = await fetch(`${API_BASE}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password }),
+          credentials: 'include' // 🔹 important: include session cookie
         });
 
         const data = await res.json();
@@ -129,8 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        // No storage — purely in-memory login
-        // You can pass data.user or data.token to the next page via query params if needed
+        // 🔹 Session cookie is now set by backend; no manual storage needed
 
         loginBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';
         loginBtn.textContent = 'Logged in Successfully';
