@@ -126,10 +126,26 @@ router.post('/login', async (req, res) => {
 
 // ----- PROFILE (Protected) -----
 router.get('/profile', async (req, res) => {
-  // Session-based auth removed — replace with token-based auth later
-  return res.status(401).json({ message: 'Unauthorized - no session system in place' });
-});
+  try {
+    // 🔹 Check if session exists
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Unauthorized - session expired' });
+    }
 
+    // 🔹 Fetch user info from DB
+    const user = await User.findById(req.session.userId).select('-password -resetPasswordToken -resetPasswordExpires');
+    if (!user) {
+      // Session exists but user no longer exists
+      req.session.destroy(); // clear session
+      return res.status(401).json({ message: 'Unauthorized - user not found' });
+    }
+
+    res.json({ user });
+  } catch (err) {
+    console.error('Profile fetch error:', err);
+    res.status(500).json({ message: 'Unable to fetch profile', error: err.message });
+  }
+});
 
 // ----- LOGOUT -----
 router.post('/logout', (req, res) => {
