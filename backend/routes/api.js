@@ -88,25 +88,20 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log('Login attempt:', email, password);
-
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
     const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
 
-    if (!user) {
-      console.log('User does not exist for email:', email);
-      return res.status(400).json({ message: 'Invalid username' });
-    }
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) return res.status(400).json({ message: 'Invalid email or password' });
 
-    console.log('User found. Stored hash:', user.password);
+    // 🔹 Create session
+    req.session.userId = user._id;
+    req.session.userRole = user.role;
+    req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours, resets on login
 
-    const ok = await bcrypt.compare(password, user.password);
-
-    console.log('Password match result:', ok);
-
-    if (!ok) return res.status(400).json({ message: 'Invalid password' });
-
+    // Update last login
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
     await user.save();
@@ -122,12 +117,12 @@ router.post('/login', async (req, res) => {
         lastLogin: previousLogin || new Date()
       }
     });
+
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Something went wrong during login', error: err.message });
   }
 });
-
 
 // ----- PROFILE (Protected) -----
 router.get('/profile', async (req, res) => {
