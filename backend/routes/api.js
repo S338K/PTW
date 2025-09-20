@@ -11,7 +11,6 @@ const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
 const nodemailer = require('nodemailer');
 require('dotenv').config();
-const crypto = require('crypto');
 
 
 // Mailgun client (HTTPS, works on Render free tier)
