@@ -24,11 +24,10 @@ body {
   /* <--- This centers it */
 }
 
-
 .profile-navbar button {
   background-color: #273172;
   color: #fff;
-  border: 2px solid #273172;
+  border: 2px solid #080435;
   border-radius: 6px;
   padding: 10px 18px;
   font-size: 15px;
@@ -39,7 +38,7 @@ body {
 
 .profile-navbar button:hover {
   background-color: goldenrod;
-  color: #273172;
+  color: #080435;
   border-radius: 25px;
 }
 
@@ -69,8 +68,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background-color: #d9f4f5;
+  background-color: #b3cfd0;
   border-radius: 10px;
+}
+
+fieldset {
+  border-color: #080435;
+  border-radius: 5px;
 }
 
 /* ===== Cards ===== */
@@ -80,7 +84,18 @@ body {
   padding: 20px;
   margin-bottom: 20px;
   background-color: #fff;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  opacity: 0;
+  transform: translateY(75px);
+  /* Start position */
+  transition: opacity 1s ease, transform 1s ease;
+  /* Smooth transition for opacity and position */
+}
+
+/* When the card comes into view */
+.card.visible {
+  opacity: 1;
+  transform: translateY(0);
+  /* Final position */
 }
 
 .card h3 {
@@ -88,18 +103,22 @@ body {
   font-weight: 700;
 }
 
-.card h4 {
-  color: #273172;
-  font-weight: 500;
-}
 
 /* Hover Effect */
 .card:hover {
   transition: all 0.3s ease;
   box-shadow: 0 10px 12px rgba(39, 49, 114, 0.2);
-  background-color: #f9f9f9;
+  background-color: #fffbfb;
   transform: scale(1.01);
   /* Slight zoom-in effect */
+}
+
+/* Scroll-in Animation */
+@keyframes scrollIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ===== Form Groups and Inputs ===== */
@@ -199,7 +218,7 @@ body {
 button[type="submit"] {
   background-color: #273172;
   color: #fff;
-  border: 2px solid #273172;
+  border: 2px solid #080435;
   padding: 12px 24px;
   font-size: 1rem;
   font-weight: 600;
@@ -210,9 +229,14 @@ button[type="submit"] {
 
 button[type="submit"]:hover {
   background-color: goldenrod;
-  color: #273172;
+  color: #080435;
   border-radius: 25px;
   transition: all 0.3s ease;
+}
+
+.card legend {
+  color: #080435;
+  font-weight: 400;
 }
 
 /*-----------File Upload*----------/
@@ -296,4 +320,22 @@ button[type="submit"]:hover {
 .input-error {
   border: 2px solid #080435;
   background: #a81616;
+}
+
+/* Initially hide the card sections */
+.card-section {
+  opacity: 0;
+  /* Start invisible */
+  transform: translateY(100px);
+  /* Start below the normal position */
+  transition: all 0.6s ease-out;
+  /* Smooth transition when visible */
+}
+
+/* When the card section becomes visible */
+.card-section.visible {
+  opacity: 1;
+  /* Fade in */
+  transform: translateY(0);
+  /* Move to normal position */
 }

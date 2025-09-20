@@ -20,53 +20,60 @@ body {
   --success-color: #28a745;
 }
 
-/* ===== App Title Banner ===== */
+/* ===== Page Header ===== */
 .page-header {
-  .page-header {
-    position: fixed;
-    /* Sticks to the top */
-    top: 0;
-    /* Center horizontally */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    color: #273172;
-    font-weight: 500;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    padding: 15px 25px;
-    max-width: 95%;
-    z-index: 1000;
-    /* Keep it above other elements */
-  }
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: lightgoldenrodyellow;
+  color: #040a37;
+  font-weight: 500;
+  text-align: center;
+  padding: 1px;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: auto;
 }
 
-/* ===== Form Container with 3D Effect ===== */
+/* ===== Form Container ===== */
 .form-container {
   width: 90%;
   background: #f9f9f9;
   padding: 30px;
   border-radius: 8px;
-  border: 2px solid var(--text-primary);
+  border: 2px solid #080435;
   margin: 0 auto;
-  box-shadow: 0 8px 8px rgba(39, 49, 114, 0.1);
+  box-shadow: 0 25px 25px;
 }
 
+/* Optional: Responsive Adjustments */
+@media (max-width: 768px) {
+  .form-container {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .page-header {
+    padding: 8px;
+  }
+}
+
+
+
 fieldset {
-  border: 1px solid var(--text-primary);
+  border: 0.1rem solid var(--text-primary);
   border-radius: 10px;
   padding: 20px;
   color: var(--text-primary);
 }
 
 legend {
-  font-size: 1.0em;
-  font-weight: regular;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
   padding: 0 10px;
-  color: var(--text-primary);
+  color: #080435;
 }
 
 .form-group {

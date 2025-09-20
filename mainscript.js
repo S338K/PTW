@@ -1,5 +1,53 @@
+document.addEventListener("DOMContentLoaded", function () {
+  // Function to handle the visibility trigger for cards
+  const revealCards = () => {
+    const cards = document.querySelectorAll('.card');
+
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+
+      // Check if the card is in the viewport
+      if (rect.top < window.innerHeight && rect.bottom >= 0) {
+        card.classList.add('visible');  // Add 'visible' class when in viewport
+      } else {
+        card.classList.remove('visible');  // Remove it if out of viewport
+      }
+    });
+  };
+
+  // Trigger on page load
+  revealCards();
+
+  // Trigger on scroll
+  window.addEventListener('scroll', revealCards);
+});
+
+
 document.addEventListener('DOMContentLoaded', function () {
+
   const API_BASE = 'https://ptw-yu8u.onrender.com';
+
+  // Add the 'in-view' class when the element comes into the viewport
+  function addInViewClassOnScroll() {
+    const elements = document.querySelectorAll('.card, .form-container, .form-group, .profile-navbar, .md-input');
+
+    elements.forEach((element) => {
+      const rect = element.getBoundingClientRect();
+      const isInView = rect.top >= 0 && rect.top <= window.innerHeight;
+
+      if (isInView && !element.classList.contains('in-view')) {
+        element.classList.add('in-view');
+      }
+    });
+  }
+
+  // Call the function on scroll and page load
+  window.addEventListener('scroll', addInViewClassOnScroll);
+  window.addEventListener('load', addInViewClassOnScroll);
+
+  // Run it immediately in case elements are already in view (on initial page load)
+  addInViewClassOnScroll();
+
 
   // =========================
   // Navbar buttons
@@ -521,4 +569,3 @@ if (submitBtn && form) {
     }
   });
 }
-

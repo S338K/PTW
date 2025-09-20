@@ -2,7 +2,7 @@
    1. Reset & Base Styles
 ---------------------------------------- */
 body {
-  background-color: lightgray;
+  background-color: #0a0637e1;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
@@ -36,23 +36,24 @@ body {
 .header-container {
   display: flex;
   flex-direction: column;
-  /* stack vertically */
   align-items: center;
-  /* center horizontally */
   justify-content: center;
-  /* center vertically if header has height */
   background: #fff;
-  padding: 1.2rem 1.5rem;
-  box-shadow: 0 3px 3px rgb(59, 4, 102);
+  padding: 1.rem 1.5rem;
+  box-shadow: 0 5px 5px #080435;
   margin-bottom: 1.2rem;
   font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  border-radius: 5px;
+  width: 100%;
+  margin: auto;
 }
 
 #dateTimeDisplay,
 #tempDisplay {
   text-align: center;
-  font-weight: regular;
+  font-weight: 600;
   margin: 4px 0;
+  color: #273172;
 }
 
 
@@ -69,25 +70,24 @@ body {
 }
 
 fieldset {
-  border: 2px solid var(--text-primary);
-  border-radius: 8px;
+  border: 2px solid #080435;
+  border-radius: 5px;
   padding: 20px;
-  color: var(--text-primary);
+  color: #080435;
 }
 
 legend {
+  text-align: center;
   font-size: 1.2em;
   font-weight: bold;
-  padding: 0 10px;
-  color: #273172;
+  color: #080435;
+
 }
 
 .form-group {
   margin-bottom: 30px;
-  /* extra space for floating error */
   width: 90%;
   position: relative;
-  /* for floating error positioning */
 }
 
 label {
@@ -221,7 +221,7 @@ input.valid {
   text-align: center;
   margin-bottom: auto;
   margin-top: auto;
-  color: #1E245E;
+  color: #fff;
 }
 
 /* ===== Responsive Add-on ===== */

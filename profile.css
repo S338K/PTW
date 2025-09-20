@@ -90,11 +90,11 @@ body {
   margin-top: 20px;
 }
 
-.card h3 {
+.card legend {
   margin-top: 0;
-  color: #273172;
-  border-bottom: 2px solid #273172;
-  padding-bottom: 8px;
+  color: #080435;
+  font-size: 18px;
+  font-weight: 600;
   margin-bottom: 15px;
 }
 
@@ -106,6 +106,14 @@ body {
   /* Slight zoom-in effect */
 }
 
+fieldset {
+  color: #080435;
+  border-radius: 5px;
+  border-width: 2px;
+  border-color: #080435;
+
+}
+
 /* ===== Table Styling for Submitted Permits ===== */
 #permitTable {
   width: 100%;
@@ -115,7 +123,7 @@ body {
 
 #permitTable th,
 #permitTable td {
-  border: 1px solid #ddd;
+  border: 2px solid #ddd;
   padding: 10px;
   text-align: center;
 }

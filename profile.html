@@ -5,15 +5,17 @@
   <title>User Profile</title>
   <link rel="stylesheet" href="profile.css">
 </head>
-<body style="margin:0; padding:0;">
 
+<body style="margin:0; padding:0;">
   <nav class="profile-navbar">
     <div class="nav-left">
       <div id="profileLastLogin">Last login:</div>
   </div>
+
     <div class="nav-center">
       <button class="profile-sbmtptw-btn" type="button" id="sbmtptw">Submit a PTW request</button>
     </div>
+
     <div class="nav-right">
       <button class="profile-signout-btn" type="button" id="logoutBtn">Sign Out</button>
     </div>
@@ -22,16 +24,21 @@
   <div class="form-container profile-form-container">
 
     <!-- Card 1: User Profile -->
-    <div class="card" id="userProfileCard">
-      <h3>User Profile Details</h3>
-      <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
-      <p><strong>Email:</strong> <span id="profileEmail"></span></p>
-      <p><strong>Company:</strong> <span id="profileCompany"></span></p>
-    </div>
+<!-- Card 1: User Profile -->
+<div class="card" id="userProfileCard">
+  <fieldset>
+    <legend>User Profile Details</legend>
+    <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
+    <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+    <p><strong>Company:</strong> <span id="profileCompany"></span></p>
+  </fieldset>
+</div>
+
 
     <!-- Card 2: Submitted Permit Details -->
     <div class="card" id="submittedPermitsCard">
-      <h3>Submitted Permit Details</h3>
+      <fieldset>
+      <legend>Submitted Permit Details</legend>
       <table id="permitTable">
         <thead>
           <tr>
@@ -46,8 +53,8 @@
           <!-- Dynamic rows will be injected via JS -->
         </tbody>
       </table>
+    </fieldset></fieldset>
     </div>
-
   </div>
 
   <script src="profile.js"></script>
