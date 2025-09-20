@@ -36,7 +36,7 @@ app.options('*', cors());
 // ===== SESSION SETUP =====
 app.use(session({
   name: 'sessionId', // cookie name
-  secret: process.env.SESSION_SECRET || 'defaultsecret', // strong secret recommended
+  secret: process.env.SESSION_SECRET || 'supersecret', // strong secret recommended
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI, dbName: 'PTW' }),
