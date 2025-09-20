@@ -1,5 +1,3 @@
-document.addEventListener("DOMContentLoaded", function () {
-
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
