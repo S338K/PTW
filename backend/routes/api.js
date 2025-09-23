@@ -149,12 +149,31 @@ router.get('/profile', async (req, res) => {
 
 // ----- LOGOUT -----
 router.post('/logout', (req, res) => {
-  res.json({ message: 'Logged out (no session system in place)' });
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ message: 'Logout failed' });
+    }
+
+    // Clear the cookie on the client
+    res.clearCookie('sessionId', {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true
+    });
+
+    res.json({ message: 'Logged out successfully' });
+  });
 });
 
 // ===== KEEP SESSION ALIVE =====
 router.get('/ping', (req, res) => {
-  res.json({ message: 'Ping acknowledged (no session system in place)' });
+  if (req.session && req.session.userId) {
+    // Optionally refresh expiry
+    req.session.touch();
+    return res.json({ message: 'Session is alive' });
+  }
+  res.status(401).json({ message: 'Session expired' });
 });
 
 // ===== WEATHER ROUTE =====
