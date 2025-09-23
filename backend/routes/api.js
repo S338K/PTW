@@ -101,14 +101,13 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // 🔹 Save the session BEFORE sending the response
+    // 🔹 Save session before sending response
     req.session.save(err => {
       if (err) {
         console.error('Session save error:', err);
         return res.status(500).json({ message: 'Failed to save session' });
       }
 
-      // Only send response once session is guaranteed saved
       res.json({
         message: 'Login successful',
         user: {
