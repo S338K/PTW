@@ -127,6 +127,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
+
 // ----- PROFILE (Protected) -----
 router.get('/profile', async (req, res) => {
   try {
@@ -134,7 +135,8 @@ router.get('/profile', async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized - session expired' });
     }
 
-    const user = await User.findById(req.session.userId).select('-password -resetPasswordToken -resetPasswordExpires');
+    const user = await User.findById(req.session.userId)
+      .select('-password -resetPasswordToken -resetPasswordExpires');
     if (!user) {
       req.session.destroy();
       return res.status(401).json({ message: 'Unauthorized - user not found' });
@@ -146,6 +148,7 @@ router.get('/profile', async (req, res) => {
     res.status(500).json({ message: 'Unable to fetch profile', error: err.message });
   }
 });
+
 
 // ----- LOGOUT -----
 router.post('/logout', (req, res) => {
@@ -159,7 +162,7 @@ router.post('/logout', (req, res) => {
     res.clearCookie('sessionId', {
       httpOnly: true,
       sameSite: 'none',
-      secure: true
+      secure: process.env.NODE_ENV === 'production' // ✅ secure only in prod
     });
 
     res.json({ message: 'Logged out successfully' });
