@@ -12,10 +12,18 @@ const crypto = require('crypto'); // added for secure token generation
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
+
 // ================= AUTH MIDDLEWARE =================
 function requireAuth(req, res, next) {
-  return res.status(401).json({ message: 'Unauthorized - no session system in place' });
+  if (req.session && req.session.user) {
+    // Session exists, user is authenticated
+    return next();
+  } else {
+    return res.status(401).json({ message: 'Unauthorized - please log in' });
+  }
 }
+
+module.exports = requireAuth;
 
 // ================= ROUTES =================
 
@@ -74,7 +82,9 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid email or password' });
@@ -85,22 +95,31 @@ router.post('/login', async (req, res) => {
     // 🔹 Create session
     req.session.userId = user._id;
     req.session.userRole = user.role;
-    req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours, resets on login
+    req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours
 
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
     await user.save();
 
-    res.json({
-      message: 'Login successful',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        company: user.company,
-        role: user.role,
-        lastLogin: previousLogin || new Date()
+    // 🔹 Save the session BEFORE sending the response
+    req.session.save(err => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ message: 'Failed to save session' });
       }
+
+      // Only send response once session is guaranteed saved
+      res.json({
+        message: 'Login successful',
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          company: user.company,
+          role: user.role,
+          lastLogin: previousLogin || new Date()
+        }
+      });
     });
 
   } catch (err) {
