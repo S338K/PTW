@@ -27,13 +27,29 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true // allow cookies
 }));
 
 // Handle preflight requests
 app.options('*', cors());
 
+// ===== Security & Cache Headers =====
+app.use((req, res, next) => {
+  // Prevent caching of sensitive responses
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+
+  next();
+});
+
 // ===== SESSION SETUP =====
+app.set('trust proxy', 1); // important when behind Render's proxy
+
 app.use(session({
   name: 'sessionId',
   secret: process.env.SESSION_SECRET || 'supersecret',
@@ -47,8 +63,8 @@ app.use(session({
   cookie: {
     maxAge: 2 * 60 * 60 * 1000, // 2 hours
     httpOnly: true,
-    sameSite: 'none', // 'none' for cross-site in production
-    secure: true,                    // true only on HTTPS
+    sameSite: 'none', // required for cross-site cookies
+    secure: true      // must be true on HTTPS (Render provides HTTPS)
   }
 }));
 
