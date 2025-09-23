@@ -15,7 +15,7 @@ require('dotenv').config();
 
 // ================= AUTH MIDDLEWARE =================
 function requireAuth(req, res, next) {
-  if (req.session && req.session.user) {
+  if (req.session && req.session.userId) {
     // Session exists, user is authenticated
     return next();
   } else {
