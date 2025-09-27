@@ -68,6 +68,21 @@ app.use(session({
   }
 }));
 
+// 🔎 Debug middleware: log session on every request
+app.use((req, res, next) => {
+  if (req.session) {
+    console.log('📦 Session check:', {
+      id: req.session.id,
+      userId: req.session.userId || null,
+      cookie: req.session.cookie
+    });
+  } else {
+    console.log('⚠️ No session object on request');
+  }
+  next();
+});
+
+
 // ===== ROUTES =====
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
