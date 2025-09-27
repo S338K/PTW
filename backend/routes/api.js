@@ -2,15 +2,14 @@
 const mongoose = require('mongoose');
 const multer = require('multer');
 const PermitModel = require('../models/permit'); // renamed to avoid conflicts
-const upload = multer({ dest: 'uploads/' });
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
-const nodemailer = require('nodemailer');
 require('dotenv').config();
+const upload = multer({ storage });
 
 
 // ================= AUTH MIDDLEWARE =================
@@ -150,7 +149,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
 // ----- PROFILE (Protected) -----
 router.get('/profile', async (req, res) => {
   try {
@@ -242,6 +240,7 @@ router.get('/weather', async (req, res) => {
 
 // ===== PERMITS ROUTES =====
 const Permit = require('../models/permit'); // your Permitdata model
+const requireAuth = require('../middleware/requireAuth');
 
 // Middleware: require login
 function requireAuth(req, res, next) {
@@ -274,18 +273,71 @@ router.get('/permit/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST create a new permit
-router.post('/permit', requireAuth, async (req, res) => {
+// ==========================
+// Multer memory storage
+// ==========================
+const storage = multer.memoryStorage();
+
+// ==========================
+// POST /api/permit
+// ==========================
+router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) => {
   try {
+    // Map uploaded files into schema format
+    const uploadedFiles = req.files.map(file => ({
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      data: file.buffer   // 🔹 store file binary directly in MongoDB
+    }));
+
+    // Build permit document
     const permit = new Permit({
-      user: req.user._id,   // 🔹 link to logged-in user
-      ...req.body
+      fullName: req.body.fullName,
+      lastName: req.body.lastName,
+      contactDetails: req.body.contactDetails,
+      altContactDetails: req.body.altContactDetails,
+      corpEmailId: req.body.corpEmailId,
+      terminal: req.body.terminal,
+      facility: req.body.facility,
+      specifyTerminal: req.body.specifyTerminal,
+      specifyFacility: req.body.specifyFacility,
+      workDescription: req.body.workDescription,
+      impact: req.body.impact,
+      equipmentTypeInput: req.body.equipmentTypeInput,
+      impactDetailsInput: req.body.impactDetailsInput,
+      ePermit: req.body.ePermit,
+      ePermitReason: req.body.ePermitReason,
+      fmmWorkorder: req.body.fmmWorkorder,
+      noFmmWorkorder: req.body.noFmmWorkorder,
+      hseRisk: req.body.hseRisk,
+      noHseRiskAssessmentReason: req.body.noHseRiskAssessmentReason,
+      opRisk: req.body.opRisk,
+      noOpsRiskAssessmentReason: req.body.noOpsRiskAssessmentReason,
+      startDateTime: req.body.startDateTime,
+      endDateTime: req.body.endDateTime,
+      signName: req.body.signName,
+      signDate: req.body.signDate,
+      signTime: req.body.signTime,
+      designation: req.body.designation,
+      files: uploadedFiles,
+      // 🔹 Link to logged-in user from session
+      requester: req.session.userId,
+      role: req.session.userRole
     });
+
     await permit.save();
-    res.status(201).json({ message: 'Permit created successfully', permit });
+
+    res.status(201).json({
+      message: 'Permit saved successfully',
+      permit
+    });
   } catch (err) {
-    console.error('Error creating permit:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Permit save error:', err);
+    res.status(500).json({
+      message: 'Failed to save permit',
+      error: err.message
+    });
   }
 });
 

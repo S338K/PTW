@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
 
+// 🔹 Subdocument schema for files stored in MongoDB
 const fileSchema = new mongoose.Schema({
-  originalName: String,
-  path: String,
-  size: Number
+  originalName: { type: String, required: true },
+  mimeType: { type: String, required: true },
+  size: { type: Number, required: true },
+  data: { type: Buffer, required: true } // binary file data
 });
 
+// 🔹 Main permit schema
 const permitSchema = new mongoose.Schema({
   fullName: String,
   lastName: String,
@@ -34,8 +37,9 @@ const permitSchema = new mongoose.Schema({
   signDate: String,
   signTime: String,
   designation: String,
-  files: [fileSchema]
+  files: [fileSchema], // 🔹 embedded file documents
+  requester: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // link to logged-in user
+  role: String
 }, { timestamps: true });
 
-// Explicitly name the collection "permitdatas"
-module.exports = mongoose.model('Permitdata', permitSchema, 'permitdatas');
+module.exports = mongoose.model('Permit', permitSchema);
