@@ -583,6 +583,7 @@ const submitBtn = document.getElementById('submitBtn');
 if (submitBtn && form) {
   submitBtn.addEventListener('click', async function (e) {
     e.preventDefault();
+    console.log('Submit button clicked');
 
     const ok =
       validateRequesterDetails() &&
