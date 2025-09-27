@@ -105,10 +105,6 @@ document.addEventListener('DOMContentLoaded', function () {
         isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
         showError(inputEl, isValid ? '' : 'Passwords do not match 🔑.');
         break;
-      case 'termsCheckbox':
-        isValid = validateTerms(inputEl.checked);
-        showError(inputEl, isValid ? '' : 'Please accept the terms and conditions 📝.');
-        break;
       case 'buildingNo':
         isValid = validateBuildingNo(inputEl.value);
         showError(inputEl, isValid ? '' : 'Building No. should be 1–2 digits.');
@@ -136,6 +132,10 @@ document.addEventListener('DOMContentLoaded', function () {
       case 'poBox':
         isValid = validatePoBox(inputEl.value);
         showError(inputEl, isValid ? '' : 'P.O. Box should be 1–6 digits.');
+        break;
+      case 'termsCheckbox':
+        isValid = validateTerms(inputEl.checked);
+        showError(inputEl, isValid ? '' : 'Please accept the terms and conditions 📝.');
         break;
     }
     return isValid;
