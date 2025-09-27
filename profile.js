@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
   /* ===== SHOW USERNAME AND LAST LOGIN DETAILS ===== */
+  // Helper to format last login nicely
   function formatLastLogin(dateString) {
     if (!dateString) return 'First login';
 
@@ -30,17 +31,25 @@ document.addEventListener('DOMContentLoaded', async function () {
       const data = await res.json();
       const user = data.user;
 
+      // Use fullName if available, fallback to username/email
       const fullName = user.fullName || user.username || user.email;
+
+      // Format last login
       const lastLoginText = formatLastLogin(user.lastLogin);
 
+      // Update navbar
       document.getElementById('profileInfo').textContent =
         `Welcome : ${fullName} | Last Login : ${lastLoginText}`;
 
     } catch (err) {
       console.error('Profile load error:', err);
-      window.location.href = 'index.html';
+      window.location.href = 'index.html'; // redirect if unauthorized
     }
   }
+
+  // Run on page load
+  loadProfile();
+
 
 
   /* ===== SESSION CHECK ===== */

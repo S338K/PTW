@@ -108,7 +108,6 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // 🔹 Save session before sending response
     req.session.save(err => {
       if (err) {
         console.error('Session save error:', err);
@@ -125,10 +124,11 @@ router.post('/login', async (req, res) => {
           email: user.email,
           company: user.company,
           role: user.role,
-          lastLogin: previousLogin || new Date()
+          lastLogin: previousLogin // ✅ return old value only
         }
       });
     });
+
 
   } catch (err) {
     console.error('Login error:', err);
