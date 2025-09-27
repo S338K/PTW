@@ -97,6 +97,13 @@ router.post('/login', async (req, res) => {
     req.session.userRole = user.role;
     req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours
 
+    // Log the session object and ID
+    console.log('🔑 New session created:', {
+      id: req.session.id,
+      userId: req.session.userId,
+      cookie: req.session.cookie
+    });
+
     const previousLogin = user.lastLogin;
     user.lastLogin = new Date();
     await user.save();
@@ -107,6 +114,8 @@ router.post('/login', async (req, res) => {
         console.error('Session save error:', err);
         return res.status(500).json({ message: 'Failed to save session' });
       }
+
+      console.log('✅ Session saved successfully:', req.session.id);
 
       res.json({
         message: 'Login successful',
