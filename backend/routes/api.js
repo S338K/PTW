@@ -241,7 +241,6 @@ router.get('/weather', async (req, res) => {
 });
 
 // ===== PERMITS ROUTES =====
-const express = require('express');
 const Permit = require('../models/permit'); // your Permitdata model
 
 // Middleware: require login
