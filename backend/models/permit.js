@@ -12,13 +12,6 @@ const permitSchema = new mongoose.Schema({
   contactDetails: String,
   altContactDetails: String,
   corpEmailId: String,
-  buildingNo: String,
-  floorNo: String,
-  streetNo: String,
-  zone: String,
-  city: String,
-  country: String,
-  poBox: String,
   terminal: String,
   facility: String,
   specifyTerminal: String,
@@ -44,4 +37,5 @@ const permitSchema = new mongoose.Schema({
   files: [fileSchema]
 }, { timestamps: true });
 
-module.exports = mongoose.model('Permitdata', permitSchema);
+// Explicitly name the collection "permitdatas"
+module.exports = mongoose.model('Permitdata', permitSchema, 'permitdatas');

@@ -241,10 +241,71 @@ router.get('/weather', async (req, res) => {
 });
 
 // ===== PERMITS ROUTES =====
-router.get('/permits', async (req, res) => res.status(401).json({ message: 'Unauthorized - no session system in place' }));
-router.post('/permits', async (req, res) => res.status(401).json({ message: 'Unauthorized - no session system in place' }));
-router.patch('/permits/:id/status', async (req, res) => res.status(401).json({ message: 'Unauthorized - no session system in place' }));
-router.delete('/permits/:id', async (req, res) => res.status(401).json({ message: 'Unauthorized - no session system in place' }));
+const express = require('express');
+const Permit = require('../models/permit'); // your Permitdata model
+
+// Middleware: require login
+function requireAuth(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized - please log in' });
+  }
+  next();
+}
+
+// GET all permits for the logged-in user
+router.get('/permit', requireAuth, async (req, res) => {
+  try {
+    const permits = await Permit.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(permits);
+  } catch (err) {
+    console.error('Error fetching permits:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET a single permit by ID
+router.get('/permit/:id', requireAuth, async (req, res) => {
+  try {
+    const permit = await Permit.findOne({ _id: req.params.id, user: req.user._id });
+    if (!permit) return res.status(404).json({ message: 'Permit not found' });
+    res.json(permit);
+  } catch (err) {
+    console.error('Error fetching permit:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST create a new permit
+router.post('/permit', requireAuth, async (req, res) => {
+  try {
+    const permit = new Permit({
+      user: req.user._id,   // 🔹 link to logged-in user
+      ...req.body
+    });
+    await permit.save();
+    res.status(201).json({ message: 'Permit created successfully', permit });
+  } catch (err) {
+    console.error('Error creating permit:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PATCH update permit status
+router.patch('/permit/:id/status', requireAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const permit = await Permit.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id }, // only update if owned by user
+      { status },
+      { new: true }
+    );
+    if (!permit) return res.status(404).json({ message: 'Permit not found' });
+    res.json({ message: 'Status updated', permit });
+  } catch (err) {
+    console.error('Error updating permit:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // ===== REQUEST PASSWORD RESET =====
 router.post('/forgot-password', async (req, res, next) => {

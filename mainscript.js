@@ -48,18 +48,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetIdleTimer));
   resetIdleTimer();
 
-  /* ===== LOGOUT BUTTON ===== */
-  const logoutButton = document.getElementById('logoutBtn');
-  if (logoutButton) {
-    logoutButton.addEventListener('click', async function () {
-      await fetch(`${API_BASE}/api/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      window.location.href = 'index.html';
-    });
-  }
-
 
   // Function to handle the visibility trigger for cards
   const revealCards = () => {
@@ -121,12 +109,55 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ===== Logout and redirect to index.html =====
+  /* ===== LOGOUT BUTTON ===== */
   const logoutButton = document.getElementById('logoutBtn');
   if (logoutButton) {
-    logoutButton.addEventListener('click', function () {
+    logoutButton.addEventListener('click', async function () {
+      await fetch(`${API_BASE}/api/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
       window.location.href = 'index.html';
     });
+  }
+
+  // =========================
+  // Utilities for validation
+  // =========================
+  function showErrorMessage(inputElement, errorMessage) {
+    if (!inputElement) return;
+    let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
+    let error = container.querySelector('.error-message');
+    if (!error) {
+      error = document.createElement('span');
+      error.className = 'error-message';
+      error.style.color = 'darkred';
+      error.style.fontSize = '0.9em';
+      error.style.display = 'block';
+      error.style.marginTop = '4px';
+      container.appendChild(error);
+    }
+    error.textContent = errorMessage;
+    inputElement.style.border = '2px solid red';
+  }
+
+  function hideErrorMessage(inputElement) {
+    if (!inputElement) return;
+    let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
+    const error = container.querySelector('.error-message');
+    if (error) error.remove();
+    inputElement.style.border = '';
+  }
+
+  function validateField(inputElement, regex, errorMessage) {
+    if (!inputElement) return true;
+    const v = (inputElement.value || '').trim();
+    if (!regex.test(v)) {
+      showErrorMessage(inputElement, errorMessage);
+      return false;
+    }
+    hideErrorMessage(inputElement);
+    return true;
   }
 
   // =========================
@@ -176,14 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'lastName', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Last Name must be alphabetic and under 25 characters.' },
     { id: 'contactdetails', regex: /^\+974\d{8}$/, msg: 'Mobile must be +974 followed by 8 digits.' },
     { id: 'altcontactdetails', regex: /^(\+974\d{8})?$/, msg: 'Alternate mobile must be +974 followed by 8 digits or left blank.' },
-    { id: 'corpemailid', regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, msg: 'Enter a valid corporate email.' },
-    { id: 'buildingNo', regex: /^\d{1,2}$/, msg: 'Building No. should be 1–2 digits.' },
-    { id: 'floorNo', regex: /^\d{1,2}$/, msg: 'Floor No. should be 1–2 digits.' },
-    { id: 'streetNo', regex: /^\d{1,3}$/, msg: 'Street No. should be 1–3 digits.' },
-    { id: 'zone', regex: /^\d{1,2}$/, msg: 'Zone should be 1–2 digits.' },
-    { id: 'city', regex: /^[A-Za-z\s]+$/, msg: 'City should be alphabetic.' },
-    { id: 'country', regex: /^[A-Za-z\s]+$/, msg: 'Country should be alphabetic.' },
-    { id: 'poBox', regex: /^\d{1,6}$/, msg: 'P.O. Box should be 1–6 digits.' }
+    { id: 'corpemailid', regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, msg: 'Enter a valid corporate email.' }
   ];
 
   validationFields.forEach(({ id, regex, msg }) => {
@@ -197,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return el ? validateField(el, regex, msg) : true;
     });
   }
+
 
   // =========================
   // Facility list update
