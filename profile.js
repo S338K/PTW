@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
   /* ===== SHOW USERNAME AND LAST LOGIN DETAILS ===== */
+  // Helper to format last login nicely
   function formatLastLogin(dateString) {
     if (!dateString) return 'First login';
 
@@ -15,23 +16,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     yesterday.setDate(now.getDate() - 1);
     const isYesterday = date.toDateString() === yesterday.toDateString();
 
-    // Format with full month and 24-hour time
-    const options = {
-      year: 'numeric',
-      month: 'long',   // full month name
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false    // 24-hour format
-    };
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    if (isToday) {
-      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
-    }
-    if (isYesterday) {
-      return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
-    }
-    return date.toLocaleString(undefined, options);
+    if (isToday) return `Today at ${time}`;
+    if (isYesterday) return `Yesterday at ${time}`;
+    return date.toLocaleString(); // fallback for older dates
   }
 
   async function loadProfile() {
