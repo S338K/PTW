@@ -21,7 +21,6 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ message: 'Unauthorized - please log in' });
   }
 }
-
 module.exports = requireAuth;
 
 // ================= ROUTES =================
