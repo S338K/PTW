@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const user = await checkSession();
   if (user) {
-    const welcomeName = document.getElementById('userFullName');
-    if (welcomeName) {
-      welcomeName.textContent = 'Welcome : ${user.username}'
+    const fullName = document.getElementById('userFullName');
+    if (fullName) {
+      fullName.textContent = user.username;
     }
   }
 
