@@ -8,7 +8,6 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
-const requireAuth = require('../middleware/requireAuth');
 require('dotenv').config();
 
 
