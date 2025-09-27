@@ -3,6 +3,25 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
   /* ===== SHOW USERNAME AND LAST LOGIN DETAILS ===== */
+  function formatLastLogin(dateString) {
+    if (!dateString) return 'First login';
+
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (isToday) return `Today at ${time}`;
+    if (isYesterday) return `Yesterday at ${time}`;
+    return date.toLocaleString(); // fallback for older dates
+  }
+
   async function loadProfile() {
     try {
       const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
@@ -11,23 +30,17 @@ document.addEventListener('DOMContentLoaded', async function () {
       const data = await res.json();
       const user = data.user;
 
-      // Format last login date/time
-      let lastLoginText = 'First login';
-      if (user.lastLogin) {
-        const formatted = new Date(user.lastLogin).toLocaleString();
-        lastLoginText = `Last login: ${formatted}`;
-      }
+      const fullName = user.fullName || user.username || user.email;
+      const lastLoginText = formatLastLogin(user.lastLogin);
 
-      // Update navbar element
-      document.getElementById('profileLastLogin').textContent = lastLoginText;
+      document.getElementById('profileInfo').textContent =
+        `Welcome : ${fullName} | Last Login : ${lastLoginText}`;
 
     } catch (err) {
       console.error('Profile load error:', err);
-      window.location.href = 'index.html'; // redirect to login if unauthorized
+      window.location.href = 'index.html';
     }
   }
-
-  loadProfile();
 
 
   /* ===== SESSION CHECK ===== */
