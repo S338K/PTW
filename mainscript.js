@@ -264,7 +264,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     });
   }
-
   // =========================
   // Impact on Operation fix (updated for Level of Impact + Equipment)
   // =========================
@@ -404,110 +403,104 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   // =========================
-  // File upload validation
+  // File upload module (unified)
   // =========================
-  (function setupFileUploadValidation() {
-    const fileInput = document.getElementById('fileUpload');
-    const typeMsg = document.getElementById('fileTypeMessage');
-    const list = document.getElementById('uploadedFiles');
-    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg'];
-    const maxTotalSize = 3 * 1024 * 1024; // 3MB total
+  const fileInput = document.getElementById('fileUpload');
+  const fileListEl = document.getElementById('uploadedFiles');
+  const typeMsg = document.getElementById('fileTypeMessage');
+  let selectedFiles = [];
 
-    // Store all selected files across multiple selections
-    let selectedFiles = [];
+  const allowedExt = ['.jpg', '.jpeg', '.pdf'];
+  const MAX_TOTAL = 3 * 1024 * 1024; // 3 MB
 
-    if (!fileInput) return;
-
-    function showErrorMessage(message) {
-      if (typeMsg) typeMsg.textContent = message;
-      // Optional: add error styling to icon label
-      const label = document.querySelector(`label[for="${fileInput.id}"]`);
-      if (label) label.classList.add('upload-error');
-    }
-
-    function hideErrorMessage() {
-      if (typeMsg) typeMsg.textContent = '';
-      const label = document.querySelector(`label[for="${fileInput.id}"]`);
-      if (label) label.classList.remove('upload-error');
-    }
-
-    function validateFiles(newFiles) {
-      let totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
-
-      for (const file of newFiles) {
-        // Check duplicates (by name + size)
-        const isDuplicate = selectedFiles.some(
-          f => f.name === file.name && f.size === file.size
-        );
-        if (isDuplicate) {
-          showErrorMessage(`Duplicate file skipped: ${file.name}`);
-          return false;
-        }
-
-        // Check type
-        if (!allowed.includes(file.type)) {
-          showErrorMessage('Only PDF, JPG and JPEG files are allowed.');
-          return false;
-        }
-
-        // Check total size limit
-        if (totalSize + file.size > maxTotalSize) {
-          showErrorMessage('Total file size must not exceed 3 MB.');
-          return false;
-        }
-
-        totalSize += file.size;
-      }
-
-      hideErrorMessage();
-      return true;
-    }
-
-    function renderFileList() {
-      fileListEl.innerHTML = '';
-
-      selectedFiles.forEach((file, index) => {
-        const li = document.createElement('li');
-        li.textContent = file.name;
-
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = '❌';
-        removeBtn.classList.add('delete-file-btn');
-        removeBtn.addEventListener('click', () => {
-          selectedFiles.splice(index, 1);
-          renderFileList();
-        });
-
-        li.appendChild(removeBtn);
-        fileListEl.appendChild(li);
-      });
-    }
-
-
-    fileInput.addEventListener('change', (e) => {
-      const newFiles = Array.from(fileInput.files);
-
-      if (validateFiles(newFiles)) {
-        // Add new files to the list
-        selectedFiles = [...selectedFiles, ...newFiles];
-        renderList();
-      }
-
-      // Reset input so the same file can be re-selected if removed
-      fileInput.value = '';
-    });
-
-    // Expose for form-wide validation
-    window.__validateFileUpload = function () {
-      return selectedFiles.length > 0 && typeMsg.textContent === '';
-    };
-  })();
-
-  function validateFileUpload() {
-    return selectedFiles.length > 0 && document.getElementById('fileTypeMessage').textContent === '';
+  function setUploadError(message) {
+    if (typeMsg) typeMsg.textContent = message;
+    const label = document.querySelector(`label[for="${fileInput?.id}"]`);
+    if (label) label.classList.add('upload-error');
+  }
+  function clearUploadError() {
+    if (typeMsg) typeMsg.textContent = '';
+    const label = document.querySelector(`label[for="${fileInput?.id}"]`);
+    if (label) label.classList.remove('upload-error');
   }
 
+  function formatSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(2)} MB`;
+  }
 
+  function renderFileList() {
+    fileListEl.innerHTML = '';
+    selectedFiles.forEach((file, index) => {
+      const li = document.createElement('li');
+
+      const info = document.createElement('span');
+      info.textContent = `${file.name} (${formatSize(file.size)})`;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '❌';
+      removeBtn.classList.add('delete-file-btn');
+      removeBtn.addEventListener('click', () => {
+        selectedFiles.splice(index, 1);
+        renderFileList();
+        fileInput.value = ''; // allow re‑selecting same file
+        if (selectedFiles.length === 0) clearUploadError();
+      });
+
+      li.appendChild(info);
+      li.appendChild(removeBtn);
+      fileListEl.appendChild(li);
+    });
+  }
+
+  function handleNewSelection(newFiles) {
+    let total = selectedFiles.reduce((s, f) => s + f.size, 0);
+
+    for (const file of newFiles) {
+      const nameLower = file.name.toLowerCase();
+
+      // Extension check
+      const isAllowed = allowedExt.some(ext => nameLower.endsWith(ext));
+      if (!isAllowed) {
+        setUploadError('Only .jpg, .jpeg, and .pdf files are allowed.');
+        continue;
+      }
+
+      // Duplicate name check
+      const isDuplicate = selectedFiles.some(f => f.name.toLowerCase() === nameLower);
+      if (isDuplicate) {
+        setUploadError(`Duplicate file skipped: ${file.name}`);
+        continue;
+      }
+
+      // Total size check
+      if (total + file.size > MAX_TOTAL) {
+        setUploadError('Total file size must not exceed 3 MB.');
+        continue;
+      }
+
+      selectedFiles.push(file);
+      total += file.size;
+      clearUploadError();
+    }
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const newFiles = Array.from(e.target.files || []);
+      if (newFiles.length === 0) return;
+      handleNewSelection(newFiles);
+      renderFileList();
+      fileInput.value = ''; // reset so same file triggers change
+    });
+  }
+
+  function validateFileUpload() {
+    return selectedFiles.length > 0 && (!typeMsg || typeMsg.textContent === '');
+  }
   // =========================
   // Signature defaults + auto-fill from full name
   // =========================
@@ -568,70 +561,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     return ok;
   }
 
-  //============================================
-  // File Selection + Delete + Form Submission
-  //============================================
-
-  const form = document.getElementById('permitForm');
-  const submitBtn = document.getElementById('submitBtn');
-  const fileInput = document.getElementById('fileUpload');
-  const fileListEl = document.getElementById('uploadedFiles');
-
-  let selectedFiles = [];
-
-  // ==========================
-  // File selection + delete
-  // ==========================
-  fileInput.addEventListener('change', (e) => {
-    const newFiles = Array.from(e.target.files);
-    let totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
-
-    newFiles.forEach(file => {
-      const isDuplicate = selectedFiles.some(f => f.name === file.name && f.size === file.size);
-      if (isDuplicate) {
-        showErrorMessage(`Duplicate skipped: ${file.name}`);
-        return;
-      }
-      if (!['application/pdf', 'image/jpeg', 'image/jpg'].includes(file.type)) {
-        showErrorMessage('Only PDF, JPG and JPEG files are allowed.');
-        return;
-      }
-      if (totalSize + file.size > 3 * 1024 * 1024) {
-        showErrorMessage('Total file size must not exceed 3 MB.');
-        return;
-      }
-
-      totalSize += file.size;
-      selectedFiles.push(file);
-    });
-
-    renderFileList();
-    fileInput.value = ''; // reset so same file can be re-added
-  });
-
-  function renderFileList() {
-    fileListEl.innerHTML = '';
-
-    selectedFiles.forEach((file, index) => {
-      const li = document.createElement('li');
-      li.textContent = file.name;
-
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = '❌';
-      removeBtn.classList.add('delete-file-btn');
-      removeBtn.addEventListener('click', () => {
-        selectedFiles.splice(index, 1);
-        renderFileList();
-      });
-
-      li.appendChild(removeBtn);
-      fileListEl.appendChild(li);
-    });
-  }
-
   // ==========================
   // Form submission
   // ==========================
+  const form = document.getElementById('permitForm');
   if (form) {
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -644,89 +577,81 @@ document.addEventListener('DOMContentLoaded', async function () {
         validateSignature() &&
         validateConditions();
 
-      if (ok) {
-        const formData = new FormData(form);
-
-        // Remove auto-added files from hidden input
-        formData.delete('files');
-
-        // Append only the files still in our array
-        selectedFiles.forEach(file => {
-          formData.append('files', file);
-        });
-
-
-        // Remove auto-added files from hidden input
-        formData.delete('files');
-
-        // Append only the files still in our array
-        selectedFiles.forEach(file => {
-          formData.append('files', file);
-        });
-
-        try {
-          const res = await fetch(`${API_BASE}/api/permit`, {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-          });
-
-          if (res.ok) {
-            alert('Form submitted successfully!');
-            form.reset();
-            selectedFiles = [];
-            renderFileList();
-
-            // Reset sign date/time
-            const now = new Date();
-            const signDate = document.getElementById('signDate');
-            const signTime = document.getElementById('signTime');
-            if (signDate) {
-              const y = now.getFullYear();
-              const m = String(now.getMonth() + 1).padStart(2, '0');
-              const d = String(now.getDate()).padStart(2, '0');
-              signDate.value = `${y}-${m}-${d}`;
-            }
-            if (signTime) {
-              const hh = String(now.getHours()).padStart(2, '0');
-              const mm = String(now.getMinutes()).padStart(2, '0');
-              signTime.value = `${hh}:${mm}`;
-            }
-
-            if (fullNameInput && signNameInput) {
-              signNameInput.value = fullNameInput.value;
-            }
-
-            // Reset UI sections
-            const fileMsg = document.getElementById('fileTypeMessage');
-            if (fileMsg) fileMsg.textContent = '';
-
-            if (facilityContainer) facilityContainer.classList.add('hidden');
-            if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
-            if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
-            if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
-
-            const equipmentTypeSection = document.getElementById('equipmentType');
-            const impactDetailsSection = document.getElementById('impactDetails');
-            const levelImpactSection = document.getElementById('levelOfImpactContainer');
-
-            if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
-            if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
-            if (levelImpactSection) levelImpactSection.classList.add('hidden');
-
-            document.querySelectorAll('.error-message').forEach(n => n.remove());
-            document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
-          } else {
-            const err = await res.json();
-            alert('Error: ' + (err.message || 'Unable to submit form'));
-          }
-        } catch (error) {
-          console.error('Submit error:', error);
-          alert('Network or server error while submitting form.');
-        }
-      } else {
+      if (!ok) {
         alert('Please review highlighted fields and complete all required details.');
+        return;
+      }
+
+      const formData = new FormData(form);
+
+      // Remove auto-added files from hidden input
+      formData.delete('files');
+
+      // Append only the files still in our array (from unified module in part 2)
+      selectedFiles.forEach(file => {
+        formData.append('files', file);
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/permit`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          alert('Form submitted successfully!');
+          form.reset();
+          selectedFiles = [];
+          renderFileList();
+
+          // Reset sign date/time
+          const now = new Date();
+          const signDate = document.getElementById('signDate');
+          const signTime = document.getElementById('signTime');
+          if (signDate) {
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            signDate.value = `${y}-${m}-${d}`;
+          }
+          if (signTime) {
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            signTime.value = `${hh}:${mm}`;
+          }
+
+          if (fullNameInput && signNameInput) {
+            signNameInput.value = fullNameInput.value;
+          }
+
+          // Reset UI sections
+          const fileMsg = document.getElementById('fileTypeMessage');
+          if (fileMsg) fileMsg.textContent = '';
+
+          if (facilityContainer) facilityContainer.classList.add('hidden');
+          if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
+          if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
+          if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
+
+          const equipmentTypeSection = document.getElementById('equipmentType');
+          const impactDetailsSection = document.getElementById('impactDetails');
+          const levelImpactSection = document.getElementById('levelOfImpactContainer');
+
+          if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
+          if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
+          if (levelImpactSection) levelImpactSection.classList.add('hidden');
+
+          document.querySelectorAll('.error-message').forEach(n => n.remove());
+          document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.message || 'Unable to submit form'));
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        alert('Network or server error while submitting form.');
       }
     });
   }
-});
+})
