@@ -102,7 +102,7 @@ input[type="password"] {
   border: 2px solid var(--input-border);
   border-radius: 25px;
   font-size: 15px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 input[type="email"]:focus,
@@ -120,7 +120,7 @@ input[type="password"]:focus {
   bottom: -18px;
   color: var(--error-color);
   font-weight: 500;
-  font-size: 0.8em;
+  font-size: 0.9em;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -240,4 +240,49 @@ input.valid {
     padding: 12px;
     font-size: 14px;
   }
+}
+
+/* ----------------------------------------
+   Floating Labels
+---------------------------------------- */
+.floating-label {
+  position: relative;
+  margin-bottom: 30px;
+  width: 90%;
+}
+
+.floating-label input {
+  background: transparent;
+  /* keep your existing background */
+  width: 100%;
+  padding: 15px;
+  border: 2px solid var(--input-border);
+  border-radius: 25px;
+  /* preserve rounded corners */
+  font-size: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-label label {
+  position: absolute;
+  top: 50%;
+  left: 18px;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: 0.3s ease all;
+  /* matches form background */
+  padding: 0 6px;
+  border-radius: 2px;
+}
+
+/* Float label when input is focused or has value */
+.floating-label input:focus+label,
+.floating-label input:not(:placeholder-shown)+label {
+  top: -10px;
+  left: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #080435;
 }

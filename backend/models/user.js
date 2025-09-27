@@ -36,15 +36,27 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordExpires: {
     type: Date,
-    index: true // optional index for faster lookups
+    index: true
+  },
+
+  // 🔹 New Office Address subdocument
+  officeAddress: {
+    buildingNo: { type: String, trim: true },
+    floorNo: { type: String, trim: true },
+    streetNo: { type: String, trim: true },
+    zone: { type: String, trim: true },
+    city: { type: String, trim: true },
+    country: { type: String, trim: true },
+    poBox: { type: String, trim: true }
   }
+
 }, { timestamps: true });
 
 // 🔹 Pre-save hook to hash password if modified or new
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next(); // only hash if password changed
+  if (!this.isModified('password')) return next();
   try {
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (err) {

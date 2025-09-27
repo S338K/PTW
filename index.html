@@ -25,42 +25,44 @@
       <fieldset>
         <legend>Login</legend>
         <form id="loginForm" method="POST" action="" novalidate>
-          <div class="form-group">
+          
+          <!-- Email -->
+          <div class="form-group floating-label">
+            <input type="email" id="email" name="email" required placeholder=" " />
             <label for="email">Email id</label>
-            <input type="email" id="email" name="email" required />
             <span class="error-message" aria-live="polite"></span>
           </div>
-          <div class="form-group">
+
+          <!-- Password -->
+          <div class="form-group floating-label">
+            <input type="password" id="password" name="password" required placeholder=" " />
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required />
             <span class="error-message" aria-live="polite"></span>
           </div>
+
           <button id="loginBtn" type="submit">Login</button>
         </form>
-        
 
-<!----SIgnup and Forgot Password-->
+        <!-- Signup and Forgot Password -->
+        <div class="login-signup-container">
+          <div class="forgot-password-link">
+            <p>
+              Forgot Password?
+              <a href="#" id="forgotPasswordLink">Click here to reset</a>
+            </p>
+          </div>
 
-<div class="login-signup-container">
-  <div class="forgot-password-link">
-    <p>
-      Forgot Password?
-      <a href="#" id="forgotPasswordLink">Click here to reset</a>
-    </p>
-  </div>
-
-  <!-- Sign Up link (right) -->
-  <div class="sign-up-link">
-    <p>
-      Don't have an account? 
-      <a href= "signup.html">Sign up here</a>
-    </p>
-  </div>
-</div>
-
+          <div class="sign-up-link">
+            <p>
+              Don't have an account? 
+              <a href="signup.html">Sign up here</a>
+            </p>
+          </div>
+        </div>
       </fieldset>
     </div>
   </main>
+
   <script src="index.js"></script>
   <script src="forgot-password.js"></script>
 </body>

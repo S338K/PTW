@@ -59,6 +59,17 @@ body {
   }
 }
 
+/* Optional: Responsive Adjustments */
+@media (max-width: 480px) {
+  .form-container {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .page-header {
+    padding: 8px;
+  }
+}
 
 
 fieldset {
@@ -74,6 +85,26 @@ legend {
   font-weight: 600;
   padding: 0 10px;
   color: #080435;
+}
+
+.card legend {
+  text-align: left;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 10px;
+  color: #080435;
+}
+
+.card fieldset {
+  width: 90%;
+  border-radius: 15px;
+}
+
+#officeAddressSection {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px 20px;
+  width: 100%;
 }
 
 .form-group {
@@ -103,6 +134,13 @@ input[type="password"] {
 input:focus {
   border-color: var(--input-focus-border);
   outline: none;
+}
+
+/* ===== Address Grid ===== */
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 15px 20px;
 }
 
 /* ===== Terms & Conditions ===== */
@@ -215,4 +253,54 @@ input.valid {
   left: 25px;
   white-space: normal;
   max-width: calc(100% -25px);
+}
+
+/* ===== Floating Labels with Blue Border Style ===== */
+.floating-label {
+  position: relative;
+  margin-bottom: 30px;
+  width: 90%;
+}
+
+.floating-label input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid var(--input-border);
+  border-radius: 25px;
+  /* keep your rounded corners */
+  font-size: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Blue border when focused */
+.floating-label input:focus {
+  border-color: #0d122e;
+  /* DodgerBlue */
+  box-shadow: 0 0 5px rgb(5, 27, 50);
+  outline: none;
+}
+
+.floating-label label {
+  position: absolute;
+  top: 50%;
+  left: 18px;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 15px;
+  pointer-events: none;
+  transition: 0.3s ease all;
+  /* matches form background */
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
+/* Float label on focus or when input has value */
+.floating-label input:focus+label,
+.floating-label input:not(:placeholder-shown)+label {
+  top: -10px;
+  left: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0d122e;
+  /* match the blue border */
 }

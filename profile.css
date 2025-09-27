@@ -175,3 +175,27 @@ fieldset {
     margin: 5px 0;
   }
 }
+
+/* Optional: Responsive Adjustments */
+@media (max-width: 768px) {
+  .form-container {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .page-header {
+    padding: 8px;
+  }
+}
+
+/* Optional: Responsive Adjustments */
+@media (max-width: 480px) {
+  .form-container {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .page-header {
+    padding: 8px;
+  }
+}

@@ -30,7 +30,20 @@ module.exports = requireAuth;
 // ----- REGISTER -----
 router.post('/register', async (req, res) => {
   try {
-    const { username, company, email, password, role } = req.body;
+    const {
+      username,
+      company,
+      email,
+      password,
+      role,
+      buildingNo,
+      floorNo,
+      streetNo,
+      zone,
+      city,
+      country,
+      poBox
+    } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -39,7 +52,8 @@ router.post('/register', async (req, res) => {
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
-        message: 'Password must be at least 8 characters long and include one letter, number, and special character.'
+        message:
+          'Password must be at least 8 characters long and include one letter, number, and special character.'
       });
     }
 
@@ -54,7 +68,16 @@ router.post('/register', async (req, res) => {
       password, // plain password, will be hashed in schema
       company: company || '',
       role: role || 'Requester',
-      lastLogin: null
+      lastLogin: null,
+      officeAddress: {
+        buildingNo: buildingNo || '',
+        floorNo: floorNo || '',
+        streetNo: streetNo || '',
+        zone: zone || '',
+        city: city || '',
+        country: country || '',
+        poBox: poBox || ''
+      }
     });
 
     await user.save();
@@ -67,10 +90,10 @@ router.post('/register', async (req, res) => {
         email: user.email,
         company: user.company,
         role: user.role,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        officeAddress: user.officeAddress
       }
     });
-
   } catch (err) {
     console.error('Registration error:', err);
     res.status(500).json({ message: 'Something went wrong', error: err.message });

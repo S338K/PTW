@@ -9,49 +9,97 @@
 <body>
 
   <div class="page-header">
-    <p>
     <h1>Welcome to HIA Baggage Handling System</h1>
     <h3>Permit to Work – A gateway to access the BHS</h3>
   </div>
-</p>
 
   <main>
     <div class="form-container auth-container">
-      <fieldset>
+      <fieldset id="officeAddressFieldset">
         <legend>Sign Up</legend>
 
         <form id="signupForm" method="POST" action="" novalidate>
           <div class="card">
-            <div class="form-group">
+
+            <!-- Full Name -->
+            <div class="form-group floating-label">
+              <input type="text" id="signupName" name="username" autocomplete="name" required placeholder=" " />
               <label for="signupName">Full Name</label>
-              <input type="text" id="signupName" name="username" autocomplete="name" required />
               <span class="error-message" aria-live="polite"></span>
             </div>
 
-            <div class="form-group">
+            <!-- Company Name -->
+            <div class="form-group floating-label">
+              <input type="text" id="companyName" name="company" autocomplete="organization" required placeholder=" " />
               <label for="companyName">Company Name</label>
-              <input type="text" id="companyName" name="company" autocomplete="organization" required />
               <span class="error-message" aria-live="polite"></span>
             </div>
 
-            <div class="form-group">
+            <!-- Email -->
+            <div class="form-group floating-label">
+              <input type="email" id="signupEmail" name="email" autocomplete="email" required placeholder=" " />
               <label for="signupEmail">Email Address</label>
-              <input type="email" id="signupEmail" name="email" autocomplete="email" required />
               <span class="error-message" aria-live="polite"></span>
             </div>
 
-            <div class="form-group">
+            <!-- Password -->
+            <div class="form-group floating-label">
+              <input type="password" id="signupPassword" name="password" autocomplete="new-password" required placeholder=" " />
               <label for="signupPassword">Password</label>
-              <input type="password" id="signupPassword" name="password" autocomplete="new-password" required />
               <span class="error-message" aria-live="polite"></span>
             </div>
 
-            <div class="form-group">
+            <!-- Confirm Password -->
+            <div class="form-group floating-label">
+              <input type="password" id="signupConfirmPassword" name="confirmPassword" autocomplete="new-password" required placeholder=" " />
               <label for="signupConfirmPassword">Confirm Password</label>
-              <input type="password" id="signupConfirmPassword" name="confirmPassword" autocomplete="new-password" required />
               <span class="error-message" aria-live="polite"></span>
             </div>
 
+            <!-- Office Address -->
+            <fieldset>
+              <legend>Office Address</legend>
+              <div id="officeAddressSection" class="address-grid">
+
+                <div class="form-group floating-label">
+                  <input type="text" id="buildingNo" name="buildingNo" required placeholder=" " maxlength="2" pattern="^\d{1,2}$"/>
+                  <label for="buildingNo">Building No.</label>
+                </div>
+
+                <div class="form-group floating-label">
+                  <input type="text" id="floorNo" name="floorNo" required placeholder=" " maxlength="2" pattern="^\d{1,2}$"/>
+                  <label for="floorNo">Floor No.</label>
+                </div>
+
+                <div class="form-group floating-label">
+                  <input type="text" id="streetNo" name="streetNo" required placeholder=" " maxlength="3" pattern="^\d{1,3}$"/>
+                  <label for="streetNo">Street No.</label>
+                </div>
+
+                <div class="form-group floating-label">
+                  <input type="text" id="zone" name="zone" required placeholder=" " maxlength="2" pattern="^\d{1,2}$"/>
+                  <label for="zone">Zone</label>
+                </div>
+
+                <div class="form-group floating-label">
+                  <input type="text" id="city" name="city" required placeholder=" " pattern="^[A-Za-z\s]+$"/>
+                  <label for="city">City</label>
+                </div>
+
+                <div class="form-group floating-label">
+                  <input type="text" id="country" name="country" required placeholder=" " pattern="^[A-Za-z\s]+$"/>
+                  <label for="country">Country</label>
+                </div>
+
+                <div class="form-group floating-label">
+                  <input type="text" id="poBox" name="poBox" required placeholder=" " maxlength="6" pattern="^\d{1,6}$"/>
+                  <label for="poBox">P.O. Box</label>
+                </div>
+
+              </div>
+            </fieldset>
+
+            <!-- Terms -->
             <div class="form-group terms-group">
               <label>
                 <input type="checkbox" id="termsCheckbox" name="terms" />
@@ -60,13 +108,16 @@
               <span class="error-message" aria-live="polite"></span>
             </div>
 
+            <!-- Submit -->
             <button id="signupBtn" type="submit">Create Account</button>
 
+            <!-- Login link -->
             <div class="log-in-link">
               <p>Already have an account?
                 <a href="index.html">Login here</a>
               </p>
             </div>
+
           </div> <!-- end .card -->
         </form>
 

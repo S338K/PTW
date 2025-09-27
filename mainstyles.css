@@ -99,8 +99,8 @@ fieldset {
 }
 
 .card h3 {
-  color: #273172;
-  font-weight: 700;
+  color: #070c2c;
+  font-weight: 600;
 }
 
 
@@ -128,7 +128,7 @@ fieldset {
 
 .md-input {
   position: relative;
-  width: 100%;
+  width: 95%;
 }
 
 .md-input input,
@@ -161,7 +161,7 @@ fieldset {
   font-size: 1rem;
   color: #666;
   pointer-events: none;
-  transition: 0.2s ease all;
+  transition: 0.3s ease all;
   padding: 8px;
 }
 
@@ -172,11 +172,11 @@ fieldset {
 .md-input input[type="email"]:not(:placeholder-shown)+label,
 .md-input textarea:focus+label,
 .md-input textarea:not(:placeholder-shown)+label {
-  top: -0.6rem;
-  left: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #273172;
+  top: -1.90rem;
+  left: 0rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0c133d;
   z-index: 1;
 }
 
@@ -195,7 +195,7 @@ fieldset {
   position: static;
   display: block;
   margin-bottom: 6px;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.95rem;
   color: #273172;
   padding-left: 2px;
@@ -205,13 +205,6 @@ fieldset {
 .md-input input::placeholder,
 .md-input textarea::placeholder {
   color: transparent;
-}
-
-/* ===== Address Grid ===== */
-.address-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 15px 20px;
 }
 
 /* ===== Submit Button ===== */
