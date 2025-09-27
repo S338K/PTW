@@ -232,7 +232,7 @@ button[type="submit"]:hover {
   font-weight: 400;
 }
 
-/*-----------File Upload*----------/
+/*-----------File Upload*----------*/
 
 .file-upload {
   display: flex;
@@ -244,7 +244,7 @@ button[type="submit"]:hover {
 
 /* Hide native file input */
 #fileUpload {
-  display: none;
+  display: none !important;
 }
 
 /* Custom clickable label */
