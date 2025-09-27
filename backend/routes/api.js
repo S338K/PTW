@@ -8,8 +8,8 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
+const requireAuth = require('../middleware/requireAuth');
 require('dotenv').config();
-const upload = multer({ storage });
 
 
 // ================= AUTH MIDDLEWARE =================
@@ -30,19 +30,7 @@ module.exports = requireAuth;
 router.post('/register', async (req, res) => {
   try {
     const {
-      username,
-      company,
-      email,
-      password,
-      role,
-      buildingNo,
-      floorNo,
-      streetNo,
-      zone,
-      city,
-      country,
-      poBox
-    } = req.body;
+      username, company, email, password, role, buildingNo, floorNo, streetNo, zone, city, country, poBox } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -276,6 +264,7 @@ router.get('/permit/:id', requireAuth, async (req, res) => {
 // Multer memory storage
 // ==========================
 const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // ==========================
 // POST /api/permit
