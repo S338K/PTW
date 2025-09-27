@@ -567,12 +567,48 @@ document.addEventListener('DOMContentLoaded', async function () {
     return ok;
   }
 
-  // =========================
-  // Form submit handler
-  // =========================
+  //============================================
+  // File Selection + Delete + Form Submission
+  //============================================
+
   const form = document.getElementById('permitForm');
   const submitBtn = document.getElementById('submitBtn');
+  const fileInput = document.getElementById('fileUpload');
+  const fileListEl = document.getElementById('uploadedFiles');
 
+  let selectedFiles = [];
+
+  // ==========================
+  // File selection + delete
+  // ==========================
+  fileInput.addEventListener('change', (e) => {
+    selectedFiles = [...selectedFiles, ...Array.from(e.target.files)];
+    renderFileList();
+  });
+
+  function renderFileList() {
+    fileListEl.innerHTML = '';
+
+    selectedFiles.forEach((file, index) => {
+      const li = document.createElement('li');
+      li.textContent = file.name;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '❌';
+      removeBtn.classList.add('delete-file-btn');
+      removeBtn.addEventListener('click', () => {
+        selectedFiles.splice(index, 1);
+        renderFileList();
+      });
+
+      li.appendChild(removeBtn);
+      fileListEl.appendChild(li);
+    });
+  }
+
+  // ==========================
+  // Form submission
+  // ==========================
   if (form) {
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -586,19 +622,30 @@ document.addEventListener('DOMContentLoaded', async function () {
         validateConditions();
 
       if (ok) {
-        const formData = new FormData(form); // includes files + text fields
+        const formData = new FormData(form);
+
+        // Remove auto-added files from hidden input
+        formData.delete('files');
+
+        // Append only the files still in our array
+        selectedFiles.forEach(file => {
+          formData.append('files', file);
+        });
 
         try {
           const res = await fetch(`${API_BASE}/api/permit`, {
             method: 'POST',
             body: formData,
-            credentials: 'include' // 🔹 ensures session cookie is sent
+            credentials: 'include'
           });
 
           if (res.ok) {
             alert('Form submitted successfully!');
             form.reset();
+            selectedFiles = [];
+            renderFileList();
 
+            // Reset sign date/time
             const now = new Date();
             const signDate = document.getElementById('signDate');
             const signTime = document.getElementById('signTime');
@@ -618,9 +665,8 @@ document.addEventListener('DOMContentLoaded', async function () {
               signNameInput.value = fullNameInput.value;
             }
 
-            const fileList = document.getElementById('uploadedFiles');
+            // Reset UI sections
             const fileMsg = document.getElementById('fileTypeMessage');
-            if (fileList) fileList.innerHTML = '';
             if (fileMsg) fileMsg.textContent = '';
 
             if (facilityContainer) facilityContainer.classList.add('hidden');
