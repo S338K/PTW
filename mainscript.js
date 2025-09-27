@@ -463,26 +463,28 @@ document.addEventListener('DOMContentLoaded', async function () {
       return true;
     }
 
-    function renderList() {
-      if (!list) return;
-      list.innerHTML = '';
+    function renderFileList() {
+      fileListEl.innerHTML = '';
 
-      selectedFiles.forEach(file => {
+      selectedFiles.forEach((file, index) => {
         const li = document.createElement('li');
-        li.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+        li.textContent = file.name;
 
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(file);
-        link.target = '_blank';
-        link.textContent = file.type === 'application/pdf' ? ' View' : ' Preview';
-        link.style.marginLeft = '5px';
-        li.appendChild(link);
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '❌';
+        removeBtn.classList.add('delete-file-btn');
+        removeBtn.addEventListener('click', () => {
+          selectedFiles.splice(index, 1);
+          renderFileList();
+        });
 
-        list.appendChild(li);
+        li.appendChild(removeBtn);
+        fileListEl.appendChild(li);
       });
     }
 
-    fileInput.addEventListener('change', () => {
+
+    fileInput.addEventListener('change', (e) => {
       const newFiles = Array.from(fileInput.files);
 
       if (validateFiles(newFiles)) {
@@ -502,10 +504,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   })();
 
   function validateFileUpload() {
-    return typeof window.__validateFileUpload === 'function'
-      ? window.__validateFileUpload()
-      : true;
+    return selectedFiles.length > 0 && document.getElementById('fileTypeMessage').textContent === '';
   }
+
 
   // =========================
   // Signature defaults + auto-fill from full name
@@ -582,8 +583,30 @@ document.addEventListener('DOMContentLoaded', async function () {
   // File selection + delete
   // ==========================
   fileInput.addEventListener('change', (e) => {
-    selectedFiles = [...selectedFiles, ...Array.from(e.target.files)];
+    const newFiles = Array.from(e.target.files);
+    let totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+
+    newFiles.forEach(file => {
+      const isDuplicate = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+      if (isDuplicate) {
+        showErrorMessage(`Duplicate skipped: ${file.name}`);
+        return;
+      }
+      if (!['application/pdf', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+        showErrorMessage('Only PDF, JPG and JPEG files are allowed.');
+        return;
+      }
+      if (totalSize + file.size > 3 * 1024 * 1024) {
+        showErrorMessage('Total file size must not exceed 3 MB.');
+        return;
+      }
+
+      totalSize += file.size;
+      selectedFiles.push(file);
+    });
+
     renderFileList();
+    fileInput.value = ''; // reset so same file can be re-added
   });
 
   function renderFileList() {
@@ -623,6 +646,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       if (ok) {
         const formData = new FormData(form);
+
+        // Remove auto-added files from hidden input
+        formData.delete('files');
+
+        // Append only the files still in our array
+        selectedFiles.forEach(file => {
+          formData.append('files', file);
+        });
+
 
         // Remove auto-added files from hidden input
         formData.delete('files');
