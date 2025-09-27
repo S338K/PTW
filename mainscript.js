@@ -565,7 +565,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Form submission
   // ==========================
   const form = document.getElementById('permitForm');
+  const submitBtn = document.getElementById('submitBtn');
+
   if (form) {
+    // Main submit handler (fires for both Enter and button click)
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       console.log('Form submission triggered');
@@ -582,12 +585,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
       }
 
+      // Optional: disable button to prevent double clicks
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+      }
+
       const formData = new FormData(form);
-
-      // Remove auto-added files from hidden input
       formData.delete('files');
-
-      // Append only the files still in our array (from unified module in part 2)
       selectedFiles.forEach(file => {
         formData.append('files', file);
       });
@@ -605,7 +610,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           selectedFiles = [];
           renderFileList();
 
-          // Reset sign date/time
+          // Reset signature defaults
           const now = new Date();
           const signDate = document.getElementById('signDate');
           const signTime = document.getElementById('signTime');
@@ -620,7 +625,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             const mm = String(now.getMinutes()).padStart(2, '0');
             signTime.value = `${hh}:${mm}`;
           }
-
           if (fullNameInput && signNameInput) {
             signNameInput.value = fullNameInput.value;
           }
@@ -628,7 +632,6 @@ document.addEventListener('DOMContentLoaded', async function () {
           // Reset UI sections
           const fileMsg = document.getElementById('fileTypeMessage');
           if (fileMsg) fileMsg.textContent = '';
-
           if (facilityContainer) facilityContainer.classList.add('hidden');
           if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
           if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
@@ -637,7 +640,6 @@ document.addEventListener('DOMContentLoaded', async function () {
           const equipmentTypeSection = document.getElementById('equipmentType');
           const impactDetailsSection = document.getElementById('impactDetails');
           const levelImpactSection = document.getElementById('levelOfImpactContainer');
-
           if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
           if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
           if (levelImpactSection) levelImpactSection.classList.add('hidden');
@@ -651,7 +653,21 @@ document.addEventListener('DOMContentLoaded', async function () {
       } catch (error) {
         console.error('Submit error:', error);
         alert('Network or server error while submitting form.');
+      } finally {
+        // Re-enable button
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit';
+        }
       }
     });
+
+    // Explicitly wire the button too (in case it's outside the <form>)
+    if (submitBtn) {
+      submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        form.requestSubmit(); // triggers the form's submit event
+      });
+    }
   }
 })
