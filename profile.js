@@ -1,6 +1,35 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
+
+  /* ===== SHOW USERNAME AND LAST LOGIN DETAILS ===== */
+  async function loadProfile() {
+    try {
+      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Unauthorized');
+
+      const data = await res.json();
+      const user = data.user;
+
+      // Format last login date/time
+      let lastLoginText = 'First login';
+      if (user.lastLogin) {
+        const formatted = new Date(user.lastLogin).toLocaleString();
+        lastLoginText = `Last login: ${formatted}`;
+      }
+
+      // Update navbar element
+      document.getElementById('profileLastLogin').textContent = lastLoginText;
+
+    } catch (err) {
+      console.error('Profile load error:', err);
+      window.location.href = 'index.html'; // redirect to login if unauthorized
+    }
+  }
+
+  loadProfile();
+
+
   /* ===== SESSION CHECK ===== */
   async function checkSession() {
     try {
@@ -35,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       method: 'POST',
       credentials: 'include'
     }).finally(() => {
-      alert('Logged out due to inactivity');
+      alert('Session expired, please login again');
       window.location.href = 'index.html';
     });
   }

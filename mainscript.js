@@ -423,7 +423,7 @@ function validateDateTime() {
 
       // Check type
       if (!allowed.includes(file.type)) {
-        showErrorMessage('Only PDF or JPG/JPEG files are allowed.');
+        showErrorMessage('Only PDF, JPG and JPEG files are allowed.');
         return false;
       }
 
