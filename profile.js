@@ -91,4 +91,37 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
+  (function createSessionOverlay() {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.bottom = '10px';
+    overlay.style.right = '10px';
+    overlay.style.background = 'rgba(0,0,0,0.8)';
+    overlay.style.color = '#fff';
+    overlay.style.padding = '10px 14px';
+    overlay.style.borderRadius = '8px';
+    overlay.style.fontSize = '14px';
+    overlay.style.zIndex = '9999';
+    overlay.style.fontFamily = 'monospace';
+    overlay.textContent = '🔍 Checking session...';
+    document.body.appendChild(overlay);
+
+    async function updateOverlay() {
+      try {
+        const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          overlay.textContent = `🟢 Session Active\nUser: ${data.user.username || data.user.email}`;
+        } else {
+          overlay.textContent = '🔴 Session Expired';
+        }
+      } catch (err) {
+        overlay.textContent = '⚠️ Network Error';
+      }
+    }
+
+    updateOverlay();
+  })();
+
+
 });
