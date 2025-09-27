@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
+        sessionStorage.setItem('previousLogin', data.user.lastLogin || '');
+
+
         // 🔹 Session cookie is now set by backend; no manual storage needed
 
         loginBtn.style.transition = 'background-color 0.4s ease, color 0.4s ease';

@@ -22,6 +22,53 @@ document.addEventListener('DOMContentLoaded', async function () {
   const user = await checkSession();
   if (!user) return; // stop execution if not logged in
 
+  // 🔹 Use username for the welcome message
+  const profileInfo = document.getElementById('profileInfo');
+  if (profileInfo) {
+    profileInfo.textContent = `Welcome : ${user.username}`;
+  }
+
+  // 🔹 Retrieve previous login from sessionStorage
+  const prevLoginISO = sessionStorage.getItem('previousLogin') || '';
+
+  // 🔹 Format helper
+  function formatLastLogin(dateString) {
+    if (!dateString) return 'First login';
+
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    const time = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    if (isToday) return `Today at ${time}`;
+    if (isYesterday) return `Yesterday at ${time}`;
+
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
+
+  // 🔹 Update the Last Login div
+  const lastLoginDiv = document.getElementById('profileLastLogin');
+  if (lastLoginDiv) {
+    lastLoginDiv.textContent = `Last login: ${formatLastLogin(prevLoginISO)}`;
+  }
+
+
   /* ===== IDLE TIMEOUT SETUP ===== */
   const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
   let idleTimer;

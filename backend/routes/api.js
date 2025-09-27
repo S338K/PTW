@@ -116,7 +116,7 @@ router.post('/login', async (req, res) => {
           email: user.email,
           company: user.company,
           role: user.role,
-          lastLogin: previousLogin || new Date()
+          lastLogin: previousLogin ? previousLogin.toISOString() : null
         }
       });
     });
