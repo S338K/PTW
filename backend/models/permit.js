@@ -40,6 +40,10 @@ const permitSchema = new mongoose.Schema({
   files: [fileSchema], // 🔹 embedded file documents
   requester: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // link to logged-in user
   role: String
-}, { timestamps: true });
+}, {
+  timestamps: true,
+  collection: 'PermitData'   // 👈 force collection name
+});
 
-module.exports = mongoose.model('Permit', permitSchema);
+// 🔹 Export model
+module.exports = mongoose.model('PermitData', permitSchema);
