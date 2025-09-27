@@ -591,7 +591,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         try {
           const res = await fetch(`${API_BASE}/api/permit`, {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'include'
           });
 
           if (res.ok) {
