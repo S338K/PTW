@@ -22,16 +22,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   const user = await checkSession();
   if (!user) return; // stop execution if not logged in
 
-  // 🔹 Use username for the welcome message
-  const profileInfo = document.getElementById('profileInfo');
-  if (profileInfo) {
-    profileInfo.textContent = `Welcome : ${user.username}`;
-  }
-
   // 🔹 Retrieve previous login from sessionStorage
   const prevLoginISO = sessionStorage.getItem('previousLogin') || '';
 
-  // 🔹 Format helper
+  // 🔹 Helper to format last login
   function formatLastLogin(dateString) {
     if (!dateString) return 'First login';
 
@@ -62,10 +56,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // 🔹 Update the Last Login div
+  // 🔹 Update the single div with both Welcome + Last Login
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
-    lastLoginDiv.textContent = `Last login: ${formatLastLogin(prevLoginISO)}`;
+    lastLoginDiv.textContent = `Welcome : ${user.username} | Last login: ${formatLastLogin(prevLoginISO)}`;
   }
 
 
