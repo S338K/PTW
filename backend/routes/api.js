@@ -229,14 +229,6 @@ router.get('/weather', async (req, res) => {
 // ===== PERMITS ROUTES =====
 const Permit = require('../models/permit'); // your Permitdata model
 
-// Middleware: require login
-function requireAuth(req, res, next) {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized - please log in' });
-  }
-  next();
-}
-
 // GET all permits for the logged-in user
 router.get('/permit', requireAuth, async (req, res) => {
   try {
