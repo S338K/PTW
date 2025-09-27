@@ -1,9 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-
-  /* ===== SHOW USERNAME AND LAST LOGIN DETAILS ===== */
-  // Helper to format last login nicely
+  /* ===== FORMATTER FOR LAST LOGIN ===== */
   function formatLastLogin(dateString) {
     if (!dateString) return 'First login';
 
@@ -11,19 +9,30 @@ document.addEventListener('DOMContentLoaded', async function () {
     const now = new Date();
 
     const isToday = date.toDateString() === now.toDateString();
-
     const yesterday = new Date();
     yesterday.setDate(now.getDate() - 1);
     const isYesterday = date.toDateString() === yesterday.toDateString();
 
-    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
 
     if (isToday) return `Today at ${time}`;
     if (isYesterday) return `Yesterday at ${time}`;
-    return date.toLocaleString(); // fallback for older dates
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
   }
 
-  async function loadProfile() {
+  /* ===== INITIAL PROFILE LOAD (MERGED SESSION CHECK) ===== */
+  async function initProfile() {
     try {
       const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
       if (!res.ok) throw new Error('Unauthorized');
@@ -31,48 +40,24 @@ document.addEventListener('DOMContentLoaded', async function () {
       const data = await res.json();
       const user = data.user;
 
-      // Use fullName if available, fallback to username/email
       const fullName = user.fullName || user.username || user.email;
-
-      // Format last login
       const lastLoginText = formatLastLogin(user.lastLogin);
 
-      // Update navbar
       document.getElementById('profileInfo').textContent =
         `Welcome : ${fullName} | Last Login : ${lastLoginText}`;
 
+      return user;
     } catch (err) {
-      console.error('Profile load error:', err);
-      window.location.href = 'index.html'; // redirect if unauthorized
-    }
-  }
-
-  // Run on page load
-  loadProfile();
-
-
-
-  /* ===== SESSION CHECK ===== */
-  async function checkSession() {
-    try {
-      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' }); // 🔹 include session cookie
-      if (!res.ok) {
-        window.location.href = 'index.html'; // redirect if session expired
-        return null;
-      }
-      const data = await res.json();
-      return data.user; // logged-in user info
-    } catch (err) {
-      console.error('Session check failed:', err);
+      console.error('Profile/session check failed:', err);
       window.location.href = 'index.html';
       return null;
     }
   }
 
-  const user = await checkSession();
-  if (!user) return; // stop execution if not logged in
+  const user = await initProfile();
+  if (!user) return; // stop if not logged in
 
-  /* ===== IDLE TIMEOUT SETUP ===== */
+  /* ===== IDLE TIMEOUT ===== */
   const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
   let idleTimer;
 
@@ -91,10 +76,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetIdleTimer));
-  resetIdleTimer(); // start timer
+  ['mousemove', 'keydown', 'click'].forEach(evt =>
+    document.addEventListener(evt, resetIdleTimer)
+  );
+  resetIdleTimer();
 
-  /* ===== Load Submitted Permit Details table ===== */
+  /* ===== PERMITS TABLE ===== */
   if (document.getElementById('permitTable')) {
     try {
       const res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include' });
@@ -110,7 +97,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             <td>${new Date(permit.submittedAt).toLocaleString()}</td>
             <td>${permit.permitNumber}</td>
             <td>${permit.title}</td>
-            <td><span class="status ${permit.status.toLowerCase().replace(/\s+/g, '')}">${permit.status}</span></td>
+            <td><span class="status ${permit.status.toLowerCase().replace(/\s+/g, '')}">
+              ${permit.status}
+            </span></td>
           `;
           tbody.appendChild(row);
         });
@@ -142,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
+  /* ===== Session Overlay (Debug) ===== */
   (function createSessionOverlay() {
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -173,6 +163,4 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     updateOverlay();
   })();
-
-
 });
