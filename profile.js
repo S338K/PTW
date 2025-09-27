@@ -16,7 +16,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     yesterday.setDate(now.getDate() - 1);
     const isYesterday = date.toDateString() === yesterday.toDateString();
 
-    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Format with full month and 24-hour time
+    const options = {
+      year: 'numeric',
+      month: 'long',   // full month name
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false    // 24-hour format
+    };
 
     if (isToday) return `Today at ${time}`;
     if (isYesterday) return `Yesterday at ${time}`;
