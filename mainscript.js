@@ -573,10 +573,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   const form = document.getElementById('permitForm');
   const submitBtn = document.getElementById('submitBtn');
 
-  if (submitBtn && form) {
-    submitBtn.addEventListener('click', async function (e) {
+  if (form) {
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      console.log('Submit button clicked');
+      console.log('Form submission triggered');
 
       const ok =
         validateRequesterDetails() &&
@@ -586,13 +586,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         validateConditions();
 
       if (ok) {
-        const formData = new FormData(form);
+        const formData = new FormData(form); // includes files + text fields
 
         try {
           const res = await fetch(`${API_BASE}/api/permit`, {
             method: 'POST',
             body: formData,
-            credentials: 'include'
+            credentials: 'include' // 🔹 ensures session cookie is sent
           });
 
           if (res.ok) {
