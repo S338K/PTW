@@ -1,63 +1,28 @@
 document.addEventListener('DOMContentLoaded', async function () {
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-  /* ===== FORMATTER FOR LAST LOGIN ===== */
-  function formatLastLogin(dateString) {
-    if (!dateString) return 'First login';
 
-    const date = new Date(dateString);
-    const now = new Date();
-
-    const isToday = date.toDateString() === now.toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(now.getDate() - 1);
-    const isYesterday = date.toDateString() === yesterday.toDateString();
-
-    const time = date.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    if (isToday) return `Today at ${time}`;
-    if (isYesterday) return `Yesterday at ${time}`;
-    return date.toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  }
-
-  /* ===== INITIAL PROFILE LOAD (MERGED SESSION CHECK) ===== */
-  async function initProfile() {
+  /* ===== SESSION CHECK ===== */
+  async function checkSession() {
     try {
-      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Unauthorized');
-
+      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' }); // 🔹 include session cookie
+      if (!res.ok) {
+        window.location.href = 'index.html'; // redirect if session expired
+        return null;
+      }
       const data = await res.json();
-      const user = data.user;
-
-      const fullName = user.fullName || user.username || user.email;
-      const lastLoginText = formatLastLogin(user.lastLogin);
-
-      document.getElementById('profileInfo').textContent =
-        `Welcome : ${fullName} | Last Login : ${lastLoginText}`;
-
-      return user;
+      return data.user; // logged-in user info
     } catch (err) {
-      console.error('Profile/session check failed:', err);
+      console.error('Session check failed:', err);
       window.location.href = 'index.html';
       return null;
     }
   }
 
-  const user = await initProfile();
-  if (!user) return; // stop if not logged in
+  const user = await checkSession();
+  if (!user) return; // stop execution if not logged in
 
-  /* ===== IDLE TIMEOUT ===== */
+  /* ===== IDLE TIMEOUT SETUP ===== */
   const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
   let idleTimer;
 
@@ -76,12 +41,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  ['mousemove', 'keydown', 'click'].forEach(evt =>
-    document.addEventListener(evt, resetIdleTimer)
-  );
-  resetIdleTimer();
+  ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetIdleTimer));
+  resetIdleTimer(); // start timer
 
-  /* ===== PERMITS TABLE ===== */
+  /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {
     try {
       const res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include' });
@@ -97,9 +60,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             <td>${new Date(permit.submittedAt).toLocaleString()}</td>
             <td>${permit.permitNumber}</td>
             <td>${permit.title}</td>
-            <td><span class="status ${permit.status.toLowerCase().replace(/\s+/g, '')}">
-              ${permit.status}
-            </span></td>
+            <td><span class="status ${permit.status.toLowerCase().replace(/\s+/g, '')}">${permit.status}</span></td>
           `;
           tbody.appendChild(row);
         });
@@ -131,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  /* ===== Session Overlay (Debug) ===== */
   (function createSessionOverlay() {
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -163,4 +123,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     updateOverlay();
   })();
+
+
 });
