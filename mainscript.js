@@ -19,7 +19,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   const user = await checkSession();
-  if (!user) return; // stop execution if not logged in
+  if (user) {
+    const welcomeName = document.getElementById('userFullName');
+    if (welcomeName) {
+      welcomeName.textContent = 'Welcome : ${user.username}'
+    }
+  }
 
   /* ===== IDLE TIMEOUT SETUP ===== */
   const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
