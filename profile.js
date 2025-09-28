@@ -116,17 +116,28 @@ document.addEventListener('DOMContentLoaded', async function () {
           badge.classList.add('status-badge', (permit.status || 'pending').toLowerCase());
           statusTd.appendChild(badge);
 
-          // Permit number (clickable if approved)
           const numberTd = document.createElement('td');
           if (permit.status === 'Approved' && permit.permitNumber) {
             const link = document.createElement('a');
             link.href = `${API_BASE}/api/permit/${permit._id}/pdf`;
             link.textContent = permit.permitNumber;
-            link.target = '_blank';
+
+            // Tooltip hint
+            link.title = "Click to download • Ctrl+Click to preview";
+
+            // Intercept normal clicks for download
+            link.addEventListener('click', (e) => {
+              handlePermitClick(e, permit._id, permit.permitNumber);
+            });
+
             numberTd.appendChild(link);
           } else {
             numberTd.textContent = '—';
           }
+
+
+
+
 
           row.appendChild(serialTd);
           row.appendChild(submittedTd);
@@ -144,6 +155,47 @@ document.addEventListener('DOMContentLoaded', async function () {
       console.warn('Error fetching permits:', err);
     }
   }
+
+  //===============PDF Download============//
+
+  async function handlePermitClick(e, permitId, permitNumber) {
+    // If user is trying to open in new tab/window, let the browser handle it
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+      return; // don't intercept
+    }
+
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`${API_BASE}/api/permit/${permitId}/pdf`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        alert('Failed to download PDF');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${permitNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+      alert('Error downloading PDF');
+    }
+  }
+
+
 
   /* ===== Redirect to mainpage.html ===== */
   const submitPtw = document.getElementById('sbmtptw');
