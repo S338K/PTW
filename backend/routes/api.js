@@ -231,7 +231,7 @@ const Permit = require('../models/permit'); // your Permitdata model
 // GET all permits for the logged-in user
 router.get('/permit', requireAuth, async (req, res) => {
   try {
-    const permits = await Permit.find({ requester: req.user._id }).sort({ createdAt: -1 });
+    const permits = await Permit.find({ requester: req.session.userId }).sort({ createdAt: -1 });
     res.json(permits);
   } catch (err) {
     console.error('Error fetching permits:', err);
