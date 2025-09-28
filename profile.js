@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {
     try {
-      const res = await fetch(`${API_BASE}/api/my-permits`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/permit`, { credentials: 'include' });
       if (res.ok) {
         const permits = await res.json();
         const tbody = document.querySelector('#permitTable tbody');
@@ -144,7 +144,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       console.warn('Error fetching permits:', err);
     }
   }
-
 
   /* ===== Redirect to mainpage.html ===== */
   const submitPtw = document.getElementById('sbmtptw');
