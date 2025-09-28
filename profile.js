@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {
     try {
-      const res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/my-permits`, { credentials: 'include' });
       if (res.ok) {
         const permits = await res.json();
         const tbody = document.querySelector('#permitTable tbody');
@@ -96,15 +96,47 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         permits.forEach((permit, index) => {
           const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${new Date(permit.submittedAt).toLocaleString()}</td>
-            <td>${permit.permitNumber}</td>
-            <td>${permit.title}</td>
-            <td><span class="status ${permit.status.toLowerCase().replace(/\s+/g, '')}">${permit.status}</span></td>
-          `;
+
+          // Serial number
+          const serialTd = document.createElement('td');
+          serialTd.textContent = index + 1;
+
+          // Submitted date/time
+          const submittedTd = document.createElement('td');
+          submittedTd.textContent = new Date(permit.createdAt).toLocaleString();
+
+          // Permit title (work description)
+          const titleTd = document.createElement('td');
+          titleTd.textContent = permit.workDescription || '—';
+
+          // Status with badge
+          const statusTd = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.textContent = permit.status || 'Pending';
+          badge.classList.add('status-badge', (permit.status || 'pending').toLowerCase());
+          statusTd.appendChild(badge);
+
+          // Permit number (clickable if approved)
+          const numberTd = document.createElement('td');
+          if (permit.status === 'Approved' && permit.permitNumber) {
+            const link = document.createElement('a');
+            link.href = `${API_BASE}/api/permit/${permit._id}/pdf`;
+            link.textContent = permit.permitNumber;
+            link.target = '_blank';
+            numberTd.appendChild(link);
+          } else {
+            numberTd.textContent = '—';
+          }
+
+          row.appendChild(serialTd);
+          row.appendChild(submittedTd);
+          row.appendChild(titleTd);
+          row.appendChild(statusTd);
+          row.appendChild(numberTd);
+
           tbody.appendChild(row);
         });
+
       } else {
         console.warn('Failed to load permits');
       }
@@ -112,6 +144,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       console.warn('Error fetching permits:', err);
     }
   }
+
 
   /* ===== Redirect to mainpage.html ===== */
   const submitPtw = document.getElementById('sbmtptw');
@@ -164,6 +197,5 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     updateOverlay();
   })();
-
 
 });

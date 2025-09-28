@@ -8,6 +8,7 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 
@@ -230,7 +231,7 @@ const Permit = require('../models/permit'); // your Permitdata model
 // GET all permits for the logged-in user
 router.get('/permit', requireAuth, async (req, res) => {
   try {
-    const permits = await Permit.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const permits = await Permit.find({ requester: req.user._id }).sort({ createdAt: -1 });
     res.json(permits);
   } catch (err) {
     console.error('Error fetching permits:', err);
@@ -241,7 +242,7 @@ router.get('/permit', requireAuth, async (req, res) => {
 // GET a single permit by ID
 router.get('/permit/:id', requireAuth, async (req, res) => {
   try {
-    const permit = await Permit.findOne({ _id: req.params.id, user: req.user._id });
+    const permit = await Permit.findOne({ _id: req.params.id, requester: req.session.userId });
     if (!permit) return res.status(404).json({ message: 'Permit not found' });
     res.json(permit);
   } catch (err) {
@@ -323,18 +324,128 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
 router.patch('/permit/:id/status', requireAuth, async (req, res) => {
   try {
     const { status } = req.body;
-    const permit = await Permit.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id }, // only update if owned by user
-      { status },
-      { new: true }
-    );
+
+    const permit = await Permit.findOne({ _id: req.params.id, requester: req.session.userId });
     if (!permit) return res.status(404).json({ message: 'Permit not found' });
+
+    // If approving and no permit number yet, generate one
+    if (status === 'Approved' && !permit.permitNumber) {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+
+      const dateStr = `${dd}${mm}${yyyy}`;
+
+      // Count how many approved permits exist for today
+      const todayStart = new Date(yyyy, now.getMonth(), now.getDate());
+      const todayEnd = new Date(yyyy, now.getMonth(), now.getDate() + 1);
+
+      const count = await Permit.countDocuments({
+        status: 'Approved',
+        createdAt: { $gte: todayStart, $lt: todayEnd }
+      });
+
+      const serial = String(count + 1).padStart(3, '0');
+      permit.permitNumber = `PTW-${dateStr}-${serial}`;
+    }
+
+    permit.status = status;
+    await permit.save();
+
     res.json({ message: 'Status updated', permit });
   } catch (err) {
     console.error('Error updating permit:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
+// GET PDF for an approved permit
+router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
+  try {
+    const permit = await Permit.findOne({
+      _id: req.params.id,
+      requester: req.session.userId
+    });
+
+    if (!permit) return res.status(404).json({ message: 'Permit not found' });
+    if (permit.status !== 'Approved') {
+      return res.status(403).json({ message: 'Permit not approved yet' });
+    }
+
+    // Launch headless browser
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    // Build HTML template
+    const html = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 30px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .header { display: flex; justify-content: space-between; align-items: center; }
+            .logo { width: 100px; height: auto; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+            th { background: #f2f2f2; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #555; }
+            .signature { margin-top: 50px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <img src="https://via.placeholder.com/100x50?text=LOGO" class="logo" />
+            <div>
+              <strong>Permit Number:</strong> ${permit.permitNumber}<br/>
+              <strong>Status:</strong> ${permit.status}
+            </div>
+          </div>
+
+          <h1>Permit to Work</h1>
+
+          <table>
+            <tr><th>Full Name</th><td>${permit.fullName} ${permit.lastName || ''}</td></tr>
+            <tr><th>Work Description</th><td>${permit.workDescription}</td></tr>
+            <tr><th>Start Date</th><td>${permit.startDateTime}</td></tr>
+            <tr><th>End Date</th><td>${permit.endDateTime}</td></tr>
+            <tr><th>Contact</th><td>${permit.contactDetails}</td></tr>
+            <tr><th>Alternate Contact</th><td>${permit.altContactDetails || '-'}</td></tr>
+            <tr><th>Terminal</th><td>${permit.terminal || '-'}</td></tr>
+            <tr><th>Facility</th><td>${permit.facility || '-'}</td></tr>
+            <tr><th>Submitted On</th><td>${permit.createdAt.toLocaleString()}</td></tr>
+          </table>
+
+          <div class="signature">
+            <p><strong>Authorized By:</strong> ____________________________</p>
+            <p><strong>Date:</strong> ____________________________</p>
+          </div>
+
+          <div class="footer">
+            This is a system‑generated permit. No manual signature required.
+          </div>
+        </body>
+      </html>
+    `;
+
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+
+    await browser.close();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Permit-${permit.permitNumber}.pdf"`
+    );
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('Error generating PDF:', err);
+    res.status(500).json({ message: 'Error generating PDF' });
+  }
+});
+
 
 // ===== REQUEST PASSWORD RESET =====
 router.post('/forgot-password', async (req, res, next) => {

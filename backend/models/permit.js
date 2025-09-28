@@ -39,6 +39,8 @@ const permitSchema = new mongoose.Schema({
   designation: String,
   files: [fileSchema], // 🔹 embedded file documents
   requester: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // link to logged-in user
+  status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
+  permitNumber: { type: String, unique: true, sparse: true }, // only set when approved
   role: String
 }, {
   timestamps: true,

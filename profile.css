@@ -199,3 +199,25 @@ fieldset {
     padding: 8px;
   }
 }
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.status-badge.pending {
+  background-color: #f0ad4e;
+  /* amber */
+}
+
+.status-badge.approved {
+  background-color: #5cb85c;
+  /* green */
+}
+
+.status-badge.rejected {
+  background-color: #d9534f;
+  /* red */
+}
