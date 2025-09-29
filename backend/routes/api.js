@@ -337,7 +337,12 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const yyyy = now.getFullYear();
 
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+
       const dateStr = `${dd}${mm}${yyyy}`;
+      const timeStr = `${hh}${min}${ss}`;
 
       // Count how many approved permits exist for today
       const todayStart = new Date(yyyy, now.getMonth(), now.getDate());
@@ -349,11 +354,9 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
       });
 
       const serial = String(count + 1).padStart(3, '0');
-      permit.permitNumber = `PTW-${dateStr}-${serial}`;
+      permit.permitNumber = `BHS-${dateStr}-${timeStr}-${serial}`;
     }
 
-    permit.status = status;
-    await permit.save();
 
     res.json({ message: 'Status updated', permit });
   } catch (err) {
@@ -439,14 +442,9 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    const { setTimeout: delay } = require('timers/promises');
-
-    // ...
-
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-    // ✅ short pause to let Chromium finish rendering
-    await delay(300);
+    await page.waitForSelector('table');  // waits until your permit table is in the DOM
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
