@@ -459,6 +459,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('body');
     await page.evaluateHandle('document.fonts.ready');
+    await new Promise(r => setTimeout(r, 300)); // tiny delay
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
