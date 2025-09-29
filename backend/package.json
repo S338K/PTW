@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "postinstall": "puppeteer browsers install"
+    "postinstall": "puppeteer browsers install chrome"
   },
   "dependencies": {
     "axios": "^1.12.0",
