@@ -321,7 +321,6 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
   }
 });
 
-// PATCH update permit status
 // PATCH: update permit status
 router.patch('/permit/:id/status', requireAuth, async (req, res) => {
   try {
@@ -355,6 +354,8 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 
       const serial = String(count + 1).padStart(3, '0');
       permit.permitNumber = `BHS-${dateStr}-${timeStr}-${serial}`;
+
+      permit.approvedAt = new Date();
     }
 
 
@@ -379,6 +380,22 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
+    // Fetch logged-in user details
+    const user = await User.findById(req.session.userId);
+
+    // Helper to format dates nicely: 29-Sep-2025 22:55:07
+    function formatDateTime(date) {
+      return new Date(date).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    }
+
     // Use @sparticuz/chromium + puppeteer-core
     const executablePath = await chromium.executablePath();
 
@@ -391,7 +408,6 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
 
     const page = await browser.newPage();
 
-    // Build HTML template (unchanged)
     const html = `
       <html>
         <head>
@@ -411,24 +427,26 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
           <div class="header">
             <img src="https://via.placeholder.com/100x50?text=LOGO" class="logo" />
             <div>
-              <strong>Permit Number:</strong> ${permit.permitNumber}<br/>
-              <strong>Status:</strong> ${permit.status}
+              <strong>Permit Number:</strong> ${permit.permitNumber || '-'}<br/>
+              <strong>Status:</strong> ${permit.status || '-'}
             </div>
           </div>
 
           <h1>Permit to Access</h1>
 
-          <table>
-            <tr><th>Full Name</th><td>${permit.fullName} ${permit.lastName || ''}</td></tr>
-            <tr><th>Work Description</th><td>${permit.workDescription}</td></tr>
-            <tr><th>Start Date</th><td>${permit.startDateTime}</td></tr>
-            <tr><th>End Date</th><td>${permit.endDateTime}</td></tr>
-            <tr><th>Contact</th><td>${permit.contactDetails}</td></tr>
-            <tr><th>Alternate Contact</th><td>${permit.altContactDetails || '-'}</td></tr>
-            <tr><th>Terminal</th><td>${permit.terminal || '-'}</td></tr>
-            <tr><th>Facility</th><td>${permit.facility || '-'}</td></tr>
-            <tr><th>Submitted On</th><td>${permit.createdAt.toLocaleString()}</td></tr>
-          </table>
+<table>
+  <tr><th>Full Name</th><td>${permit.fullName || '-'} ${permit.lastName || ''}</td></tr>
+  <tr><th>Work Description</th><td>${permit.workDescription || '-'}</td></tr>
+  <tr><th>Start Date</th><td>${permit.startDateTime ? formatDateTime(permit.startDateTime) : '-'}</td></tr>
+  <tr><th>End Date</th><td>${permit.endDateTime ? formatDateTime(permit.endDateTime) : '-'}</td></tr>
+  <tr><th>Contact</th><td>${permit.contactDetails || '-'}</td></tr>
+  <tr><th>Alternate Contact</th><td>${permit.altContactDetails || '-'}</td></tr>
+  <tr><th>Terminal</th><td>${permit.terminal || '-'}</td></tr>
+  <tr><th>Facility</th><td>${permit.facility || '-'}</td></tr>
+  <tr><th>Submitted On</th><td>${permit.createdAt ? formatDateTime(permit.createdAt) : '-'}</td></tr>
+  <tr><th>Approved On</th><td>${permit.approvedAt ? formatDateTime(permit.approvedAt) : '-'}</td></tr>
+</table>
+
 
           <div class="signature">
             <p><strong>Authorized By:</strong> ____________________________</p>
@@ -437,6 +455,8 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
 
           <div class="footer">
             This is a system‑generated permit. No manual signature required.
+            <br/><br/>
+            <em>Printed by: ${user?.fullName || 'Unknown User'} on ${formatDateTime(new Date())}</em>
           </div>
         </body>
       </html>

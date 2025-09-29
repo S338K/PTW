@@ -31,8 +31,8 @@ const permitSchema = new mongoose.Schema({
   noHseRiskAssessmentReason: String,
   opRisk: String,
   noOpsRiskAssessmentReason: String,
-  startDateTime: String,
-  endDateTime: String,
+  startDateTime: { type: Date },   // ✅ use Date instead of String
+  endDateTime: { type: Date },     // ✅ use Date instead of String
   signName: String,
   signDate: String,
   signTime: String,
@@ -41,7 +41,10 @@ const permitSchema = new mongoose.Schema({
   requester: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // link to logged-in user
   status: { type: String, default: 'Pending' }, // Pending, Approved, Rejected
   permitNumber: { type: String, unique: true, sparse: true }, // only set when approved
-  role: String
+  role: String,
+
+  // ✅ New field for approval timestamp
+  approvedAt: { type: Date }
 }, {
   timestamps: true,
   collection: 'PermitData'   // 👈 force collection name
