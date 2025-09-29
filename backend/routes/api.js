@@ -439,9 +439,14 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    // Stronger wait + short delay to avoid blank PDFs
+    const { setTimeout: delay } = require('timers/promises');
+
+    // ...
+
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(300);
+
+    // ✅ short pause to let Chromium finish rendering
+    await delay(300);
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
