@@ -439,88 +439,81 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-    await browser.close();
+    // Give Chromium a short beat to finish layout
+    await page.waitForTimeout(300);
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="Permit-${permit.permitNumber}.pdf"`
-    );
-    res.send(pdfBuffer);
-  } catch (err) {
-    console.error('Error generating PDF:', err);
-    res.status(500).json({ message: 'Error generating PDF' });
-  }
-});
-
-
-// ===== REQUEST PASSWORD RESET =====
-router.post('/forgot-password', async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email is required' });
-
-    const genericOk = { message: 'If the email exists, a reset link will be sent' };
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(200).json(genericOk);
-
-    const rawToken = crypto.randomBytes(20).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-
-    user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
-    await user.save();
-
-    const frontendBase = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
-    const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
-
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[DEV MODE] Reset link:', resetLink);
-      return res.status(200).json({ message: 'Password reset link (dev mode)', resetLink, token: rawToken });
-    }
-    return res.status(200).json(genericOk);
-
-  } catch (err) {
-    next(err);
-  }
-});
-
-// ===== RESET PASSWORD =====
-router.post('/reset-password', async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: 'Token and new password are required' });
-    }
-
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-    if (!strongPasswordRegex.test(newPassword)) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.' });
-    }
-
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpires: { $gt: Date.now() }
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
     });
 
-    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+    // ===== REQUEST PASSWORD RESET =====
+    router.post('/forgot-password', async (req, res, next) => {
+      try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
+        const genericOk = { message: 'If the email exists, a reset link will be sent' };
 
-    res.json({ message: 'Password updated successfully' });
-  } catch (err) {
-    console.error('[Reset Password] Error:', err);
-    res.status(500).json({ message: 'Error resetting password', error: err.message });
-  }
-});
+        const user = await User.findOne({ email });
+        if (!user) return res.status(200).json(genericOk);
 
-module.exports = router;
+        const rawToken = crypto.randomBytes(20).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
+        await user.save();
+
+        const frontendBase = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
+        const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[DEV MODE] Reset link:', resetLink);
+          return res.status(200).json({ message: 'Password reset link (dev mode)', resetLink, token: rawToken });
+        }
+        return res.status(200).json(genericOk);
+
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    // ===== RESET PASSWORD =====
+    router.post('/reset-password', async (req, res) => {
+      try {
+        const { token, newPassword } = req.body;
+        if (!token || !newPassword) {
+          return res.status(400).json({ message: 'Token and new password are required' });
+        }
+
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        if (!strongPasswordRegex.test(newPassword)) {
+          return res.status(400).json({ message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.' });
+        }
+
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+          resetPasswordToken: hashedToken,
+          resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
+      } catch (err) {
+        console.error('[Reset Password] Error:', err);
+        res.status(500).json({ message: 'Error resetting password', error: err.message });
+      }
+    });
+
+    module.exports = router;
