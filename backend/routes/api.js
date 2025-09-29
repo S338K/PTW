@@ -375,7 +375,18 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     }
 
     // Launch headless browser
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      headless: true,
+      executablePath: puppeteer.executablePath(),
+      args: [
+        '--nosandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--signle-process'
+      ]
+    });
+
     const page = await browser.newPage();
 
     // Build HTML template
@@ -403,7 +414,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
             </div>
           </div>
 
-          <h1>Permit to Work</h1>
+          <h1>Permit to Access</h1>
 
           <table>
             <tr><th>Full Name</th><td>${permit.fullName} ${permit.lastName || ''}</td></tr>
