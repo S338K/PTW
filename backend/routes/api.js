@@ -374,17 +374,27 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
-    console.log('using chrome at:', puppeteer.executablePath());
-    // Launch headless browser
+    // Log the resolved Chromium path
+    const chromePath = puppeteer.executablePath('chrome');
+    console.log('Using Chromium at:', chromePath);
+
+    if (!chromePath) {
+      // Fallback if Puppeteer can’t resolve a path
+      return res.status(500).json({
+        message: 'Chromium binary not found in this environment'
+      });
+    }
+
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: puppeteer.executablePath('chrome'),
+      executablePath: chromePath,
       args: [
-        '--nosandbox',
+        '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--signle-process'
+        '--no-zygote',
+        '--single-process'
       ]
     });
 

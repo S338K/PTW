@@ -159,9 +159,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   //===============PDF Download============//
 
   async function handlePermitClick(e, permitId, permitNumber) {
-    // If user is trying to open in new tab/window, let the browser handle it
+    // Let browser handle new tab/window clicks
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
-      return; // don't intercept
+      return;
     }
 
     e.preventDefault();
@@ -173,7 +173,15 @@ document.addEventListener('DOMContentLoaded', async function () {
       });
 
       if (!res.ok) {
-        alert('Failed to download PDF');
+        // Try to parse backend error message
+        let message = 'Failed to download PDF';
+        try {
+          const data = await res.json();
+          if (data.message) message = data.message;
+        } catch (_) {
+          // ignore parse errors, fallback to generic
+        }
+        alert(message);
         return;
       }
 
