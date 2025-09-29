@@ -400,7 +400,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     const executablePath = await chromium.executablePath();
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
       defaultViewport: chromium.defaultViewport,
       executablePath,
       headless: chromium.headless
@@ -475,6 +475,9 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     await new Promise(r => setTimeout(r, 300));
 
     await page.waitForSelector('table');  // waits until your permit table is in the DOM
+
+    // 👉 Debug screenshot here
+    await page.screenshot({ path: 'debug.png', fullPage: true });
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
