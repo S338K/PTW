@@ -375,8 +375,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     }
 
     // Log the resolved Chromium path
-    const chromePath = puppeteer.executablePath('chrome');
-
+    const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath('chrome');
     console.log('Using Chromium at:', chromePath);
 
     if (!chromePath) {
@@ -385,6 +384,8 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
         message: 'Chromium binary not found in this environment'
       });
     }
+    const fs = require('fs');
+    console.log('Checking Chrome path:', chromePath, fs.existsSync(chromePath));
 
     const browser = await puppeteer.launch({
       headless: true,
