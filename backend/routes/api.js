@@ -378,7 +378,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     // Launch headless browser
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: puppeteer.executablePath(),
+      executablePath: puppeteer.executablePath('chrome'),
       args: [
         '--nosandbox',
         '--disable-setuid-sandbox',
