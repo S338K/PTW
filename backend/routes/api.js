@@ -8,7 +8,8 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
-const puppeteer = require('puppeteer');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 require('dotenv').config();
 
 
@@ -375,33 +376,15 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     }
 
     // Resolve Chromium path first
-    const fs = require('fs');
-    const chromePath =
-      process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath('chrome');
+    const executablePath = await chromium.executablePath();
 
-    console.log('Resolved Chromium path:', chromePath, 'Exists:', fs.existsSync(chromePath));
-
-    console.log('Using Chromium at:', chromePath, 'Exists:', fs.existsSync(chromePath));
-
-    if (!chromePath || !fs.existsSync(chromePath)) {
-      return res.status(500).json({
-        message: 'Chromium binary not found in this environment'
-      });
-    }
-
-    // Launch Puppeteer
     const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: chromePath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-zygote',
-        '--single-process'
-      ]
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath,
+      headless: chromium.headless
     });
+
 
     const page = await browser.newPage();
 
