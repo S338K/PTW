@@ -332,31 +332,34 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
     // If approving and no permit number yet, generate one
     if (status === 'Approved' && !permit.permitNumber) {
       const now = new Date();
+
+      // Format date/time parts
       const dd = String(now.getDate()).padStart(2, '0');
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const yyyy = now.getFullYear();
-
       const hh = String(now.getHours()).padStart(2, '0');
       const min = String(now.getMinutes()).padStart(2, '0');
       const ss = String(now.getSeconds()).padStart(2, '0');
 
-      const dateStr = `${dd}${mm}${yyyy}`;
-      const timeStr = `${hh}${min}${ss}`;
+      const datePart = `${dd}${mm}${yyyy}`;
+      const timePart = `${hh}${min}${ss}`;
 
-      // Count how many approved permits exist for today
-      const todayStart = new Date(yyyy, now.getMonth(), now.getDate());
-      const todayEnd = new Date(yyyy, now.getMonth(), now.getDate() + 1);
+      // Count how many permits already approved today
+      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-      const count = await Permit.countDocuments({
+      const countToday = await Permit.countDocuments({
         status: 'Approved',
-        createdAt: { $gte: todayStart, $lt: todayEnd }
+        approvedAt: { $gte: startOfDay, $lte: endOfDay }
       });
 
-      const serial = String(count + 1).padStart(3, '0');
-      permit.permitNumber = `BHS-${dateStr}-${timeStr}-${serial}`;
+      const serial = String(countToday + 1).padStart(3, '0');
 
+      // ✅ New format
+      permit.permitNumber = `BHS-${datePart}-${timePart}-${serial}`;
       permit.approvedAt = new Date();
     }
+
 
 
     res.json({ message: 'Status updated', permit });
