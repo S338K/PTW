@@ -86,7 +86,6 @@ app.use((req, res, next) => {
 
 // ===== Puppeteer Browser Reuse =====
 let browser;
-
 async function getBrowser() {
   if (!browser) {
     browser = await puppeteer.launch({
@@ -99,6 +98,8 @@ async function getBrowser() {
   }
   return browser;
 }
+
+app.set('getBrowser', getBrowser);
 
 // Optional: close browser gracefully on shutdown
 async function closeBrowser() {
