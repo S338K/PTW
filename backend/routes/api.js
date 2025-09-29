@@ -378,7 +378,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     const chromePath =
       process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath('chrome');
 
-    console.log('Resolved Chromium path:', chromePath, 'Exists:' fs.existsSync(chromePath));
+    console.log('Resolved Chromium path:', chromePath, 'Exists:', fs.existsSync(chromePath));
 
     const fs = require('fs');
     console.log('Using Chromium at:', chromePath, 'Exists:', fs.existsSync(chromePath));
