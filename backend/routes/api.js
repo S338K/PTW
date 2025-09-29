@@ -374,6 +374,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
+    console.log('using chrome at:', puppeteer.executablePath());
     // Launch headless browser
     const browser = await puppeteer.launch({
       headless: true,
