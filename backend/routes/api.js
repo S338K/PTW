@@ -466,8 +466,13 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     console.log(html);
     console.log('=== PDF HTML END ===');
 
-
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
+    await page.waitForSelector('body'); // ensures body is present
+    await page.evaluateHandle('document.fonts.ready'); // wait for fonts/styles
+
+    // Tiny delay to let Chromium paint
+    await new Promise(r => setTimeout(r, 300));
 
     await page.waitForSelector('table');  // waits until your permit table is in the DOM
 
