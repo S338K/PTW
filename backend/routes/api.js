@@ -322,6 +322,7 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
 });
 
 // PATCH update permit status
+// PATCH: update permit status
 router.patch('/permit/:id/status', requireAuth, async (req, res) => {
   try {
     const { status } = req.body;
@@ -375,7 +376,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
-    // Resolve Chromium path first
+    // Use @sparticuz/chromium + puppeteer-core
     const executablePath = await chromium.executablePath();
 
     const browser = await puppeteer.launch({
@@ -385,10 +386,9 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       headless: chromium.headless
     });
 
-
     const page = await browser.newPage();
 
-    // Build HTML template
+    // Build HTML template (unchanged)
     const html = `
       <html>
         <head>
@@ -439,9 +439,8 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
+    // Stronger wait + short delay to avoid blank PDFs
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
-
-    // Give Chromium a short beat to finish layout
     await page.waitForTimeout(300);
 
     const pdfBuffer = await page.pdf({
@@ -450,70 +449,84 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
     });
 
-    // ===== REQUEST PASSWORD RESET =====
-    router.post('/forgot-password', async (req, res, next) => {
-      try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ message: 'Email is required' });
+    await browser.close();
 
-        const genericOk = { message: 'If the email exists, a reset link will be sent' };
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Permit-${permit.permitNumber}.pdf"`
+    );
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('Error generating PDF:', err);
+    res.status(500).json({ message: 'Error generating PDF' });
+  }
+});
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(200).json(genericOk);
+// ===== REQUEST PASSWORD RESET =====
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
 
-        const rawToken = crypto.randomBytes(20).toString('hex');
-        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const genericOk = { message: 'If the email exists, a reset link will be sent' };
 
-        user.resetPasswordToken = hashedToken;
-        user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
-        await user.save();
+    const user = await User.findOne({ email });
+    if (!user) return res.status(200).json(genericOk);
 
-        const frontendBase = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
-        const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
+    const rawToken = crypto.randomBytes(20).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('[DEV MODE] Reset link:', resetLink);
-          return res.status(200).json({ message: 'Password reset link (dev mode)', resetLink, token: rawToken });
-        }
-        return res.status(200).json(genericOk);
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
+    await user.save();
 
-      } catch (err) {
-        next(err);
-      }
+    const frontendBase = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
+    const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[DEV MODE] Reset link:', resetLink);
+      return res.status(200).json({ message: 'Password reset link (dev mode)', resetLink, token: rawToken });
+    }
+    return res.status(200).json(genericOk);
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ===== RESET PASSWORD =====
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!strongPasswordRegex.test(newPassword)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
     });
 
-    // ===== RESET PASSWORD =====
-    router.post('/reset-password', async (req, res) => {
-      try {
-        const { token, newPassword } = req.body;
-        if (!token || !newPassword) {
-          return res.status(400).json({ message: 'Token and new password are required' });
-        }
+    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
 
-        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-        if (!strongPasswordRegex.test(newPassword)) {
-          return res.status(400).json({ message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.' });
-        }
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
 
-        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('[Reset Password] Error:', err);
+    res.status(500).json({ message: 'Error resetting password', error: err.message });
+  }
+});
 
-        const user = await User.findOne({
-          resetPasswordToken: hashedToken,
-          resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
-
-        user.password = await bcrypt.hash(newPassword, 10);
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        await user.save();
-
-        res.json({ message: 'Password updated successfully' });
-      } catch (err) {
-        console.error('[Reset Password] Error:', err);
-        res.status(500).json({ message: 'Error resetting password', error: err.message });
-      }
-    });
-
-    module.exports = router;
+module.exports = router;
