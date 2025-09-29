@@ -462,6 +462,11 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
+    console.log('=== PDF HTML START ===');
+    console.log(html);
+    console.log('=== PDF HTML END ===');
+
+
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
     await page.waitForSelector('table');  // waits until your permit table is in the DOM
