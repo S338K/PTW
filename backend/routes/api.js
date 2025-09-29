@@ -374,19 +374,20 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
-    // Log the resolved Chromium path
-    const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath('chrome');
-    console.log('Using Chromium at:', chromePath);
+    // Resolve Chromium path first
+    const chromePath =
+      process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath('chrome');
 
-    if (!chromePath) {
-      // Fallback if Puppeteer can’t resolve a path
+    const fs = require('fs');
+    console.log('Using Chromium at:', chromePath, 'Exists:', fs.existsSync(chromePath));
+
+    if (!chromePath || !fs.existsSync(chromePath)) {
       return res.status(500).json({
         message: 'Chromium binary not found in this environment'
       });
     }
-    const fs = require('fs');
-    console.log('Checking Chrome path:', chromePath, fs.existsSync(chromePath));
 
+    // Launch Puppeteer
     const browser = await puppeteer.launch({
       headless: true,
       executablePath: chromePath,
@@ -401,9 +402,16 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     });
 
     const page = await browser.newPage();
+    // … your existing HTML template and PDF generation …
+  } catch (err) {
+    console.error('Error generating PDF:', err);
+    res.status(500).json({ message: 'Error generating PDF' });
+  }
+});
 
-    // Build HTML template
-    const html = `
+
+// Build HTML template
+const html = `
       <html>
         <head>
           <style>
@@ -453,21 +461,21 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+await page.setContent(html, { waitUntil: 'networkidle0' });
+const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
 
-    await browser.close();
+await browser.close();
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="Permit-${permit.permitNumber}.pdf"`
-    );
-    res.send(pdfBuffer);
+res.setHeader('Content-Type', 'application/pdf');
+res.setHeader(
+  'Content-Disposition',
+  `attachment; filename="Permit-${permit.permitNumber}.pdf"`
+);
+res.send(pdfBuffer);
   } catch (err) {
-    console.error('Error generating PDF:', err);
-    res.status(500).json({ message: 'Error generating PDF' });
-  }
+  console.error('Error generating PDF:', err);
+  res.status(500).json({ message: 'Error generating PDF' });
+}
 });
 
 
