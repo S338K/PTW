@@ -9,6 +9,8 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 
 const isProd = process.env.NODE_ENV === 'production';
 const app = express();
@@ -81,6 +83,23 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ===== Puppeteer Browser Reuse =====
+let browser;
+
+async function getBrowser() {
+  if (!browser) {
+    browser = await puppeteer.launch({
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless
+    });
+    console.log('✅ Chromium launched and cached');
+  }
+  return browser;
+}
+
 
 // ===== ROUTES =====
 app.get("/", (req, res) => {

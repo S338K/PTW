@@ -390,7 +390,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     function formatDateTime(date) {
       return new Date(date).toLocaleString('en-GB', {
         day: '2-digit',
-        month: 'short',
+        month: 'long',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
@@ -399,16 +399,8 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       });
     }
 
-    // Use @sparticuz/chromium + puppeteer-core
-    const executablePath = await chromium.executablePath();
-
-    const browser = await puppeteer.launch({
-      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
-      defaultViewport: chromium.defaultViewport,
-      executablePath,
-      headless: chromium.headless
-    });
-
+    // ✅ Reuse shared browser instance
+    const browser = await getBrowser();
     const page = await browser.newPage();
 
     const html = `
@@ -437,19 +429,18 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
 
           <h1>Permit to Access</h1>
 
-<table>
-  <tr><th>Full Name</th><td>${permit.fullName || '-'} ${permit.lastName || ''}</td></tr>
-  <tr><th>Work Description</th><td>${permit.workDescription || '-'}</td></tr>
-  <tr><th>Start Date</th><td>${permit.startDateTime ? formatDateTime(permit.startDateTime) : '-'}</td></tr>
-  <tr><th>End Date</th><td>${permit.endDateTime ? formatDateTime(permit.endDateTime) : '-'}</td></tr>
-  <tr><th>Contact</th><td>${permit.contactDetails || '-'}</td></tr>
-  <tr><th>Alternate Contact</th><td>${permit.altContactDetails || '-'}</td></tr>
-  <tr><th>Terminal</th><td>${permit.terminal || '-'}</td></tr>
-  <tr><th>Facility</th><td>${permit.facility || '-'}</td></tr>
-  <tr><th>Submitted On</th><td>${permit.createdAt ? formatDateTime(permit.createdAt) : '-'}</td></tr>
-  <tr><th>Approved On</th><td>${permit.approvedAt ? formatDateTime(permit.approvedAt) : '-'}</td></tr>
-</table>
-
+          <table>
+            <tr><th>Full Name</th><td>${permit.fullName || '-'} ${permit.lastName || ''}</td></tr>
+            <tr><th>Work Description</th><td>${permit.workDescription || '-'}</td></tr>
+            <tr><th>Start Date</th><td>${permit.startDateTime ? formatDateTime(permit.startDateTime) : '-'}</td></tr>
+            <tr><th>End Date</th><td>${permit.endDateTime ? formatDateTime(permit.endDateTime) : '-'}</td></tr>
+            <tr><th>Contact</th><td>${permit.contactDetails || '-'}</td></tr>
+            <tr><th>Alternate Contact</th><td>${permit.altContactDetails || '-'}</td></tr>
+            <tr><th>Terminal</th><td>${permit.terminal || '-'}</td></tr>
+            <tr><th>Facility</th><td>${permit.facility || '-'}</td></tr>
+            <tr><th>Submitted On</th><td>${permit.createdAt ? formatDateTime(permit.createdAt) : '-'}</td></tr>
+            <tr><th>Approved On</th><td>${permit.approvedAt ? formatDateTime(permit.approvedAt) : '-'}</td></tr>
+          </table>
 
           <div class="signature">
             <p><strong>Authorized By:</strong> ____________________________</p>
@@ -465,22 +456,10 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    console.log('=== PDF HTML START ===');
-    console.log(html);
-    console.log('=== PDF HTML END ===');
-
+    // Load HTML and wait for paint
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
-
-    await page.waitForSelector('body'); // ensures body is present
-    await page.evaluateHandle('document.fonts.ready'); // wait for fonts/styles
-
-    // Tiny delay to let Chromium paint
-    await new Promise(r => setTimeout(r, 300));
-
-    await page.waitForSelector('table');  // waits until your permit table is in the DOM
-
-    // 👉 Debug screenshot here
-    await page.screenshot({ path: 'debug.png', fullPage: true });
+    await page.waitForSelector('body');
+    await page.evaluateHandle('document.fonts.ready');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -488,7 +467,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
     });
 
-    await browser.close();
+    await page.close(); // ✅ close only the page, not the browser
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
