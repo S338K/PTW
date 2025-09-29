@@ -373,6 +373,9 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 // GET PDF for an approved permit
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   try {
+    const getBrowser = req.app.get('getBrowser'); // ✅ access helper
+    const browser = await getBrowser();
+    const page = await browser.newPage();
     const permit = await Permit.findOne({
       _id: req.params.id,
       requester: req.session.userId
@@ -398,10 +401,6 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
         hour12: false
       });
     }
-
-    // ✅ Reuse shared browser instance
-    const browser = await getBrowser();
-    const page = await browser.newPage();
 
     const html = `
       <html>

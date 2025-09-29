@@ -100,6 +100,15 @@ async function getBrowser() {
   return browser;
 }
 
+// Optional: close browser gracefully on shutdown
+async function closeBrowser() {
+  if (browser) {
+    await browser.close();
+    console.log('🛑 Chromium closed');
+    browser = null;
+  }
+}
+
 
 // ===== ROUTES =====
 app.get("/", (req, res) => {
@@ -135,4 +144,11 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`CORS allowed for origins: ${allowedOrigins}`);
+  // Warm up Chromium so first request is fast
+  getBrowser().then(() => console.log('Chromium warmed up 🚀'));
+
+  // Graceful shutdown
+  process.on('SIGINT', async () => { await closeBrowser(); process.exit(0); });
+  process.on('SIGTERM', async () => { await closeBrowser(); process.exit(0); });
+
 });
