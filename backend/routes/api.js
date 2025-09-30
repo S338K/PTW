@@ -371,12 +371,24 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 
 
 // GET PDF for an approved permit
+const puppeteer = require('puppeteer');
+
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
+  let browser;
   try {
-    const getBrowser = req.app.get('getBrowser');
-    const browser = await getBrowser();
+    // Launch Puppeteer directly
+    browser = await puppeteer.launch({
+      headless: 'new', // or true if your Puppeteer version doesn’t support 'new'
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage'
+      ]
+    });
+
     const page = await browser.newPage();
 
+    // Fetch permit
     const permit = await Permit.findOne({
       _id: req.params.id,
       requester: req.session.userId
@@ -387,19 +399,26 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
+    // Fetch user
     const user = await User.findById(req.session.userId);
 
+    // Debug log
+    console.log({
+      permitNumber: permit.permitNumber,
+      status: permit.status,
+      fullName: permit.fullName,
+      lastName: permit.lastName,
+      userName: user?.username
+    });
+
+    // Minimal HTML
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
-          <meta charset="utf-8" />
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 14px;
-              margin: 20px;
-            }
+            @page { size: A4; margin: 1cm; }
+            body { font-family: Arial, sans-serif; font-size: 14px; }
           </style>
         </head>
         <body>
@@ -419,10 +438,11 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+      preferCSSPageSize: true
     });
 
     await page.close();
+    await browser.close();
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -433,6 +453,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
 
   } catch (err) {
     console.error('Error generating PDF:', err);
+    if (browser) await browser.close();
     res.status(500).json({ message: 'Error generating PDF' });
   }
 });
