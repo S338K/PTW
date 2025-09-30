@@ -201,7 +201,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     { id: 'lastName', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Last Name must be alphabetic and under 25 characters.' },
     { id: 'contactdetails', regex: /^\+974\d{8}$/, msg: 'Mobile must be +974 followed by 8 digits.' },
     { id: 'altcontactdetails', regex: /^(\+974\d{8})?$/, msg: 'Alternate mobile must be +974 followed by 8 digits or left blank.' },
-    { id: 'corpemailid', regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, msg: 'Enter a valid corporate email.' }
+    { id: 'corpemailid', regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, msg: 'Enter a valid corporate email.' },
+    { id: 'permitTitle', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Permit title must be alphabetic and under 25 characters.' },
   ];
 
   validationFields.forEach(({ id, regex, msg }) => {
@@ -395,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     if (startDate && endDate && endDate <= startDate) {
-      showErrorMessage(endEl, 'End date/time must be after start date/time');
+      showErrorMessage(endEl, 'End date & time must be after Start date & time');
       valid = false;
     }
 
@@ -472,7 +473,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       // Duplicate name check
       const isDuplicate = selectedFiles.some(f => f.name.toLowerCase() === nameLower);
       if (isDuplicate) {
-        setUploadError(`Duplicate file skipped: ${file.name}`);
+        setUploadError(`Duplicate file detected: ${file.name}`);
         continue;
       }
 
@@ -521,7 +522,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   })();
 
-  const fullNameInput = document.getElementById('fullNameMD');
+  const fullNameInput = document.getElementById('username');
   const signNameInput = document.getElementById('signName');
   if (fullNameInput && signNameInput) {
     const sync = () => { signNameInput.value = fullNameInput.value; };
@@ -652,7 +653,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
       } catch (error) {
         console.error('Submit error:', error);
-        alert('Network or server error while submitting form.');
+        alert('Network or Server error while submitting form.');
       } finally {
         // Re-enable button
         if (submitBtn) {

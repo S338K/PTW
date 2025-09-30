@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   // 🔹 Update the single div with both Welcome + Last Login
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
-    lastLoginDiv.textContent = `Welcome : ${user.username} | Last login: ${formatLastLogin(prevLoginISO)}`;
+    lastLoginDiv.textContent = `Welcome : ${user.username} || Last login: ${formatLastLogin(prevLoginISO)}`;
   }
 
 
@@ -105,9 +105,9 @@ document.addEventListener('DOMContentLoaded', async function () {
           const submittedTd = document.createElement('td');
           submittedTd.textContent = new Date(permit.createdAt).toLocaleString();
 
-          // Permit title (work description)
+          // Permit title
           const titleTd = document.createElement('td');
-          titleTd.textContent = permit.workDescription || '—';
+          titleTd.textContent = permit.permitTitle || '—';
 
           // Status with badge
           const statusTd = document.createElement('td');
@@ -134,10 +134,6 @@ document.addEventListener('DOMContentLoaded', async function () {
           } else {
             numberTd.textContent = '—';
           }
-
-
-
-
 
           row.appendChild(serialTd);
           row.appendChild(submittedTd);
@@ -202,8 +198,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       alert('Error downloading PDF');
     }
   }
-
-
 
   /* ===== Redirect to mainpage.html ===== */
   const submitPtw = document.getElementById('sbmtptw');
