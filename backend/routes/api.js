@@ -377,7 +377,6 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     const browser = await getBrowser();
     const page = await browser.newPage();
 
-    // Fetch permit
     const permit = await Permit.findOne({
       _id: req.params.id,
       requester: req.session.userId
@@ -388,22 +387,21 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
-    // Fetch user
     const user = await User.findById(req.session.userId);
 
-    // 🔎 Debug logs
-    console.log({
-      permitNumber: permit.permitNumber,
-      status: permit.status,
-      fullName: permit.fullName,
-      lastName: permit.lastName,
-      userName: user?.username
-    });
-
-    // Minimal HTML
     const html = `
       <!DOCTYPE html>
       <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              font-size: 14px;
+              margin: 20px;
+            }
+          </style>
+        </head>
         <body>
           <h2>Permit PDF Test</h2>
           Permit Number: ${permit.permitNumber}<br/>
@@ -414,21 +412,16 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    // Log HTML details
-    console.log('HTML length:', html.length);
-    console.log('HTML preview:', html.slice(0, 200));
-
-    // Render and wait
     await page.setContent(html, { waitUntil: 'networkidle0' });
     await page.waitForSelector('body');
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200));
 
-    // Screenshot for debugging
-    await page.screenshot({ path: 'debug.png', fullPage: true });
-    console.log('✅ Screenshot saved as debug.png');
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+    });
 
-    // Generate PDF
-    const pdfBuffer = await page.pdf({ format: 'A4' });
     await page.close();
 
     res.setHeader('Content-Type', 'application/pdf');
