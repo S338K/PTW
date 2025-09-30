@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   // ==========================
   function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
     const yesRadio = document.getElementById(radioYesId);
-    const noRadio = document.getElementById(radioNoId);
+    const noRadio = document.getElementById(noRadioId);
     const container = document.getElementById(containerId);
     const input = document.getElementById(inputId);
 
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
   // ==========================
-  // Bind file inputs to radios
+  // Bind file inputs to radios + inline preview
   // ==========================
   function bindDocWithFile(yesId, noId, fileId, label) {
     const yesRadio = document.getElementById(yesId);
@@ -331,12 +331,38 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (noRadio.checked) {
         fileInput.removeAttribute('required');
         hideErrorMessage(fileInput);
+        const preview = fileInput.closest('.md-input')?.querySelector('.file-preview');
+        if (preview) preview.remove();
       }
     });
 
     fileInput.addEventListener('change', () => {
+      const container = fileInput.closest('.md-input') || fileInput.parentElement;
+      let preview = container.querySelector('.file-preview');
+      if (preview) preview.remove();
+
       if (fileInput.files && fileInput.files.length > 0) {
         hideErrorMessage(fileInput);
+        preview = document.createElement('div');
+        preview.className = 'file-preview';
+        preview.style.fontSize = '0.85em';
+        preview.style.marginTop = '4px';
+
+        const file = fileInput.files[0];
+        if (file.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          img.style.maxWidth = '120px';
+          img.style.maxHeight = '120px';
+          img.style.display = 'block';
+          img.style.marginTop = '4px';
+          img.style.border = '1px solid #ccc';
+          img.style.borderRadius = '4px';
+          preview.appendChild(img);
+        } else {
+          preview.textContent = `Selected: ${file.name}`;
+        }
+        container.appendChild(preview);
       } else if (yesRadio.checked) {
         showErrorMessage(fileInput, `${label} must be uploaded`);
       }
@@ -380,43 +406,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   // ==========================
-  // File preview for required docs
-  // ==========================
-  function setupFilePreview(fileInputId, previewContainerId) {
-    const fileInput = document.getElementById(fileInputId);
-    const previewContainer = document.getElementById(previewContainerId);
-
-    if (!fileInput || !previewContainer) return;
-
-    fileInput.addEventListener('change', () => {
-      previewContainer.innerHTML = ''; // clear old preview
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      if (file.type.startsWith('image/')) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.style.maxWidth = '120px';
-        img.style.maxHeight = '120px';
-        img.style.display = 'block';
-        img.style.marginTop = '4px';
-        img.style.border = '1px solid #ccc';
-        img.style.borderRadius = '4px';
-        previewContainer.appendChild(img);
-      } else {
-        const span = document.createElement('span');
-        span.textContent = `Selected: ${file.name}`;
-        previewContainer.appendChild(span);
-      }
-    });
-  }
-
-  // Apply previews to each required doc
-  setupFilePreview('ePermitFile', 'ePermitPreview');
-  setupFilePreview('fmmWorkorderFile', 'fmmWorkorderPreview');
-  setupFilePreview('hseRiskFile', 'hseRiskPreview');
-  setupFilePreview('opRiskFile', 'opRiskPreview');
-  // ==========================
   // General File Upload (attachments)
   // ==========================
   let selectedFiles = [];
@@ -447,7 +436,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     fileInput.addEventListener('change', () => {
       const files = Array.from(fileInput.files);
       files.forEach(file => {
-        // Validate type and size
         const allowedTypes = [
           'application/pdf',
           'image/jpeg',
@@ -463,7 +451,6 @@ document.addEventListener('DOMContentLoaded', async function () {
           fileTypeMessage.textContent = 'File size must be under 5MB';
           return;
         }
-        // Prevent duplicates
         if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
           fileTypeMessage.textContent = 'Duplicate file skipped';
           return;
@@ -471,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         selectedFiles.push(file);
       });
       renderFileList();
-      fileInput.value = ''; // reset input
+      fileInput.value = '';
     });
   }
 
@@ -483,6 +470,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     hideErrorMessage(fileInput);
     return true;
   }
+
+
   // ==========================
   // Date & Time validation
   // ==========================
@@ -547,6 +536,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     return valid;
   }
+
+
   // ==========================
   // Signature auto-fill & validation
   // ==========================
