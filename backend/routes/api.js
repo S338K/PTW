@@ -9,7 +9,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const crypto = require('crypto'); // added for secure token generation
 const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 
@@ -376,7 +376,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   let browser;
   try {
     // Launch Puppeteer
-    browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({
       headless: 'new', // use true if your version doesn’t support 'new'
       args: [
         '--no-sandbox',
