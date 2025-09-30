@@ -527,6 +527,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   const signNameInput = document.getElementById('signName');
 
   if (fullNameInput && lastNameInput && signNameInput) {
+
+    signNameInput.readOnly = true;
+
     const sync = () => {
       const first = fullNameInput.value.trim();
       const last = lastNameInput.value.trim();
