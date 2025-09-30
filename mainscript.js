@@ -310,36 +310,35 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('workDescription')?.setAttribute('required', 'required');
 
   // =========================
-  // Required Documents validation (file uploads)
+  // Required Documents fix
   // =========================
-  function validateRequiredDocs() {
-    let valid = true;
+  function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
+    const yesRadio = document.getElementById(radioYesId);
+    const noRadio = document.getElementById(radioNoId);
+    const container = document.getElementById(containerId);
+    const input = document.getElementById(inputId);
 
-    const docRules = [
-      { yesId: 'ePermitYes', fileId: 'ePermitFile', label: 'E-Permit document' },
-      { yesId: 'fmmWorkorderYes', fileId: 'fmmWorkorderFile', label: 'FMM Workorder document' },
-      { yesId: 'hseRiskYes', fileId: 'hseRiskFile', label: 'HSE Risk Assessment document' },
-      { yesId: 'opRiskYes', fileId: 'opRiskFile', label: 'Operational Risk Assessment document' }
-    ];
-
-    docRules.forEach(({ yesId, fileId, label }) => {
-      const yesRadio = document.getElementById(yesId);
-      const fileInput = document.getElementById(fileId);
-
-      if (yesRadio && yesRadio.checked) {
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-          showErrorMessage(fileInput, `${label} must be uploaded`);
-          valid = false;
-        } else {
-          hideErrorMessage(fileInput);
+    if (yesRadio && noRadio && container && input) {
+      yesRadio.addEventListener('change', () => {
+        if (yesRadio.checked) {
+          container.classList.add('hidden');
+          input.removeAttribute('required');
+          input.value = '';
         }
-      } else {
-        if (fileInput) hideErrorMessage(fileInput);
-      }
-    });
-
-    return valid;
+      });
+      noRadio.addEventListener('change', () => {
+        if (noRadio.checked) {
+          container.classList.remove('hidden');
+          input.setAttribute('required', 'required');
+        }
+      });
+    }
   }
+
+  setupDocToggle('ePermitYes', 'ePermitNo', 'ePermitDetails', 'ePermitReason');
+  setupDocToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr', 'noFmmWorkorder');
+  setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
+  setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
   // =========================
   // Date & time validation
@@ -505,8 +504,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   function validateFileUpload() {
     return selectedFiles.length > 0 && (!typeMsg || typeMsg.textContent === '');
   }
-
-
   // =========================
   // Signature defaults + auto-fill from full name + last name
   // =========================
@@ -594,8 +591,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         validateDateTime() &&
         validateFileUpload() &&
         validateSignature() &&
-        validateConditions() &&
-        validateRequiredDocs();
+        validateConditions();
 
       if (!ok) {
         alert('Please review highlighted fields and complete all required details.');
