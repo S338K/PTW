@@ -193,6 +193,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     return true;
   }
 
+
   // =========================
   // Requester details validation
   // =========================
@@ -265,6 +266,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     });
   }
+
   // =========================
   // Impact on Operation fix (updated for Level of Impact + Equipment)
   // =========================
@@ -308,35 +310,36 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('workDescription')?.setAttribute('required', 'required');
 
   // =========================
-  // Required Documents fix
+  // Required Documents validation (file uploads)
   // =========================
-  function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
-    const yesRadio = document.getElementById(radioYesId);
-    const noRadio = document.getElementById(radioNoId);
-    const container = document.getElementById(containerId);
-    const input = document.getElementById(inputId);
+  function validateRequiredDocs() {
+    let valid = true;
 
-    if (yesRadio && noRadio && container && input) {
-      yesRadio.addEventListener('change', () => {
-        if (yesRadio.checked) {
-          container.classList.add('hidden');
-          input.removeAttribute('required');
-          input.value = '';
+    const docRules = [
+      { yesId: 'ePermitYes', fileId: 'ePermitFile', label: 'E-Permit document' },
+      { yesId: 'fmmWorkorderYes', fileId: 'fmmWorkorderFile', label: 'FMM Workorder document' },
+      { yesId: 'hseRiskYes', fileId: 'hseRiskFile', label: 'HSE Risk Assessment document' },
+      { yesId: 'opRiskYes', fileId: 'opRiskFile', label: 'Operational Risk Assessment document' }
+    ];
+
+    docRules.forEach(({ yesId, fileId, label }) => {
+      const yesRadio = document.getElementById(yesId);
+      const fileInput = document.getElementById(fileId);
+
+      if (yesRadio && yesRadio.checked) {
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+          showErrorMessage(fileInput, `${label} must be uploaded`);
+          valid = false;
+        } else {
+          hideErrorMessage(fileInput);
         }
-      });
-      noRadio.addEventListener('change', () => {
-        if (noRadio.checked) {
-          container.classList.remove('hidden');
-          input.setAttribute('required', 'required');
-        }
-      });
-    }
+      } else {
+        if (fileInput) hideErrorMessage(fileInput);
+      }
+    });
+
+    return valid;
   }
-
-  setupDocToggle('ePermitYes', 'ePermitNo', 'ePermitDetails', 'ePermitReason');
-  setupDocToggle('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmwrkordr', 'noFmmWorkorder');
-  setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
-  setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
   // =========================
   // Date & time validation
@@ -502,6 +505,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   function validateFileUpload() {
     return selectedFiles.length > 0 && (!typeMsg || typeMsg.textContent === '');
   }
+
+
   // =========================
   // Signature defaults + auto-fill from full name + last name
   // =========================
@@ -589,7 +594,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         validateDateTime() &&
         validateFileUpload() &&
         validateSignature() &&
-        validateConditions();
+        validateConditions() &&
+        validateRequiredDocs();
 
       if (!ok) {
         alert('Please review highlighted fields and complete all required details.');
