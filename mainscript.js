@@ -115,9 +115,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // ==========================
+  // =========================
   // Utilities for validation
-  // ==========================
+  // =========================
   function showErrorMessage(inputElement, errorMessage) {
     if (!inputElement) return;
     let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
@@ -154,9 +154,49 @@ document.addEventListener('DOMContentLoaded', async function () {
     return true;
   }
 
-  // ==========================
+  // =========================
+  // Utilities for validation
+  // =========================
+  function showErrorMessage(inputElement, errorMessage) {
+    if (!inputElement) return;
+    let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
+    let error = container.querySelector('.error-message');
+    if (!error) {
+      error = document.createElement('span');
+      error.className = 'error-message';
+      error.style.color = 'darkred';
+      error.style.fontSize = '0.9em';
+      error.style.display = 'block';
+      error.style.marginTop = '4px';
+      container.appendChild(error);
+    }
+    error.textContent = errorMessage;
+    inputElement.style.border = '2px solid red';
+  }
+
+  function hideErrorMessage(inputElement) {
+    if (!inputElement) return;
+    let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
+    const error = container.querySelector('.error-message');
+    if (error) error.remove();
+    inputElement.style.border = '';
+  }
+
+  function validateField(inputElement, regex, errorMessage) {
+    if (!inputElement) return true;
+    const v = (inputElement.value || '').trim();
+    if (!regex.test(v)) {
+      showErrorMessage(inputElement, errorMessage);
+      return false;
+    }
+    hideErrorMessage(inputElement);
+    return true;
+  }
+
+
+  // =========================
   // Requester details validation
-  // ==========================
+  // =========================
   const validationFields = [
     { id: 'fullName', regex: /^[A-Za-z\s]{1,50}$/, msg: 'Name must be alphabetic and under 50 characters.' },
     { id: 'lastName', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Last Name must be alphabetic and under 25 characters.' },
@@ -178,23 +218,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // ==========================
-  // Work details validation & facility logic
-  // ==========================
+
+  // =========================
+  // Facility list update
+  // =========================
   const facilityData = {
-    'PTC': [
-      'Arrival Hall', 'Baggage Hall', 'Check-In Area',
-      'Terminating Alpha', 'Terminating Bravo',
-      'Transfer Alpha', 'Transfer Bravo', 'Transfer Charlie',
-      'Dog Sniffing Area', 'Stand C1', 'Stand C2', 'Stand C3', 'Stand C4', 'Stand C5'
-    ],
-    'RTBF': [
-      'Employee Service Building', 'Customer Service Building',
-      'RTBF Baggage Hall', 'RTBF Baggage Control Room'
-    ],
-    'QROC': [
-      'Arrival Area', 'Departure Area', 'Baggage Hall Area'
-    ]
+    'PTC': ['Arrival Hall', 'Baggage Hall', 'Check-In Area', 'Terminating Alpha', 'Terminating Bravo', 'Transfer Alpha', 'Transfer Bravo', 'Transfer Charlie', 'Dog Sniffing Area', 'Stand C1', 'Stand C2', 'Stand C3', 'Stand C4', 'Stand C5'],
+    'RTBF': ['Employee Service Building', 'Customer Service Building', 'RTBF Baggage Hall', 'RTBF Baggage Control Room'],
+    'QROC': ['Arrival Area', 'Departure Area', 'Baggage Hall Area']
   };
 
   const terminalEl = document.getElementById('terminal');
@@ -236,7 +267,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // Impact on Operation conditional fields
+  // =========================
+  // Impact on Operation fix (updated for Level of Impact + Equipment)
+  // =========================
   const impactEl = document.getElementById('impact');
   if (impactEl) {
     impactEl.addEventListener('change', function () {
@@ -276,13 +309,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('natureOfWork')?.setAttribute('required', 'required');
   document.getElementById('workDescription')?.setAttribute('required', 'required');
 
-
-  // ==========================
-  // Documents Required
-  // ==========================
+  // =========================
+  // Required Documents fix
+  // =========================
   function setupDocToggle(radioYesId, radioNoId, containerId, inputId) {
     const yesRadio = document.getElementById(radioYesId);
-    const noRadio = document.getElementById(noRadioId);
+    const noRadio = document.getElementById(radioNoId);
     const container = document.getElementById(containerId);
     const input = document.getElementById(inputId);
 
@@ -308,173 +340,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   setupDocToggle('hseRiskYes', 'hseRiskNo', 'hseassmnt', 'noHseRiskAssessmentReason');
   setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
-  // ==========================
-  // Bind file inputs to radios + inline preview
-  // ==========================
-  function bindDocWithFile(yesId, noId, fileId, label) {
-    const yesRadio = document.getElementById(yesId);
-    const noRadio = document.getElementById(noId);
-    const fileInput = document.getElementById(fileId);
-
-    if (!yesRadio || !noRadio || !fileInput) return;
-
-    yesRadio.addEventListener('change', () => {
-      if (yesRadio.checked) {
-        fileInput.setAttribute('required', 'required');
-        if (!fileInput.files || fileInput.files.length === 0) {
-          showErrorMessage(fileInput, `${label} must be uploaded`);
-        }
-      }
-    });
-
-    noRadio.addEventListener('change', () => {
-      if (noRadio.checked) {
-        fileInput.removeAttribute('required');
-        hideErrorMessage(fileInput);
-        const preview = fileInput.closest('.md-input')?.querySelector('.file-preview');
-        if (preview) preview.remove();
-      }
-    });
-
-    fileInput.addEventListener('change', () => {
-      const container = fileInput.closest('.md-input') || fileInput.parentElement;
-      let preview = container.querySelector('.file-preview');
-      if (preview) preview.remove();
-
-      if (fileInput.files && fileInput.files.length > 0) {
-        hideErrorMessage(fileInput);
-        preview = document.createElement('div');
-        preview.className = 'file-preview';
-        preview.style.fontSize = '0.85em';
-        preview.style.marginTop = '4px';
-
-        const file = fileInput.files[0];
-        if (file.type.startsWith('image/')) {
-          const img = document.createElement('img');
-          img.src = URL.createObjectURL(file);
-          img.style.maxWidth = '120px';
-          img.style.maxHeight = '120px';
-          img.style.display = 'block';
-          img.style.marginTop = '4px';
-          img.style.border = '1px solid #ccc';
-          img.style.borderRadius = '4px';
-          preview.appendChild(img);
-        } else {
-          preview.textContent = `Selected: ${file.name}`;
-        }
-        container.appendChild(preview);
-      } else if (yesRadio.checked) {
-        showErrorMessage(fileInput, `${label} must be uploaded`);
-      }
-    });
-  }
-
-  bindDocWithFile('ePermitYes', 'ePermitNo', 'ePermitFile', 'E-Permit document');
-  bindDocWithFile('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmWorkorderFile', 'FMM Workorder document');
-  bindDocWithFile('hseRiskYes', 'hseRiskNo', 'hseRiskFile', 'HSE Risk Assessment document');
-  bindDocWithFile('opRiskYes', 'opRiskNo', 'opRiskFile', 'Operational Risk Assessment document');
-
-  // ==========================
-  // Validation on submit
-  // ==========================
-  function validateRequiredDocs() {
-    let valid = true;
-    const docRules = [
-      { yesId: 'ePermitYes', fileId: 'ePermitFile', label: 'E-Permit document' },
-      { yesId: 'fmmWorkorderYes', fileId: 'fmmWorkorderFile', label: 'FMM Workorder document' },
-      { yesId: 'hseRiskYes', fileId: 'hseRiskFile', label: 'HSE Risk Assessment document' },
-      { yesId: 'opRiskYes', fileId: 'opRiskFile', label: 'Operational Risk Assessment document' }
-    ];
-
-    docRules.forEach(({ yesId, fileId, label }) => {
-      const yesRadio = document.getElementById(yesId);
-      const fileInput = document.getElementById(fileId);
-
-      if (yesRadio && yesRadio.checked) {
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-          showErrorMessage(fileInput, `${label} must be uploaded`);
-          valid = false;
-        } else {
-          hideErrorMessage(fileInput);
-        }
-      } else {
-        if (fileInput) hideErrorMessage(fileInput);
-      }
-    });
-
-    return valid;
-  }
-
-  // ==========================
-  // General File Upload (attachments)
-  // ==========================
-  let selectedFiles = [];
-
-  const fileInput = document.getElementById('files');
-  const fileList = document.getElementById('fileList');
-  const fileTypeMessage = document.getElementById('fileTypeMessage');
-
-  function renderFileList() {
-    if (!fileList) return;
-    fileList.innerHTML = '';
-    selectedFiles.forEach((file, index) => {
-      const li = document.createElement('li');
-      li.textContent = file.name;
-      const removeBtn = document.createElement('button');
-      removeBtn.textContent = 'Remove';
-      removeBtn.type = 'button';
-      removeBtn.addEventListener('click', () => {
-        selectedFiles.splice(index, 1);
-        renderFileList();
-      });
-      li.appendChild(removeBtn);
-      fileList.appendChild(li);
-    });
-  }
-
-  if (fileInput) {
-    fileInput.addEventListener('change', () => {
-      const files = Array.from(fileInput.files);
-      files.forEach(file => {
-        const allowedTypes = [
-          'application/pdf',
-          'image/jpeg',
-          'image/png',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ];
-        if (!allowedTypes.includes(file.type)) {
-          fileTypeMessage.textContent = 'Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX';
-          return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-          fileTypeMessage.textContent = 'File size must be under 5MB';
-          return;
-        }
-        if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
-          fileTypeMessage.textContent = 'Duplicate file skipped';
-          return;
-        }
-        selectedFiles.push(file);
-      });
-      renderFileList();
-      fileInput.value = '';
-    });
-  }
-
-  function validateFileUpload() {
-    if (selectedFiles.length === 0) {
-      showErrorMessage(fileInput, 'Please upload at least one supporting file');
-      return false;
-    }
-    hideErrorMessage(fileInput);
-    return true;
-  }
-
-
-  // ==========================
-  // Date & Time validation
-  // ==========================
+  // =========================
+  // Date & time validation
+  // =========================
   let fpStart = null;
   let fpEnd = null;
 
@@ -537,71 +405,173 @@ document.addEventListener('DOMContentLoaded', async function () {
     return valid;
   }
 
+  // =========================
+  // File upload module (unified)
+  // =========================
+  const fileInput = document.getElementById('fileUpload');
+  const fileListEl = document.getElementById('uploadedFiles');
+  const typeMsg = document.getElementById('fileTypeMessage');
+  let selectedFiles = [];
 
-  // ==========================
-  // Signature auto-fill & validation
-  // ==========================
-  const fullNameInput = document.getElementById('fullName');
-  const signNameInput = document.getElementById('signName');
-  const signDate = document.getElementById('signDate');
-  const signTime = document.getElementById('signTime');
+  const allowedExt = ['.jpg', '.jpeg', '.pdf'];
+  const MAX_TOTAL = 3 * 1024 * 1024; // 3 MB
 
-  // Auto-fill signature name from full name
-  if (fullNameInput && signNameInput) {
-    fullNameInput.addEventListener('input', () => {
-      signNameInput.value = fullNameInput.value;
+  function setUploadError(message) {
+    if (typeMsg) typeMsg.textContent = message;
+    const label = document.querySelector(`label[for="${fileInput?.id}"]`);
+    if (label) label.classList.add('upload-error');
+  }
+  function clearUploadError() {
+    if (typeMsg) typeMsg.textContent = '';
+    const label = document.querySelector(`label[for="${fileInput?.id}"]`);
+    if (label) label.classList.remove('upload-error');
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(2)} MB`;
+  }
+
+  function renderFileList() {
+    fileListEl.innerHTML = '';
+    selectedFiles.forEach((file, index) => {
+      const li = document.createElement('li');
+
+      const info = document.createElement('span');
+      info.textContent = `${file.name} (${formatSize(file.size)})`;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '❌';
+      removeBtn.classList.add('delete-file-btn');
+      removeBtn.addEventListener('click', () => {
+        selectedFiles.splice(index, 1);
+        renderFileList();
+        fileInput.value = ''; // allow re‑selecting same file
+        if (selectedFiles.length === 0) clearUploadError();
+      });
+
+      li.appendChild(info);
+      li.appendChild(removeBtn);
+      fileListEl.appendChild(li);
     });
   }
 
-  // Default date/time for signature
-  (function setDefaultSignatureDateTime() {
+  function handleNewSelection(newFiles) {
+    let total = selectedFiles.reduce((s, f) => s + f.size, 0);
+
+    for (const file of newFiles) {
+      const nameLower = file.name.toLowerCase();
+
+      // Extension check
+      const isAllowed = allowedExt.some(ext => nameLower.endsWith(ext));
+      if (!isAllowed) {
+        setUploadError('Only .jpg, .jpeg, and .pdf files are allowed.');
+        continue;
+      }
+
+      // Duplicate name check
+      const isDuplicate = selectedFiles.some(f => f.name.toLowerCase() === nameLower);
+      if (isDuplicate) {
+        setUploadError(`Duplicate file detected: ${file.name}`);
+        continue;
+      }
+
+      // Total size check
+      if (total + file.size > MAX_TOTAL) {
+        setUploadError('Total file size must not exceed 3 MB.');
+        continue;
+      }
+
+      selectedFiles.push(file);
+      total += file.size;
+      clearUploadError();
+    }
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const newFiles = Array.from(e.target.files || []);
+      if (newFiles.length === 0) return;
+      handleNewSelection(newFiles);
+      renderFileList();
+      fileInput.value = ''; // reset so same file triggers change
+    });
+  }
+
+  function validateFileUpload() {
+    return selectedFiles.length > 0 && (!typeMsg || typeMsg.textContent === '');
+  }
+  // =========================
+  // Signature defaults + auto-fill from full name + last name
+  // =========================
+  (function fillSignatureDefaults() {
+    const signDate = document.getElementById('signDate');
+    const signTime = document.getElementById('signTime');
     const now = new Date();
-    if (signDate) {
+    if (signDate && !signDate.value) {
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, '0');
       const d = String(now.getDate()).padStart(2, '0');
       signDate.value = `${y}-${m}-${d}`;
     }
-    if (signTime) {
+    if (signTime && !signTime.value) {
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
       signTime.value = `${hh}:${mm}`;
     }
   })();
 
-  function validateSignature() {
-    let valid = true;
-    if (!signNameInput || !signNameInput.value.trim()) {
-      showErrorMessage(signNameInput, 'Signature name is required');
-      valid = false;
-    } else {
-      hideErrorMessage(signNameInput);
-    }
-    if (!signDate || !signDate.value.trim()) {
-      showErrorMessage(signDate, 'Signature date is required');
-      valid = false;
-    } else {
-      hideErrorMessage(signDate);
-    }
-    if (!signTime || !signTime.value.trim()) {
-      showErrorMessage(signTime, 'Signature time is required');
-      valid = false;
-    } else {
-      hideErrorMessage(signTime);
-    }
-    return valid;
+  const fullNameInput = document.getElementById('fullName');
+  const lastNameInput = document.getElementById('lastName');
+  const signNameInput = document.getElementById('signName');
+
+  if (fullNameInput && lastNameInput && signNameInput) {
+
+    signNameInput.readOnly = true;
+
+    const sync = () => {
+      const first = fullNameInput.value.trim();
+      const last = lastNameInput.value.trim();
+      signNameInput.value = [first, last].filter(Boolean).join(' ');
+    };
+    fullNameInput.addEventListener('input', sync);
+    lastNameInput.addEventListener('input', sync);
+    sync(); // run once on load
   }
-  // ==========================
+
+  // =========================
   // Conditions validation
-  // ==========================
+  // =========================
   function validateConditions() {
-    const conditionsCheckbox = document.getElementById('conditions');
-    if (!conditionsCheckbox || !conditionsCheckbox.checked) {
-      showErrorMessage(conditionsCheckbox, 'You must agree to the conditions before submitting');
+    const checkbox = document.getElementById('confirmConditions');
+    if (!checkbox) return true;
+    if (!checkbox.checked) {
+      alert('You must agree to the conditions before submitting.');
       return false;
     }
-    hideErrorMessage(conditionsCheckbox);
     return true;
+  }
+
+  // =========================
+  // Signature validation
+  // =========================
+  function validateSignature() {
+    const fields = ['signName', 'signDate', 'signTime', 'designation'];
+    let ok = true;
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (!el.value || !el.value.toString().trim()) {
+        showErrorMessage(el, 'This field is required');
+        ok = false;
+      } else {
+        hideErrorMessage(el);
+      }
+    });
+    return ok;
   }
 
   // ==========================
@@ -611,26 +581,24 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitBtn = document.getElementById('submitBtn');
 
   if (form) {
+    // Main submit handler (fires for both Enter and button click)
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
+      console.log('Form submission triggered');
 
       const ok =
         validateRequesterDetails() &&
         validateDateTime() &&
-        validateRequiredDocs() &&   // ✅ now bound to radios + file inputs
         validateFileUpload() &&
         validateSignature() &&
         validateConditions();
 
       if (!ok) {
-        // Scroll to first error for better UX
-        const firstError = document.querySelector('.error-message');
-        if (firstError) {
-          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        alert('Please review highlighted fields and complete all required details.');
         return;
       }
 
+      // Optional: disable button to prevent double clicks
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
@@ -657,6 +625,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
           // Reset signature defaults
           const now = new Date();
+          const signDate = document.getElementById('signDate');
+          const signTime = document.getElementById('signTime');
           if (signDate) {
             const y = now.getFullYear();
             const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -672,7 +642,21 @@ document.addEventListener('DOMContentLoaded', async function () {
             signNameInput.value = fullNameInput.value;
           }
 
-          // Clear error messages and borders
+          // Reset UI sections
+          const fileMsg = document.getElementById('fileTypeMessage');
+          if (fileMsg) fileMsg.textContent = '';
+          if (facilityContainer) facilityContainer.classList.add('hidden');
+          if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
+          if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
+          if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
+
+          const equipmentTypeSection = document.getElementById('equipmentType');
+          const impactDetailsSection = document.getElementById('impactDetails');
+          const levelImpactSection = document.getElementById('levelOfImpactContainer');
+          if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
+          if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
+          if (levelImpactSection) levelImpactSection.classList.add('hidden');
+
           document.querySelectorAll('.error-message').forEach(n => n.remove());
           document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
         } else {
@@ -683,6 +667,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.error('Submit error:', error);
         alert('Network or Server error while submitting form.');
       } finally {
+        // Re-enable button
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Submit';
@@ -690,6 +675,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     });
 
+    // Explicitly wire the button too (in case it's outside the <form>)
     if (submitBtn) {
       submitBtn.addEventListener('click', (e) => {
         e.preventDefault();
