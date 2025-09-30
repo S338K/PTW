@@ -414,12 +414,20 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
+    console.log('HTML length:', html.length);
+    console.log('HTML preview:', html.slice(0, 200));
     // Render
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('body');
 
     const pdfBuffer = await page.pdf({ format: 'A4' });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.waitForSelector('body');
+    await new Promise(r => setTimeout(r, 300));
+
     await page.close();
+
+    await page.screenshot({ path: 'debug.png', fullPage: true });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
