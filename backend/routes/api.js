@@ -406,17 +406,40 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
         <head>
           <meta charset="utf-8" />
           <style>
-            @page { size: A4; margin: 1cm; }
-            body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4; }
-            header { text-align: center; margin-bottom: 20px; }
-            header h1 { font-size: 16px; margin: 0; }
-            header h2 { font-size: 14px; margin: 5px 0 0 0; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            td { border: 1px solid #000; padding: 6px; vertical-align: top; }
-            td.label { font-weight: bold; width: 35%; background: #f2f2f2; }
-            blockquote { font-style: italic; margin: 20px 0; padding-left: 10px; border-left: 3px solid #999; }
-            footer { font-size: 11px; margin-top: 30px; border-top: 1px solid #ccc; padding-top: 8px; }
-          </style>
+  @page { size: A4; margin: 1cm; }
+
+  body {
+    font-family: Tahoma, sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+    border: 2px solid #000;   /* ✅ full-page border */
+    padding: 20px;            /* ✅ keep content away from border */
+    box-sizing: border-box;
+  }
+
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 16px; margin: 0; }
+  header h2 { font-size: 14px; margin: 5px 0 0 0; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+  td.label { font-weight: bold; width: 35%; background: #f2f2f2; }
+
+  blockquote {
+    font-style: italic;
+    margin: 20px 0;
+    padding-left: 10px;
+    border-left: 3px solid #999;
+  }
+
+  footer {
+    font-size: 11px;
+    margin-top: 30px;
+    border-top: 1px solid #ccc;
+    padding-top: 8px;
+  }
+</style>
+
         </head>
         <body>
           <header>
