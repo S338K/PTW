@@ -375,14 +375,11 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   let browser;
   try {
-    // Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: 'new', // use true if your version doesn’t support 'new'
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage'
-      ]
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(), // Sparticuz-provided path
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
@@ -392,7 +389,6 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       _id: req.params.id,
       requester: req.session.userId
     });
-
     if (!permit) return res.status(404).json({ message: 'Permit not found' });
     if (permit.status !== 'Approved') {
       return res.status(403).json({ message: 'Permit not approved yet' });
@@ -401,17 +397,9 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     // Fetch user
     const user = await User.findById(req.session.userId);
 
-    // Minimal HTML
+    // Minimal HTML for now
     const html = `
-      <!DOCTYPE html>
       <html>
-        <head>
-          <meta charset="utf-8" />
-          <style>
-            @page { size: A4; margin: 1cm; }
-            body { font-family: Arial, sans-serif; font-size: 14px; }
-          </style>
-        </head>
         <body>
           <h2>Permit PDF</h2>
           Permit Number: ${permit.permitNumber}<br/>
@@ -422,20 +410,11 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    // Render and generate PDF
     await page.setContent(html, { waitUntil: 'networkidle0' });
-    await page.waitForSelector('body');
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      preferCSSPageSize: true
-    });
-
-    await page.close();
     await browser.close();
 
-    // Send PDF
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -449,6 +428,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Error generating PDF' });
   }
 });
+
 
 
 // ===== REQUEST PASSWORD RESET =====
