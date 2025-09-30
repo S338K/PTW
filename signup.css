@@ -1,5 +1,5 @@
 body {
-  background-color: #fff;
+  background-color: #0d122e;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
@@ -26,14 +26,15 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  background: rgb(34, 5, 57);
-  color: #fff;
+  background: #fff;
+  color: #0d122e;
   font-weight: 500;
   text-align: center;
   padding: 1px;
   z-index: 1000;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  margin-bottom: auto;
+  margin-bottom: 10px;
+  border-radius: 10px;
 }
 
 /* ===== Form Container ===== */

@@ -21,10 +21,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Validation rules
   function validateName(value) {
-    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,25}$/.test(value.trim());
+    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,50}$/.test(value.trim());
   }
   function validateCompany(value) {
-    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]{2,25}$/.test(value.trim());
+    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]{2,50}$/.test(value.trim());
   }
   function validateEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -87,11 +87,11 @@ document.addEventListener('DOMContentLoaded', function () {
     switch (inputEl.id) {
       case 'signupName':
         isValid = validateName(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Letters only (2–25 chars).');
+        showError(inputEl, isValid ? '' : 'Letters only (2–50 chars).');
         break;
       case 'companyName':
         isValid = validateCompany(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Letters/numbers only (2–25 chars).');
+        showError(inputEl, isValid ? '' : 'Letters/numbers only (2–50 chars).');
         break;
       case 'signupEmail':
         isValid = validateEmail(inputEl.value);
