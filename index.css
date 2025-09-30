@@ -87,7 +87,7 @@ legend {
 .form-group {
   margin-bottom: 30px;
   width: 90%;
-  position: relative;
+  position: absolute;
 }
 
 label {
@@ -264,10 +264,7 @@ input.valid {
 }
 
 .floating-label label {
-  position: absolute;
-  top: 50%;
   left: 18px;
-  transform: translateY(-50%);
   font-size: 15px;
   color: var(--text-muted);
   pointer-events: none;

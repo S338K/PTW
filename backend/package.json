@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "postinstall": "puppeteer browsers install chrome"
+    "postinstall": "puppeteer install"
   },
   "dependencies": {
     "@sparticuz/chromium": "^138.0.2",
