@@ -400,34 +400,36 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       userName: user?.username
     });
 
-    // Minimal HTML with only DB values
+    // Minimal HTML
     const html = `
       <!DOCTYPE html>
       <html>
         <body>
           <h2>Permit PDF Test</h2>
-          Permit Number: ${permit.permitNumber || '-'}<br/>
-          Status: ${permit.status || '-'}<br/>
-          Full Name: ${[permit.fullName, permit.lastName].filter(Boolean).join(' ') || '-'}<br/>
+          Permit Number: ${permit.permitNumber}<br/>
+          Status: ${permit.status}<br/>
+          Full Name: ${[permit.fullName, permit.lastName].filter(Boolean).join(' ')}<br/>
           Printed by: ${user?.username || 'Unknown User'}<br/>
         </body>
       </html>
     `;
 
+    // Log HTML details
     console.log('HTML length:', html.length);
     console.log('HTML preview:', html.slice(0, 200));
-    // Render
-    await page.setContent(html, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('body');
 
-    const pdfBuffer = await page.pdf({ format: 'A4' });
+    // Render and wait
     await page.setContent(html, { waitUntil: 'networkidle0' });
     await page.waitForSelector('body');
     await new Promise(r => setTimeout(r, 300));
 
-    await page.close();
-
+    // Screenshot for debugging
     await page.screenshot({ path: 'debug.png', fullPage: true });
+    console.log('✅ Screenshot saved as debug.png');
+
+    // Generate PDF
+    const pdfBuffer = await page.pdf({ format: 'A4' });
+    await page.close();
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -441,6 +443,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Error generating PDF' });
   }
 });
+
 
 // ===== REQUEST PASSWORD RESET =====
 router.post('/forgot-password', async (req, res, next) => {
