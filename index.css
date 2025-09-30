@@ -86,13 +86,16 @@ legend {
 
 .form-group {
   margin-bottom: 30px;
-  width: 90%;
-  position: absolute;
+  width: 100%;
+  position: relative;
 }
+
 
 label {
   display: block;
   margin-bottom: 8px;
+  color: #080435;
+  font-weight: 600;
 }
 
 input[type="email"],
@@ -240,46 +243,4 @@ input.valid {
     padding: 12px;
     font-size: 14px;
   }
-}
-
-/* ----------------------------------------
-   Floating Labels
----------------------------------------- */
-.floating-label {
-  position: relative;
-  margin-bottom: 30px;
-  width: 90%;
-}
-
-.floating-label input {
-  background: transparent;
-  /* keep your existing background */
-  width: 100%;
-  padding: 15px;
-  border: 2px solid var(--input-border);
-  border-radius: 25px;
-  /* preserve rounded corners */
-  font-size: 15px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.floating-label label {
-  left: 18px;
-  font-size: 15px;
-  color: var(--text-muted);
-  pointer-events: none;
-  transition: 0.3s ease all;
-  /* matches form background */
-  padding: 0 6px;
-  border-radius: 2px;
-}
-
-/* Float label when input is focused or has value */
-.floating-label input:focus+label,
-.floating-label input:not(:placeholder-shown)+label {
-  top: -10px;
-  left: 14px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #080435;
 }
