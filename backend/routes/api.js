@@ -450,13 +450,14 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
           <table>
             <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${permit.lastName || ''}</td></tr>
             <tr><td class="label">Designation</td><td>${permit.designation || ''}</td></tr>
-            <tr><td class="label">Mobile Number</td><td>${permit.mobile || ''}</td></tr>
+            <tr><td class="label">Mobile Number</td><td>${permit.contactDetails || ''}</td></tr>
+            <tr><td class="label">Alternate Mobile Number</td><td>${permit.altContactDetails || ''}</td></tr>
             <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
             <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
             <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
-            <tr><td class="label">Start Date and Time</td><td>${permit.startDate ? new Date(permit.startDate).toLocaleString() : ''}</td></tr>
-            <tr><td class="label">End Date and Time</td><td>${permit.endDate ? new Date(permit.endDate).toLocaleString() : ''}</td></tr>
-            <tr><td class="label">Work Description</td><td>${permit.description || ''}</td></tr>
+            <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : ''}</td></tr>
+            <tr><td class="label">End Date and Time</td><td>${permit.endDateTime ? new Date(permit.endDateTime).toLocaleString() : ''}</td></tr>
+            <tr><td class="label">Work Description</td><td>${permit.workDescription || ''}</td></tr>
           </table>
 
           <blockquote>
