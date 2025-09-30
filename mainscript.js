@@ -275,6 +275,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Always require Nature of Work and Work Description
   document.getElementById('natureOfWork')?.setAttribute('required', 'required');
   document.getElementById('workDescription')?.setAttribute('required', 'required');
+
+
   // ==========================
   // Documents Required
   // ==========================
@@ -307,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
   // ==========================
-  // Bind file upload to required documents
+  // Bind file inputs to radios
   // ==========================
   function bindDocWithFile(yesId, noId, fileId, label) {
     const yesRadio = document.getElementById(yesId);
@@ -316,18 +318,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     if (!yesRadio || !noRadio || !fileInput) return;
 
-    // When "Yes" is selected → file becomes required
     yesRadio.addEventListener('change', () => {
       if (yesRadio.checked) {
         fileInput.setAttribute('required', 'required');
-        // validate immediately if empty
         if (!fileInput.files || fileInput.files.length === 0) {
           showErrorMessage(fileInput, `${label} must be uploaded`);
         }
       }
     });
 
-    // When "No" is selected → file not required
     noRadio.addEventListener('change', () => {
       if (noRadio.checked) {
         fileInput.removeAttribute('required');
@@ -335,7 +334,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     });
 
-    // When file changes → clear error if present
     fileInput.addEventListener('change', () => {
       if (fileInput.files && fileInput.files.length > 0) {
         hideErrorMessage(fileInput);
@@ -345,18 +343,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // Bind each required doc to its file input
   bindDocWithFile('ePermitYes', 'ePermitNo', 'ePermitFile', 'E-Permit document');
   bindDocWithFile('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmWorkorderFile', 'FMM Workorder document');
   bindDocWithFile('hseRiskYes', 'hseRiskNo', 'hseRiskFile', 'HSE Risk Assessment document');
   bindDocWithFile('opRiskYes', 'opRiskNo', 'opRiskFile', 'Operational Risk Assessment document');
 
   // ==========================
-  // Validate required document uploads
+  // Validation on submit
   // ==========================
   function validateRequiredDocs() {
     let valid = true;
-
     const docRules = [
       { yesId: 'ePermitYes', fileId: 'ePermitFile', label: 'E-Permit document' },
       { yesId: 'fmmWorkorderYes', fileId: 'fmmWorkorderFile', label: 'FMM Workorder document' },
@@ -382,6 +378,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     return valid;
   }
+
   // ==========================
   // File preview for required docs
   // ==========================
@@ -615,6 +612,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     hideErrorMessage(conditionsCheckbox);
     return true;
   }
+
   // ==========================
   // Form submission
   // ==========================
@@ -622,21 +620,19 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitBtn = document.getElementById('submitBtn');
 
   if (form) {
-    // Main submit handler (fires for both Enter and button click)
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      console.log('Form submission triggered');
 
       const ok =
         validateRequesterDetails() &&
         validateDateTime() &&
-        validateRequiredDocs() &&   // ✅ new required-docs validation
+        validateRequiredDocs() &&   // ✅ now bound to radios + file inputs
         validateFileUpload() &&
         validateSignature() &&
         validateConditions();
 
       if (!ok) {
-        // Instead of alert, just scroll to first error
+        // Scroll to first error for better UX
         const firstError = document.querySelector('.error-message');
         if (firstError) {
           firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -644,7 +640,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
       }
 
-      // Optional: disable button to prevent double clicks
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
@@ -686,21 +681,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             signNameInput.value = fullNameInput.value;
           }
 
-          // Reset UI sections
-          const fileMsg = document.getElementById('fileTypeMessage');
-          if (fileMsg) fileMsg.textContent = '';
-          if (facilityContainer) facilityContainer.classList.add('hidden');
-          if (specifyTerminalContainer) specifyTerminalContainer.classList.add('hidden');
-          if (specifyFacilityContainer) specifyFacilityContainer.classList.add('hidden');
-          if (facilityEl) facilityEl.innerHTML = '<option value="" disabled selected>Select the Facility</option>';
-
-          const equipmentTypeSection = document.getElementById('equipmentType');
-          const impactDetailsSection = document.getElementById('impactDetails');
-          const levelImpactSection = document.getElementById('levelOfImpactContainer');
-          if (equipmentTypeSection) equipmentTypeSection.classList.add('hidden');
-          if (impactDetailsSection) impactDetailsSection.classList.add('hidden');
-          if (levelImpactSection) levelImpactSection.classList.add('hidden');
-
+          // Clear error messages and borders
           document.querySelectorAll('.error-message').forEach(n => n.remove());
           document.querySelectorAll('input, textarea, select').forEach(el => { el.style.border = ''; });
         } else {
@@ -711,7 +692,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.error('Submit error:', error);
         alert('Network or Server error while submitting form.');
       } finally {
-        // Re-enable button
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Submit';
@@ -719,7 +699,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     });
 
-    // Explicitly wire the button too (in case it's outside the <form>)
     if (submitBtn) {
       submitBtn.addEventListener('click', (e) => {
         e.preventDefault();
