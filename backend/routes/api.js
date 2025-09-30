@@ -371,7 +371,6 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 
 
 // GET PDF for an approved permit
-const puppeteer = require('puppeteer');
 
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   let browser;
