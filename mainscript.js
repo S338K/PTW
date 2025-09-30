@@ -307,6 +307,51 @@ document.addEventListener('DOMContentLoaded', async function () {
   setupDocToggle('opRiskYes', 'opRiskNo', 'opsassmnt', 'noOpsRiskAssessmentReason');
 
   // ==========================
+  // Bind file upload to required documents
+  // ==========================
+  function bindDocWithFile(yesId, noId, fileId, label) {
+    const yesRadio = document.getElementById(yesId);
+    const noRadio = document.getElementById(noId);
+    const fileInput = document.getElementById(fileId);
+
+    if (!yesRadio || !noRadio || !fileInput) return;
+
+    // When "Yes" is selected → file becomes required
+    yesRadio.addEventListener('change', () => {
+      if (yesRadio.checked) {
+        fileInput.setAttribute('required', 'required');
+        // validate immediately if empty
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showErrorMessage(fileInput, `${label} must be uploaded`);
+        }
+      }
+    });
+
+    // When "No" is selected → file not required
+    noRadio.addEventListener('change', () => {
+      if (noRadio.checked) {
+        fileInput.removeAttribute('required');
+        hideErrorMessage(fileInput);
+      }
+    });
+
+    // When file changes → clear error if present
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files.length > 0) {
+        hideErrorMessage(fileInput);
+      } else if (yesRadio.checked) {
+        showErrorMessage(fileInput, `${label} must be uploaded`);
+      }
+    });
+  }
+
+  // Bind each required doc to its file input
+  bindDocWithFile('ePermitYes', 'ePermitNo', 'ePermitFile', 'E-Permit document');
+  bindDocWithFile('fmmWorkorderYes', 'fmmWorkorderNo', 'fmmWorkorderFile', 'FMM Workorder document');
+  bindDocWithFile('hseRiskYes', 'hseRiskNo', 'hseRiskFile', 'HSE Risk Assessment document');
+  bindDocWithFile('opRiskYes', 'opRiskNo', 'opRiskFile', 'Operational Risk Assessment document');
+
+  // ==========================
   // Validate required document uploads
   // ==========================
   function validateRequiredDocs() {
@@ -337,7 +382,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     return valid;
   }
-
   // ==========================
   // File preview for required docs
   // ==========================
