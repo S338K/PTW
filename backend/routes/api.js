@@ -278,6 +278,7 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
       contactDetails: req.body.contactDetails,
       altContactDetails: req.body.altContactDetails,
       corpEmailId: req.body.corpEmailId,
+      permitTitle: req.body.permitTitle,
       terminal: req.body.terminal,
       facility: req.body.facility,
       specifyTerminal: req.body.specifyTerminal,
@@ -375,10 +376,11 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   let browser;
   try {
+    // Launch Puppeteer with Sparticuz Chromium (stable on Render)
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(), // Sparticuz-provided path
+      executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
 
@@ -394,27 +396,70 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
-    // Fetch user
+    // Fetch user (for "Printed by")
     const user = await User.findById(req.session.userId);
 
-    // Minimal HTML for now
+    // Build HTML with permit data
     const html = `
+      <!DOCTYPE html>
       <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            @page { size: A4; margin: 1cm; }
+            body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4; }
+            header { text-align: center; margin-bottom: 20px; }
+            header h1 { font-size: 16px; margin: 0; }
+            header h2 { font-size: 14px; margin: 5px 0 0 0; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+            td.label { font-weight: bold; width: 35%; background: #f2f2f2; }
+            blockquote { font-style: italic; margin: 20px 0; padding-left: 10px; border-left: 3px solid #999; }
+            footer { font-size: 11px; margin-top: 30px; border-top: 1px solid #ccc; padding-top: 8px; }
+          </style>
+        </head>
         <body>
-          <h2>Permit PDF</h2>
-          Permit Number: ${permit.permitNumber}<br/>
-          Status: ${permit.status}<br/>
-          Full Name: ${[permit.fullName, permit.lastName].filter(Boolean).join(' ')}<br/>
-          Printed by: ${user?.username || 'Unknown User'}<br/>
+          <header>
+            <h1>HIA Baggage Handling System - A Gateway to Access the BHS</h1>
+            <h2>Permit Status Report</h2>
+          </header>
+
+          <table>
+            <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${permit.lastName || ''}</td></tr>
+            <tr><td class="label">Designation</td><td>${permit.designation || ''}</td></tr>
+            <tr><td class="label">Mobile Number</td><td>${permit.mobile || ''}</td></tr>
+            <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
+            <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
+            <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
+            <tr><td class="label">Start Date and Time</td><td>${permit.startDate ? new Date(permit.startDate).toLocaleString() : ''}</td></tr>
+            <tr><td class="label">End Date and Time</td><td>${permit.endDate ? new Date(permit.endDate).toLocaleString() : ''}</td></tr>
+            <tr><td class="label">Work Description</td><td>${permit.description || ''}</td></tr>
+          </table>
+
+          <blockquote>
+            "Safety and teamwork are the foundation of every successful operation."
+          </blockquote>
+
+          <p>
+            Thank you for your commitment to safe and professional work practices.
+            Your dedication ensures smooth operations and a secure environment.
+          </p>
+
+          <footer>
+            <div>This is a system generated report, no signature required.</div>
+            <div>Printed by: ${user?.username || 'Unknown User'} &nbsp;&nbsp; Date/Time: ${new Date().toLocaleString()}</div>
+          </footer>
         </body>
       </html>
     `;
 
+    // Render and generate PDF
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
 
     await browser.close();
 
+    // Send PDF
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -428,7 +473,6 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Error generating PDF' });
   }
 });
-
 
 
 // ===== REQUEST PASSWORD RESET =====

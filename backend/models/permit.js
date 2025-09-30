@@ -15,6 +15,7 @@ const permitSchema = new mongoose.Schema({
   contactDetails: String,
   altContactDetails: String,
   corpEmailId: String,
+  permitTitle: String,
   terminal: String,
   facility: String,
   specifyTerminal: String,
