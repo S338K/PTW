@@ -412,12 +412,18 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     font-family: Tahoma, sans-serif;
     font-size: 12px;
     line-height: 1.4;
-    border: 2px solid #000;   /* ✅ full-page border */
-    padding: 20px;            /* ✅ keep content away from border */
+    border: 2px solid #000;   /* full-page border */
+    padding: 20px;
     box-sizing: border-box;
   }
 
-  header { text-align: center; margin-bottom: 20px; }
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+    background-color: #273172;   /* ✅ dark blue background */
+    color: #fff;                 /* ✅ white text */
+    padding: 10px;
+  }
   header h1 { font-size: 16px; margin: 0; }
   header h2 { font-size: 14px; margin: 5px 0 0 0; }
 
@@ -437,8 +443,15 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     margin-top: 30px;
     border-top: 1px solid #ccc;
     padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
+  footer .center { flex: 1; text-align: center; }
+  footer .left { text-align: left; flex: 1; }
+  footer .right { text-align: right; flex: 1; }
 </style>
+
 
         </head>
         <body>
@@ -470,8 +483,12 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
           </p>
 
           <footer>
-            <div>This is a system generated report, no signature required.</div>
-            <div>Printed by: ${user?.username || 'Unknown User'} &nbsp;&nbsp; Date/Time: ${new Date().toLocaleString()}</div>
+              <div class="left">Printed by: ${user?.username || 'Unknown User'}</div>
+              <div class="center">This is a system generated report, no signature required.</div>
+              <div class="right">
+                Date: ${new Date().toLocaleDateString()}<br/>
+                Time: ${new Date().toLocaleTimeString()}
+              </div>
           </footer>
         </body>
       </html>
