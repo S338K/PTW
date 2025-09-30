@@ -373,6 +373,10 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 // GET PDF for an approved permit
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   try {
+    const getBrowser = req.app.get('getBrowser'); // ✅ access helper
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+
     const permit = await Permit.findOne({
       _id: req.params.id,
       requester: req.session.userId
@@ -383,46 +387,92 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Permit not approved yet' });
     }
 
+    // Fetch logged-in user details
     const user = await User.findById(req.session.userId);
-    const getBrowser = req.app.get('getBrowser');
-    const browser = await getBrowser();
-    const page = await browser.newPage();
 
-    // Build your HTML string here (same as before)
+    // Helper to format dates nicely: 29-Sep-2025 22:55:07
+    function formatDateTime(date) {
+      return new Date(date).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    }
+
     const html = `
-  <html>
-    <body>
-      <h1 style="color:red">Hello PDF</h1>
-      <p>This is a test</p>
-    </body>
-  </html>
-`;
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 30px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .header { display: flex; justify-content: space-between; align-items: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+            th { background: #f2f2f2; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #555; }
+            .signature { margin-top: 50px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <strong>Permit Number:</strong> ${permit.permitNumber || '-'}<br/>
+              <strong>Status:</strong> ${permit.status || '-'}
+            </div>
+          </div>
 
-    await page.setContent(html, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('body');
+          <h1>Permit to Access</h1>
 
+          <table>
+            <tr><th>Full Name</th><td>${permit.fullName || '-'} ${permit.lastName || ''}</td></tr>
+            <tr><th>Work Description</th><td>${permit.workDescription || '-'}</td></tr>
+            <tr><th>Start Date</th><td>${permit.startDateTime ? formatDateTime(permit.startDateTime) : '-'}</td></tr>
+            <tr><th>End Date</th><td>${permit.endDateTime ? formatDateTime(permit.endDateTime) : '-'}</td></tr>
+            <tr><th>Contact</th><td>${permit.contactDetails || '-'}</td></tr>
+            <tr><th>Alternate Contact</th><td>${permit.altContactDetails || '-'}</td></tr>
+            <tr><th>Terminal</th><td>${permit.terminal || '-'}</td></tr>
+            <tr><th>Facility</th><td>${permit.facility || '-'}</td></tr>
+            <tr><th>Submitted On</th><td>${permit.createdAt ? formatDateTime(permit.createdAt) : '-'}</td></tr>
+            <tr><th>Approved On</th><td>${permit.approvedAt ? formatDateTime(permit.approvedAt) : '-'}</td></tr>
+          </table>
 
-    // Load and wait for paint
+          <div class="signature">
+            <p><strong>Authorized By:</strong> ____________________________</p>
+            <p><strong>Date:</strong> ____________________________</p>
+          </div>
+
+          <div class="footer">
+            This is a system‑generated permit. No manual signature required.
+            <br/><br/>
+            <em>Printed by: ${user?.fullName || 'Unknown User'} on ${formatDateTime(new Date())}</em>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Load HTML and wait for paint
     await page.setContent(html, { waitUntil: 'networkidle0' });
     await page.waitForSelector('body');
-    await page.evaluateHandle('document.fonts.ready');
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200)); // tiny delay
 
-    // 🔎 Screenshot fallback for debugging
-    const screenshot = await page.screenshot({ fullPage: true });
-    await page.close();
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+    });
 
-    // 👉 Send screenshot instead of PDF for now
-    res.setHeader('Content-Type', 'image/png');
-    return res.send(screenshot);
+    await page.close(); // ✅ close only the page, not the browser
 
-    // Once confirmed, switch back to:
-    // const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    // await page.close();
-    // res.setHeader('Content-Type', 'application/pdf');
-    // res.setHeader('Content-Disposition', `attachment; filename="Permit-${permit.permitNumber}.pdf"`);
-    // res.send(pdfBuffer);
-
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Permit-${permit.permitNumber}.pdf"`
+    );
+    res.send(pdfBuffer);
   } catch (err) {
     console.error('Error generating PDF:', err);
     res.status(500).json({ message: 'Error generating PDF' });
