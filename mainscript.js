@@ -197,12 +197,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Requester details validation
   // =========================
   const validationFields = [
-    { id: 'fullNameMD', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Name must be alphabetic and under 25 characters.' },
+    { id: 'fullNameMD', regex: /^[A-Za-z\s]{1,50}$/, msg: 'Name must be alphabetic and under 50 characters.' },
     { id: 'lastName', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Last Name must be alphabetic and under 25 characters.' },
-    { id: 'contactdetails', regex: /^\+974\d{8}$/, msg: 'Mobile must be +974 followed by 8 digits.' },
-    { id: 'altcontactdetails', regex: /^(\+974\d{8})?$/, msg: 'Alternate mobile must be +974 followed by 8 digits or left blank.' },
-    { id: 'corpemailid', regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, msg: 'Enter a valid corporate email.' },
-    { id: 'permitTitle', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Permit title must be alphabetic and under 25 characters.' },
+    { id: 'contactdetails', regex: /^\+974\d{8}$/, msg: 'Mobile number must be +974 followed by 8 digits.' },
+    { id: 'altcontactdetails', regex: /^(\+974\d{8})?$/, msg: 'Alternate mobile number must be +974 followed by 8 digits.' },
+    { id: 'corpemailid', regex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, msg: 'Enter a valid email address.' },
+    { id: 'permitTitle', regex: /^[A-Za-z\s]{1,50}$/, msg: 'Permit title must be alphabetic and under 50 characters.' },
   ];
 
   validationFields.forEach(({ id, regex, msg }) => {
@@ -522,7 +522,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   })();
 
-  const fullNameInput = document.getElementById('username');
+  const fullNameInput = document.getElementById('fullName');
   const signNameInput = document.getElementById('signName');
   if (fullNameInput && signNameInput) {
     const sync = () => { signNameInput.value = fullNameInput.value; };
