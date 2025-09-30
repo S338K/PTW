@@ -400,11 +400,12 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       userName: user?.username
     });
 
-    // Minimal HTML with only text
+    // Minimal HTML with only DB values
     const html = `
       <!DOCTYPE html>
       <html>
         <body>
+          <h2>Permit PDF Test</h2>
           Permit Number: ${permit.permitNumber || '-'}<br/>
           Status: ${permit.status || '-'}<br/>
           Full Name: ${[permit.fullName, permit.lastName].filter(Boolean).join(' ') || '-'}<br/>
@@ -413,6 +414,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
+    // Render
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('body');
 
