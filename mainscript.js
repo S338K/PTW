@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Requester details validation
   // =========================
   const validationFields = [
-    { id: 'fullNameMD', regex: /^[A-Za-z\s]{1,50}$/, msg: 'Name must be alphabetic and under 50 characters.' },
+    { id: 'fullName', regex: /^[A-Za-z\s]{1,50}$/, msg: 'Name must be alphabetic and under 50 characters.' },
     { id: 'lastName', regex: /^[A-Za-z\s]{1,25}$/, msg: 'Last Name must be alphabetic and under 25 characters.' },
     { id: 'contactdetails', regex: /^\+974\d{8}$/, msg: 'Mobile number must be +974 followed by 8 digits.' },
     { id: 'altcontactdetails', regex: /^(\+974\d{8})?$/, msg: 'Alternate mobile number must be +974 followed by 8 digits.' },
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     return selectedFiles.length > 0 && (!typeMsg || typeMsg.textContent === '');
   }
   // =========================
-  // Signature defaults + auto-fill from full name
+  // Signature defaults + auto-fill from full name + last name
   // =========================
   (function fillSignatureDefaults() {
     const signDate = document.getElementById('signDate');
@@ -523,11 +523,18 @@ document.addEventListener('DOMContentLoaded', async function () {
   })();
 
   const fullNameInput = document.getElementById('fullName');
+  const lastNameInput = document.getElementById('lastName');
   const signNameInput = document.getElementById('signName');
-  if (fullNameInput && signNameInput) {
-    const sync = () => { signNameInput.value = fullNameInput.value; };
+
+  if (fullNameInput && lastNameInput && signNameInput) {
+    const sync = () => {
+      const first = fullNameInput.value.trim();
+      const last = lastNameInput.value.trim();
+      signNameInput.value = [first, last].filter(Boolean).join(' ');
+    };
     fullNameInput.addEventListener('input', sync);
-    sync();
+    lastNameInput.addEventListener('input', sync);
+    sync(); // run once on load
   }
 
   // =========================
