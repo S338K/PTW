@@ -389,7 +389,18 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     const page = await browser.newPage();
 
     // Build your HTML string here (same as before)
-    const html = `...`;
+    const html = `
+  <html>
+    <body>
+      <h1 style="color:red">Hello PDF</h1>
+      <p>This is a test</p>
+    </body>
+  </html>
+`;
+
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('body');
+
 
     // Load and wait for paint
     await page.setContent(html, { waitUntil: 'networkidle0' });
