@@ -375,9 +375,9 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   let browser;
   try {
-    // Launch Puppeteer directly
+    // Launch Puppeteer
     browser = await puppeteer.launch({
-      headless: 'new', // or true if your Puppeteer version doesn’t support 'new'
+      headless: 'new', // use true if your version doesn’t support 'new'
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -401,27 +401,19 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     // Fetch user
     const user = await User.findById(req.session.userId);
 
-    // Debug log
-    console.log({
-      permitNumber: permit.permitNumber,
-      status: permit.status,
-      fullName: permit.fullName,
-      lastName: permit.lastName,
-      userName: user?.username
-    });
-
     // Minimal HTML
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8" />
           <style>
             @page { size: A4; margin: 1cm; }
             body { font-family: Arial, sans-serif; font-size: 14px; }
           </style>
         </head>
         <body>
-          <h2>Permit PDF Test</h2>
+          <h2>Permit PDF</h2>
           Permit Number: ${permit.permitNumber}<br/>
           Status: ${permit.status}<br/>
           Full Name: ${[permit.fullName, permit.lastName].filter(Boolean).join(' ')}<br/>
@@ -430,9 +422,9 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
+    // Render and generate PDF
     await page.setContent(html, { waitUntil: 'networkidle0' });
     await page.waitForSelector('body');
-    await new Promise(r => setTimeout(r, 200));
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -443,6 +435,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     await page.close();
     await browser.close();
 
+    // Send PDF
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
