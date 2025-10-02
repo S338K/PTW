@@ -5,17 +5,9 @@ const Permit = require("../models/permit");
 const User = require("../models/user");
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer");
+const { requireAuth } = require("../middleware/authMiddleware");
+
 require("dotenv").config();
-
-// ----- Auth middleware -----
-function requireAuth(req, res, next) {
-    if (req.session && req.session.userId) return next();
-    return res.status(401).json({ message: "Unauthorized - please log in" });
-}
-
-// 👇 Export it so other route files can use it
-module.exports = { requireAuth };
-
 
 // ----- Multer config -----
 const storage = multer.memoryStorage();
@@ -133,7 +125,6 @@ router.patch("/permit/:id/status", requireAuth, async (req, res) => {
             permit.approvedAt = new Date();
         }
 
-        // ✅ Persist the status change
         permit.status = status;
         await permit.save();
 
@@ -167,7 +158,6 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
 
         const user = await User.findById(req.session.userId);
 
-        // Build HTML with permit data
         const html = `
       <!DOCTYPE html>
       <html>
@@ -199,9 +189,9 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
             <tr><td class="label">Designation</td><td>${permit.designation || ''}</td></tr>
             <tr><td class="label">Mobile Number</td><td>${permit.contactDetails || ''}</td></tr>
             <tr><td class="label">Alternate Mobile Number</td><td>${permit.altContactDetails || ''}</td></tr>
-                        <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
+            <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
             <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
-            <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
+                        <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
             <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : ''}</td></tr>
             <tr><td class="label">End Date and Time</td><td>${permit.endDateTime ? new Date(permit.endDateTime).toLocaleString() : ''}</td></tr>
             <tr><td class="label">Work Description</td><td>${permit.workDescription || ''}</td></tr>

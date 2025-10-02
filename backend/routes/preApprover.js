@@ -1,17 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Permit = require("../models/permit");
-const { requireAuth } = require("./permit"); // keep using your existing auth middleware
+const { requireAuth, requirePreApprover } = require("../middleware/authMiddleware");
 
-// Role check middleware (now uses session role)
-function requirePreApprover(req, res, next) {
-    if (!req.session || req.session.userRole !== "PreApprover") {
-        return res.status(403).json({ error: "Access denied" });
-    }
-    next();
-}
-
-// ----- GET /pre-approver/stats -----
+// ----- GET /preapprover/stats -----
 router.get("/stats", requireAuth, requirePreApprover, async (req, res) => {
     try {
         const [pending, inProgress, approved, rejected] = await Promise.all([
@@ -28,23 +20,21 @@ router.get("/stats", requireAuth, requirePreApprover, async (req, res) => {
     }
 });
 
-// ----- GET /pre-approver/permits -----
+// ----- GET /preapprover/permits -----
 // List all permits that are still Pending
-router.get("/permits",
+router.get("/permits", requireAuth, requirePreApprover, async (req, res) => {
+    try {
+        const permits = await Permit.find({ status: "Pending" })
+            .populate("requester", "username email")
+            .sort({ createdAt: -1 });
+        res.json(permits);
+    } catch (err) {
+        console.error("Permits fetch error:", err);
+        res.status(500).json({ error: "Failed to fetch permits" });
+    }
+});
 
-    requirePreApprover, async (req, res) => {
-        try {
-            const permits = await Permit.find({ status: "Pending" })
-                .populate("requester", "username email")
-                .sort({ createdAt: -1 });
-            res.json(permits);
-        } catch (err) {
-            console.error("Permits fetch error:", err);
-            res.status(500).json({ error: "Failed to fetch permits" });
-        }
-    });
-
-// ----- POST /pre-approver/approve/:id -----
+// ----- POST /preapprover/approve/:id -----
 router.post("/approve/:id", requireAuth, requirePreApprover, async (req, res) => {
     try {
         const { comments } = req.body;
@@ -73,7 +63,7 @@ router.post("/approve/:id", requireAuth, requirePreApprover, async (req, res) =>
     }
 });
 
-// ----- POST /pre-approver/reject/:id -----
+// ----- POST /preapprover/reject/:id -----
 router.post("/reject/:id", requireAuth, requirePreApprover, async (req, res) => {
     try {
         const { comments } = req.body;

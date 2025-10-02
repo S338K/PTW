@@ -111,6 +111,10 @@ async function closeBrowser() {
   }
 }
 
+//=========PRE APPROVER======= //
+const preApproverRoutes = require("./routes/preApprover");
+app.use("/preapprover", preApproverRoutes);
+
 // ===== ROUTES ===== //
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
@@ -151,8 +155,4 @@ app.listen(PORT, () => {
   // Graceful shutdown
   process.on('SIGINT', async () => { await closeBrowser(); process.exit(0); });
   process.on('SIGTERM', async () => { await closeBrowser(); process.exit(0); });
-
-  //=========PRE APPROVER======= //
-  const preApproverRoutes = require("./routes/preApprover");
-  app.use("/preapprover", preApproverRoutes);
 });
