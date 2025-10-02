@@ -30,19 +30,19 @@ router.get("/stats", requireAuth, requirePreApprover, async (req, res) => {
 
 // ----- GET /pre-approver/permits -----
 // List all permits that are still Pending
-router.get("/permits", 
-    
-    , requirePreApprover, async (req, res) => {
-    try {
-        const permits = await Permit.find({ status: "Pending" })
-            .populate("requester", "username email")
-            .sort({ createdAt: -1 });
-        res.json(permits);
-    } catch (err) {
-        console.error("Permits fetch error:", err);
-        res.status(500).json({ error: "Failed to fetch permits" });
-    }
-});
+router.get("/permits",
+
+    requirePreApprover, async (req, res) => {
+        try {
+            const permits = await Permit.find({ status: "Pending" })
+                .populate("requester", "username email")
+                .sort({ createdAt: -1 });
+            res.json(permits);
+        } catch (err) {
+            console.error("Permits fetch error:", err);
+            res.status(500).json({ error: "Failed to fetch permits" });
+        }
+    });
 
 // ----- POST /pre-approver/approve/:id -----
 router.post("/approve/:id", requireAuth, requirePreApprover, async (req, res) => {
