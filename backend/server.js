@@ -154,6 +154,6 @@ app.listen(PORT, () => {
 
   //=========PRE APPROVER======= //
   const preApproverRoutes = require("./routes/preApprover");
-  app.use("/pre-approver", preApproverRoutes);
+  app.use("/preapprover", preApproverRoutes);
 
 });

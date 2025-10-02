@@ -36,45 +36,27 @@
 </div>
 
 
-    <!-- Card 2: Permits Pending Pre‑Approval -->
-<div class="card" id="preApproverPermitsCard">
-  <fieldset>
-    <legend>Permits Pending Pre‑Approval</legend>
-    <table id="preApproverPermitTable">
-      <thead>
-        <tr>
-          <th>Serial No.</th>
-          <th>Submitted Date & Time</th>
-          <th>Permit Title</th>
-          <th>Requester</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Dynamic rows injected via JS -->
-      </tbody>
-    </table>
-  </fieldset>
-</div>
-
-<!-- 🔹 Modal for expanded details -->
-<div id="permitDetailModal" class="modal">
-  <div class="modal-content">
-    <span class="closeBtn">&times;</span>
-    <h3>Permit Details</h3>
-    <p><strong>Permit Title:</strong> <span id="modalPermitTitle"></span></p>
-    <p><strong>Requester:</strong> <span id="modalRequester"></span></p>
-    <p><strong>Status:</strong> <span id="modalStatus"></span></p>
-    <p><strong>Submitted:</strong> <span id="modalSubmitted"></span></p>
-    <p><strong>Comments:</strong> <span id="modalComments"></span></p>
-    <div class="modal-actions">
-      <button id="modalApproveBtn">Approve</button>
-      <button id="modalRejectBtn">Reject</button>
+    <!-- Card 2: Submitted Permit Details -->
+    <div class="card" id="submittedPermitsCard">
+      <fieldset>
+      <legend>My Permit Details</legend>
+      <table id="permitTable">
+        <thead>
+          <tr>
+            <th>Serial No.</th>
+            <th>Submitted Date & Time</th>
+            <th>Permit Title </th>
+            <th>Status</th>
+            <th>Permit Number</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic rows will be injected via JS -->
+        </tbody>
+      </table>
+    </fieldset></fieldset>
     </div>
   </div>
-</div>
-
 
   <script src="profile.js"></script>
   <script src="mainscript.js"></script>

@@ -30,7 +30,9 @@ router.get("/stats", requireAuth, requirePreApprover, async (req, res) => {
 
 // ----- GET /pre-approver/permits -----
 // List all permits that are still Pending
-router.get("/permits", requireAuth, requirePreApprover, async (req, res) => {
+router.get("/permits", 
+    
+    , requirePreApprover, async (req, res) => {
     try {
         const permits = await Permit.find({ status: "Pending" })
             .populate("requester", "username email")
