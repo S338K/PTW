@@ -158,6 +158,12 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
 
         const user = await User.findById(req.session.userId);
 
+        // 🔑 Date/time formatting constants (Qatar timezone)
+        const FORMAT_LOCALE = "en-GB"; // dd/mm/yyyy style
+        const FORMAT_OPTS_DATE = { timeZone: "Asia/Qatar", year: "numeric", month: "2-digit", day: "2-digit" };
+        const FORMAT_OPTS_TIME = { timeZone: "Asia/Qatar", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true };
+        const FORMAT_OPTS_DATETIME = { timeZone: "Asia/Qatar" };
+
         const html = `
       <!DOCTYPE html>
       <html>
@@ -191,9 +197,9 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
             <tr><td class="label">Alternate Mobile Number</td><td>${permit.altContactDetails || ''}</td></tr>
             <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
             <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
-                        <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
-            <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : ''}</td></tr>
-            <tr><td class="label">End Date and Time</td><td>${permit.endDateTime ? new Date(permit.endDateTime).toLocaleString() : ''}</td></tr>
+            <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
+            <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME) : ''}</td></tr>
+            <tr><td class="label">End Date and Time</td><td>${permit.endDateTime ? new Date(permit.endDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME) : ''}</td></tr>
             <tr><td class="label">Work Description</td><td>${permit.workDescription || ''}</td></tr>
           </table>
 
@@ -210,8 +216,8 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
               <div class="left">Printed by: ${user?.username || 'Unknown User'}</div>
               <div class="center">This is a system generated report and does not require signature.</div>
               <div class="right">
-                Date: ${new Date().toLocaleDateString()}<br/>
-                Time: ${new Date().toLocaleTimeString()}
+                Date: ${new Date().toLocaleDateString(FORMAT_LOCALE, FORMAT_OPTS_DATE)}<br/>
+                Time: ${new Date().toLocaleTimeString(FORMAT_LOCALE, FORMAT_OPTS_TIME)}
               </div>
           </footer>
         </body>
