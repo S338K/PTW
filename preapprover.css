@@ -1,0 +1,234 @@
+body {
+    background-color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* ===== Navbar ===== */
+.profile-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 12px 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    color: #273172;
+    font-weight: 500;
+}
+
+.profile-navbar .nav-left,
+.profile-navbar .nav-center,
+.profile-navbar .nav-right {
+    justify-content: center;
+    margin: 5px 0;
+}
+
+.profile-navbar h2 {
+    color: #273172;
+    margin: 0;
+}
+
+/* ===== Buttons ===== */
+.profile-signout-btn {
+    background: #fff;
+    color: #273172;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.profile-signout-btn:hover {
+    background-color: #e6e6e6;
+}
+
+/* ===== Form container ===== */
+.profile-form-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #273172;
+    width: 95%;
+    margin: 0 auto;
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* ===== Card Styling ===== */
+.card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 95%;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.card legend {
+    margin-top: 0;
+    color: #080435;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.card:hover {
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 12px rgba(39, 49, 114, 0.2);
+    background-color: #edffed;
+    transform: scale(1.01);
+}
+
+fieldset {
+    color: #080435;
+    border-radius: 5px;
+    border-width: 2px;
+    border-color: #080435;
+}
+
+/* ===== Chart Container ===== */
+#permitStatusChart {
+    max-width: 250px;
+    margin: 0 auto;
+}
+
+/* ===== Stats Counters ===== */
+#permitStats p {
+    margin: 4px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#permitStats strong {
+    color: #273172;
+}
+
+/* ===== Permit List Styling ===== */
+#preApproverPermitList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#preApproverPermitList li {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+    background-color: #fafafa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
+}
+
+#preApproverPermitList li:hover {
+    background-color: #f5fff5;
+}
+
+/* ===== Approve/Reject Buttons ===== */
+.approveBtn,
+.rejectBtn {
+    margin-top: 8px;
+    margin-right: 8px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.approveBtn {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+.approveBtn:hover {
+    background-color: #27ae60;
+}
+
+.rejectBtn {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+.rejectBtn:hover {
+    background-color: #c0392b;
+}
+
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 768px) {
+    .profile-form-container {
+        width: 95%;
+        padding: 15px;
+    }
+
+    #permitStats {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-form-container {
+        width: 95%;
+        padding: 10px;
+    }
+
+    #permitStats {
+        font-size: 12px;
+    }
+}
+
+/* ===== Modal Styling ===== */
+.modal {
+    display: none;
+    /* hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+    background: #fff;
+    margin: 8% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 60%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.closeBtn {
+    float: right;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.modal-actions {
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    margin-right: 10px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#modalApproveBtn {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+#modalRejectBtn {
+    background-color: #e74c3c;
+    color: #fff;
+}

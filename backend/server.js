@@ -11,6 +11,7 @@ const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
+const path = require("path");
 
 const isProd = process.env.NODE_ENV === 'production';
 const app = express();
@@ -35,7 +36,7 @@ app.use(cors({
 // Handle preflight requests
 app.options('*', cors());
 
-// ===== Security & Cache Headers =====
+// ===== Security & Cache Headers ===== //
 app.use((req, res, next) => {
   // Prevent caching of sensitive responses
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -49,7 +50,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== SESSION SETUP =====
+// ===== SESSION SETUP ===== //
 app.set('trust proxy', 1); // important when behind Render's proxy
 
 app.use(session({
@@ -84,7 +85,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== Puppeteer Browser Reuse =====
+// ===== Puppeteer Browser Reuse ===== //
 let browser;
 async function getBrowser() {
   if (!browser) {
@@ -110,8 +111,7 @@ async function closeBrowser() {
   }
 }
 
-
-// ===== ROUTES =====
+// ===== ROUTES ===== //
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
@@ -119,7 +119,7 @@ app.get("/", (req, res) => {
 app.use('/mainpage', mainPageRoutes);
 app.use('/api', apiRoutes);
 
-// ===== MONGODB CONNECTION =====
+// ===== MONGODB CONNECTION =====//
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -128,7 +128,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-// ===== GLOBAL ERROR HANDLER =====
+// ===== GLOBAL ERROR HANDLER ===== //
 app.use((err, req, res, next) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] ${req.method} ${req.originalUrl}`);
@@ -140,7 +140,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ===== START SERVER =====
+// ===== START SERVER ======= //
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -151,5 +151,9 @@ app.listen(PORT, () => {
   // Graceful shutdown
   process.on('SIGINT', async () => { await closeBrowser(); process.exit(0); });
   process.on('SIGTERM', async () => { await closeBrowser(); process.exit(0); });
+
+  //=========PRE APPROVER======= //
+  const preApproverRoutes = require("./routes/preApprover");
+  app.use("/pre-approver", preApproverRoutes);
 
 });

@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
         break;
       case 'password':
         isValid = validatePassword(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Enter valid password 🔑.');
+        showError(passwordEl, isValid ? '' : 'Enter valid password 🔑.');
         break;
     }
     return isValid;
@@ -152,8 +152,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         setTimeout(() => {
-          window.location.href = 'profile.html';
-        }, 2000);
+          switch (data.user.role) {
+            case "PreApprover":
+              window.location.href = "preapprover.html";
+              break;
+            case "Approver":
+              window.location.href = "approver.html";
+              break;
+            case "Admin":
+              window.location.href = "admin.html";
+              break;
+            default:
+              window.location.href = "profile.html"; // fallback
+          }
+        }, 1000);
+
       } catch {
         showError(passwordEl, 'Network error. Please try again.');
       }

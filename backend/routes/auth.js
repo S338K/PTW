@@ -68,18 +68,34 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password)
-            return res.status(400).json({ message: "Email and password are required" });
+
+        if (!email || !password) {
+            return res.status(400).json({
+                field: !email ? "email" : "password",
+                message: "Email address and password are required"
+            });
+        }
 
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ message: "Invalid email or password" });
+        if (!user) {
+            return res.status(400).json({
+                field: "email",
+                message: "Please enter a valid email address."
+            });
+        }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) return res.status(400).json({ message: "Invalid email or password" });
+        if (!passwordMatch) {
+            return res.status(400).json({
+                field: "password",
+                message: "Please enter a valid password."
+            });
+        }
 
+        // 🔑 Set session values
         req.session.userId = user._id;
         req.session.userRole = user.role;
-        req.session.cookie.maxAge = 2 * 60 * 60 * 1000;
+        req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours
 
         const previousLogin = user.lastLogin;
         user.lastLogin = new Date();
@@ -104,9 +120,13 @@ router.post("/login", async (req, res) => {
         });
     } catch (err) {
         console.error("Login error:", err);
-        res.status(500).json({ message: "Something went wrong during login", error: err.message });
+        res.status(500).json({
+            message: "Something went wrong, try again",
+            error: err.message
+        });
     }
 });
+
 
 // ----- PROFILE -----
 router.get("/profile", async (req, res) => {
@@ -118,7 +138,10 @@ router.get("/profile", async (req, res) => {
             req.session.destroy();
             return res.status(401).json({ message: "Unauthorized - user not found" });
         }
-        res.json({ user });
+        res.json({
+            user,
+            session: { id: req.session.userId, role: req.session.userRole }
+        });
     } catch (err) {
         console.error("Profile fetch error:", err);
         res.status(500).json({ message: "Unable to fetch profile", error: err.message });

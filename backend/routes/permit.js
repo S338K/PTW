@@ -7,17 +7,17 @@ const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer");
 require("dotenv").config();
 
-// Auth middleware
+// ----- Auth middleware -----
 function requireAuth(req, res, next) {
     if (req.session && req.session.userId) return next();
     return res.status(401).json({ message: "Unauthorized - please log in" });
 }
 
-// Multer config
+// ----- Multer config -----
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// GET all permits
+// ----- GET all permits for current requester -----
 router.get("/permit", requireAuth, async (req, res) => {
     try {
         const permits = await Permit.find({ requester: req.session.userId }).sort({ createdAt: -1 });
@@ -27,7 +27,7 @@ router.get("/permit", requireAuth, async (req, res) => {
     }
 });
 
-// GET single permit
+// ----- GET single permit -----
 router.get("/permit/:id", requireAuth, async (req, res) => {
     try {
         const permit = await Permit.findOne({
@@ -42,7 +42,7 @@ router.get("/permit/:id", requireAuth, async (req, res) => {
     }
 });
 
-// POST new permit
+// ----- POST new permit -----
 router.post("/permit", requireAuth, upload.array("files", 5), async (req, res) => {
     try {
         const uploadedFiles = req.files.map(file => ({
@@ -94,7 +94,7 @@ router.post("/permit", requireAuth, upload.array("files", 5), async (req, res) =
     }
 });
 
-// PATCH update permit status (⚠️ reverted to match your current code)
+// ----- PATCH update permit status -----
 router.patch("/permit/:id/status", requireAuth, async (req, res) => {
     try {
         const { status } = req.body;
@@ -129,8 +129,9 @@ router.patch("/permit/:id/status", requireAuth, async (req, res) => {
             permit.approvedAt = new Date();
         }
 
-        // ⚠️ No `permit.status = status; await permit.save();`
-        // This matches your current code exactly.
+        // ✅ Persist the status change
+        permit.status = status;
+        await permit.save();
 
         res.json({ message: "Status updated", permit });
     } catch (err) {
@@ -139,7 +140,7 @@ router.patch("/permit/:id/status", requireAuth, async (req, res) => {
     }
 });
 
-// GET PDF for an approved permit
+// ----- GET PDF for an approved permit -----
 router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
     let browser;
     try {
@@ -169,66 +170,32 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
         <head>
           <meta charset="utf-8" />
           <style>
-  @page { size: A4; margin: 1cm; }
-
-  body {
-    font-family: Tahoma, sans-serif;
-    font-size: 12px;
-    line-height: 1.4;
-    border: 2px solid #000;   /* full-page border */
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  header {
-    text-align: center;
-    margin-bottom: 20px;
-    background-color: #273172;   /* ✅ dark blue background */
-    color: #fff;                 /* ✅ white text */
-    padding: 10px;
-  }
-  header h1 { font-size: 16px; margin: 0; }
-  header h2 { font-size: 14px; margin: 5px 0 0 0; }
-
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-  td { border: 1px solid #000; padding: 6px; vertical-align: top; }
-  td.label { font-weight: bold; width: 35%; background: #f2f2f2; }
-
-  blockquote {
-    font-style: italic;
-    margin: 20px 0;
-    padding-left: 10px;
-    border-left: 3px solid #999;
-  }
-
-  footer {
-    font-size: 11px;
-    margin-top: 30px;
-    border-top: 1px solid #ccc;
-    padding-top: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  footer .center { flex: 1; text-align: center; }
-  footer .left { text-align: left; flex: 1; }
-  footer .right { text-align: right; flex: 1; }
-</style>
-
-
+            @page { size: A4; margin: 1cm; }
+            body { font-family: Tahoma, sans-serif; font-size: 12px; line-height: 1.4; border: 2px solid #000; padding: 20px; box-sizing: border-box; }
+            header { text-align: center; margin-bottom: 20px; background-color: #273172; color: #fff; padding: 10px; }
+            header h1 { font-size: 16px; margin: 0; }
+            header h2 { font-size: 14px; margin: 5px 0 0 0; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+            td.label { font-weight: bold; width: 35%; background: #f2f2f2; }
+            blockquote { font-style: italic; margin: 20px 0; padding-left: 10px; border-left: 3px solid #999; }
+            footer { font-size: 11px; margin-top: 30px; border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+            footer .center { flex: 1; text-align: center; }
+            footer .left { text-align: left; flex: 1; }
+            footer .right { text-align: right; flex: 1; }
+          </style>
         </head>
         <body>
           <header>
             <h1>HIA Baggage Handling System - A Gateway to Access the BHS</h1>
             <h2>Permit Status Report</h2>
           </header>
-
           <table>
             <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${permit.lastName || ''}</td></tr>
             <tr><td class="label">Designation</td><td>${permit.designation || ''}</td></tr>
             <tr><td class="label">Mobile Number</td><td>${permit.contactDetails || ''}</td></tr>
             <tr><td class="label">Alternate Mobile Number</td><td>${permit.altContactDetails || ''}</td></tr>
-            <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
+                        <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
             <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
             <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
             <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : ''}</td></tr>
@@ -247,7 +214,7 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
 
           <footer>
               <div class="left">Printed by: ${user?.username || 'Unknown User'}</div>
-              <div class="center">This is a system generated report, no signature required.</div>
+              <div class="center">This is a system generated report and does not require signature.</div>
               <div class="right">
                 Date: ${new Date().toLocaleDateString()}<br/>
                 Time: ${new Date().toLocaleTimeString()}
