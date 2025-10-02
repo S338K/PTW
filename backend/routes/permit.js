@@ -13,6 +13,10 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ message: "Unauthorized - please log in" });
 }
 
+// 👇 Export it so other route files can use it
+module.exports = { requireAuth };
+
+
 // ----- Multer config -----
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
