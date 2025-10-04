@@ -20,7 +20,7 @@ router.post('/submit', async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    const newRequest = new MainPage({
+    const newRequest = new Permit({
       requesterName,
       requesterEmail,
       company,
@@ -35,7 +35,10 @@ router.post('/submit', async (req, res) => {
 
     // TODO: Send notification/email to approver here if needed
 
-    res.status(201).json({ message: 'Request submitted successfully', requestId: newRequest._id });
+    res.status(201).json({
+      message: 'Request submitted successfully',
+      requestId: newRequest._id
+    });
 
   } catch (error) {
     console.error('Error saving request:', error);
@@ -46,7 +49,7 @@ router.post('/submit', async (req, res) => {
 // GET all requests (for approver)
 router.get('/requests', async (req, res) => {
   try {
-    const requests = await MainPage.find().sort({ createdAt: -1 });
+    const requests = await Permit.find().sort({ createdAt: -1 });
     res.json(requests);
   } catch (error) {
     console.error('Error fetching requests:', error);
