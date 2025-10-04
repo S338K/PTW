@@ -20,7 +20,7 @@ router.post('/submit', async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    const newRequest = new PermitData({
+    const newRequest = new Permit({
       requesterName,
       requesterEmail,
       company,
