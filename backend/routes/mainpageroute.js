@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Permit = require('../models/Permit');
+const PermitData = require('../models/PermitData');
 
 // POST form data
 router.post('/submit', async (req, res) => {
@@ -20,7 +20,7 @@ router.post('/submit', async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    const newRequest = new Permit({
+    const newRequest = new PermitData({
       requesterName,
       requesterEmail,
       company,
