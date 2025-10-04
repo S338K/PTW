@@ -18,6 +18,8 @@ router.use(requireAdmin);
 
 // POST /admin/register-user
 router.post("/register-user", async (req, res) => {
+    console.log("Incoming admin registration:", req.body);
+
     try {
         const {
             fullName,
