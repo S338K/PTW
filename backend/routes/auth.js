@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const express = require("express");
 const User = require("../models/User");
+const Admin = require("../models/Admin");
 const Approver = require("../models/Approver");
 require("dotenv").config();
 
@@ -67,11 +67,6 @@ router.post("/register", async (req, res) => {
 });
 
 // ----- LOGIN -----
-
-// Import your models
-const Admin = require("../models/Admin");
-const Approver = require("../models/Approver");
-const PreApprover = require("../models/preApprover");
 
 router.post("/login", async (req, res) => {
     try {
