@@ -229,7 +229,7 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
         await browser.close();
 
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename="Permit-${permit.permitNumber}.pdf"`);
+        res.setHeader("Content-Disposition", `attachment; filename="BHS-${permit.permitNumber}.pdf"`);
         res.send(pdfBuffer);
     } catch (err) {
         console.error("Error generating PDF:", err);
