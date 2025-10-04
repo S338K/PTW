@@ -82,7 +82,7 @@ router.post("/login", async (req, res) => {
         // 🔎 Try each collection in turn
         let user = await Admin.findOne({ email });
         if (!user) user = await Approver.findOne({ email });
-        if (!user) user = await PreApprover.findOne({ email });
+        if (!user) user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({
