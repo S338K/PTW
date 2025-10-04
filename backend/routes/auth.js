@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
         const user = new User({
             username,
             email,
-            password,
+            password, // plain text here, pre-save hook will hash it
             company: company || "",
             role: role || "Requester",
             lastLogin: null,
@@ -67,7 +67,6 @@ router.post("/register", async (req, res) => {
 });
 
 // ----- LOGIN -----
-
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -91,8 +90,8 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // ✅ Compare against passwordHash
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+        // ✅ Compare using schema method
+        const passwordMatch = await user.comparePassword(password);
         if (!passwordMatch) {
             return res.status(400).json({
                 field: "password",
@@ -134,9 +133,6 @@ router.post("/login", async (req, res) => {
         });
     }
 });
-
-module.exports = router;
-
 
 // ----- PROFILE -----
 router.get("/profile", async (req, res) => {
@@ -192,7 +188,7 @@ router.post("/forgot-password", async (req, res, next) => {
         await user.save();
 
         const frontendBase = process.env.FRONTEND_BASE_URL || "https://s338k.github.io";
-        const resetLink = `${frontendBase} /PTW/reset - password.html ? token = ${rawToken} `;
+        const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
 
         if (process.env.NODE_ENV !== "production") {
             console.log("[DEV MODE] Reset link:", resetLink);
@@ -223,7 +219,7 @@ router.post("/reset-password", async (req, res) => {
         });
         if (!user) return res.status(400).json({ message: "Invalid or expired token" });
 
-        user.password = await bcrypt.hash(newPassword, 10);
+        user.password = newPassword; // plain text, pre-save hook will hash
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
