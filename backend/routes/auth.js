@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const Admin = require("../models/Admin");
 const Approver = require("../models/Approver");
+const user = require("../models/user");
 require("dotenv").config();
 
 // ----- REGISTER -----
@@ -25,10 +26,10 @@ router.post("/register", async (req, res) => {
             });
         }
 
-        const exists = await User.findOne({ email });
+        const exists = await user.findOne({ email });
         if (exists) return res.status(409).json({ message: "Email is already in use" });
 
-        const user = new User({
+        const user = new user({
             username,
             email,
             password, // plain text here, pre-save hook will hash it
@@ -80,7 +81,7 @@ router.post("/login", async (req, res) => {
         // 🔎 Try each collection in turn
         let user = await Admin.findOne({ email });
         if (!user) user = await Approver.findOne({ email });
-        if (!user) user = await User.findOne({ email });
+        if (!user) user = await user.findOne({ email });
 
         if (!user) {
             return res.status(400).json({

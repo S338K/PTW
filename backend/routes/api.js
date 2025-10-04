@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const user = require("../models/user");
 
 // ✅ Mount new route modules
 router.use("/", require("./auth"));     // /register, /login, /logout, /profile, /forgot-password, /reset-password

@@ -1,5 +1,5 @@
 const express = require("express");
-const User = require("../models/User");
+const user = require("../models/user");
 const Approver = require("../models/Approver");
 const Admin = require("../models/Admin");
 
@@ -16,8 +16,8 @@ function requireAdmin(req, res, next) {
 // Apply to all routes in this file
 router.use(requireAdmin);
 
-// POST /admin/register-User
-router.post("/register-User", async (req, res) => {
+// POST /admin/register-user
+router.post("/register-user", async (req, res) => {
     try {
         const {
             fullName,
@@ -60,10 +60,10 @@ router.post("/register-User", async (req, res) => {
             });
             await approver.save();
         } else {
-            return res.status(400).json({ error: "Invalid User type" });
+            return res.status(400).json({ error: "Invalid user type" });
         }
 
-        res.status(201).json({ message: "User registered successfully" });
+        res.status(201).json({ message: "user registered successfully" });
     } catch (err) {
         console.error(err);
         if (err.code === 11000) {
@@ -143,7 +143,7 @@ router.post("/toggle-status/:id", async (req, res) => {
             return res.json({ message: "Status updated", status: user.status });
         }
 
-        res.status(404).json({ error: "User not found" });
+        res.status(404).json({ error: "user not found" });
     } catch (err) {
         console.error("Error toggling status:", err);
         res.status(500).json({ error: "Failed to toggle status" });
@@ -174,7 +174,7 @@ router.post("/reset-password/:id", async (req, res) => {
             return res.json({ message: "Password reset successfully" });
         }
 
-        res.status(404).json({ error: "User not found" });
+        res.status(404).json({ error: "user not found" });
     } catch (err) {
         console.error("Error resetting password:", err);
         res.status(500).json({ error: "Failed to reset password" });
