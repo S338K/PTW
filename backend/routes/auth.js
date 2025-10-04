@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const Admin = require("../models/Admin");
 const Approver = require("../models/Approver");
-const User = require("../models/User");
 require("dotenv").config();
 
 // ----- REGISTER -----
