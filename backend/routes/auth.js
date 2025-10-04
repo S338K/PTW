@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const Admin = require("../models/admin");
 const Approver = require("../models/approver");
+const User = require("../models/user");
 require("dotenv").config();
 
 // ----- REGISTER -----
@@ -25,10 +25,10 @@ router.post("/register", async (req, res) => {
             });
         }
 
-        const exists = await user.findOne({ email });
+        const exists = await User.findOne({ email });
         if (exists) return res.status(409).json({ message: "Email is already in use" });
 
-        const user = new user({
+        const newUser = new User({
             username,
             email,
             password, // plain text here, pre-save hook will hash it
@@ -46,17 +46,17 @@ router.post("/register", async (req, res) => {
             }
         });
 
-        await user.save();
+        await newUser.save();
         res.status(201).json({
             message: "Registration successful",
             user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                company: user.company,
-                role: user.role,
-                lastLogin: user.lastLogin,
-                officeAddress: user.officeAddress
+                id: newUser._id,
+                username: newUser.username,
+                email: newUser.email,
+                company: newUser.company,
+                role: newUser.role,
+                lastLogin: newUser.lastLogin,
+                officeAddress: newUser.officeAddress
             }
         });
     } catch (err) {
@@ -78,19 +78,28 @@ router.post("/login", async (req, res) => {
         }
 
         // 🔎 Try each collection in turn
-        let user = await Admin.findOne({ email });
-        if (!user) user = await Approver.findOne({ email });
-        if (!user) user = await user.findOne({ email });
+        let account = await Admin.findOne({ email });
+        if (!account) account = await Approver.findOne({ email });
+        if (!account) account = await User.findOne({ email });
 
-        if (!user) {
+        if (!account) {
             return res.status(400).json({
                 field: "email",
                 message: "Please enter a valid email address."
             });
         }
 
+        // Debug logging
+        console.log("Login attempt:", {
+            emailFromBody: email,
+            passwordProvided: !!password,
+            accountRole: account.role,
+            accountHasPassword: !!account.password,
+            accountPasswordSample: account.password ? account.password.slice(0, 20) + "..." : null
+        });
+
         // ✅ Compare using schema method
-        const passwordMatch = await user.comparePassword(password);
+        const passwordMatch = await account.comparePassword(password);
         if (!passwordMatch) {
             return res.status(400).json({
                 field: "password",
@@ -99,13 +108,13 @@ router.post("/login", async (req, res) => {
         }
 
         // 🔑 Set session values
-        req.session.userId = user._id;
-        req.session.userRole = user.role;
+        req.session.userId = account._id;
+        req.session.userRole = account.role;
         req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours
 
-        const previousLogin = user.lastLogin;
-        user.lastLogin = new Date();
-        await user.save();
+        const previousLogin = account.lastLogin;
+        account.lastLogin = new Date();
+        await account.save();
 
         req.session.save(err => {
             if (err) {
@@ -115,11 +124,11 @@ router.post("/login", async (req, res) => {
             res.json({
                 message: "Login successful",
                 user: {
-                    id: user._id,
-                    fullName: user.fullName,
-                    email: user.email,
-                    company: user.company,
-                    role: user.role,
+                    id: account._id,
+                    fullName: account.fullName || account.username,
+                    email: account.email,
+                    company: account.company,
+                    role: account.role,
                     lastLogin: previousLogin ? previousLogin.toISOString() : new Date().toISOString()
                 }
             });
