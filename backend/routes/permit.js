@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const Permit = require("../models/permit");
-const user = require("../models/user");
+const User = require("../models/user");
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer");
 const { requireAuth } = require("../middleware/authMiddleware");
@@ -156,7 +156,7 @@ router.get("/permit/:id/pdf", requireAuth, async (req, res) => {
         if (permit.status !== "Approved")
             return res.status(403).json({ message: "Permit not approved yet" });
 
-        const user = await user.findById(req.session.userId);
+        const user = await User.findById(req.session.userId);
 
         // 🔑 Date/time formatting constants (Qatar timezone)
         const FORMAT_LOCALE = "en-GB"; // dd/mm/yyyy style

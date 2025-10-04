@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const mainPageRoutes = require('./routes/mainpageroute');
 const apiRoutes = require('./routes/api');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
@@ -124,7 +123,6 @@ app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
 
-app.use('/mainpage', mainPageRoutes);
 app.use('/api', apiRoutes);
 
 // ===== MONGODB CONNECTION =====//

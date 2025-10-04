@@ -6,24 +6,24 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ message: "Unauthorized - please log in" });
 }
 
-// Role guards (using session.userRole)
-function requirePreApprover(req, res, next) {
-    if (req.session?.userRole === "PreApprover") return next();
-    return res.status(403).json({ error: "Access denied" });
+// Generic role guard
+function requireRole(...allowedRoles) {
+    return (req, res, next) => {
+        if (req.session && allowedRoles.includes(req.session.userRole)) {
+            return next();
+        }
+        return res.status(403).json({ error: "Access denied" });
+    };
 }
 
-function requireApprover(req, res, next) {
-    if (req.session?.userRole === "Approver") return next();
-    return res.status(403).json({ error: "Access denied" });
-}
-
-function requireAdmin(req, res, next) {
-    if (req.session?.userRole === "Admin") return next();
-    return res.status(403).json({ error: "Access denied" });
-}
+// Specific role guards (for convenience)
+const requirePreApprover = requireRole("PreApprover");
+const requireApprover = requireRole("Approver");
+const requireAdmin = requireRole("Admin");
 
 module.exports = {
     requireAuth,
+    requireRole,
     requirePreApprover,
     requireApprover,
     requireAdmin

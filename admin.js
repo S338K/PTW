@@ -113,7 +113,7 @@ form.addEventListener("submit", async e => {
         if (!validateField(input)) valid = false;
     });
     if (!valid) {
-        showToast("⚠️ Please fix the highlighted errors", "warning");
+        showToast("Please fix the highlighted errors", "warning");
         return;
     }
 
@@ -129,7 +129,7 @@ form.addEventListener("submit", async e => {
         });
 
         if (res.ok) {
-            showToast("✅ User registered successfully!", "success");
+            showToast("User registered successfully!", "success");
             modal.classList.remove("open");
             setTimeout(() => {
                 modal.style.display = "none";
@@ -138,10 +138,10 @@ form.addEventListener("submit", async e => {
             loadUsers();
         } else {
             const errText = await res.text().catch(() => "");
-            showToast(errText || "⚠️ Error registering user", "error");
+            showToast(errText || "Error registering user", "error");
         }
     } catch {
-        showToast("⚠️ Network error. Please try again.", "error");
+        showToast("Network error. Please try again.", "error");
     }
 });
 
@@ -439,14 +439,17 @@ async function resetPassword(userId) {
     }
 }
 
-// Logout
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-    try {
-        await fetch("/api/logout", { method: "POST", credentials: "include" });
-    } finally {
-        window.location.href = "/index.html";
-    }
-});
+/* ===== Logout Button ===== */
+const logoutButton = document.getElementById('logoutBtn');
+if (logoutButton) {
+    logoutButton.addEventListener('click', async function () {
+        await fetch(`${API_BASE}/api/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        window.location.href = 'index.html';
+    });
+}
 
 // Init
 loadUsers();

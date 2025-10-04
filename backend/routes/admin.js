@@ -1,5 +1,4 @@
 const express = require("express");
-const User = require("../models/user");
 const Approver = require("../models/approver");
 const Admin = require("../models/admin");
 
@@ -7,7 +6,7 @@ const router = express.Router();
 
 // Middleware to ensure only Admins can access these routes
 function requireAdmin(req, res, next) {
-    if (req.session && req.session.role === "Admin") {
+    if (req.session && req.session.userRole === "Admin") {
         return next();
     }
     return res.status(403).json({ error: "Unauthorized" });
@@ -29,15 +28,18 @@ router.post("/register-user", async (req, res) => {
             department,
             designation,
             password,
-            userType
+            role
         } = req.body;
 
         // Basic validation
-        if (!fullName || !email || !mobile || !password || !userType) {
+        if (!fullName || !email || !mobile || !password || !role) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        if (userType === "Admin") {
+        if (role === "Admin") {
+            const exists = await Admin.findOne({ email });
+            if (exists) return res.status(409).json({ error: "Email already exists" });
+
             const admin = new Admin({
                 fullName,
                 email,
@@ -45,11 +47,14 @@ router.post("/register-user", async (req, res) => {
                 company,
                 department,
                 designation,
-                password, // plain text, pre-save hook will hash
+                password, // pre-save hook will hash
                 role: "Admin"
             });
             await admin.save();
-        } else if (userType === "PreApprover" || userType === "Approver") {
+        } else if (role === "PreApprover" || role === "Approver") {
+            const exists = await Approver.findOne({ email });
+            if (exists) return res.status(409).json({ error: "Email already exists" });
+
             const approver = new Approver({
                 fullName,
                 email,
@@ -57,23 +62,21 @@ router.post("/register-user", async (req, res) => {
                 company,
                 department,
                 designation,
-                password, // plain text, pre-save hook will hash
-                role: userType
+                password, // pre-save hook will hash
+                role
             });
             await approver.save();
         } else {
-            return res.status(400).json({ error: "Invalid User type" });
+            return res.status(400).json({ error: "Invalid role" });
         }
 
-        res.status(201).json({ message: "User registered successfully" });
+        res.status(201).json({ message: `${role} registered successfully` });
     } catch (err) {
         console.error(err);
-        if (err.code === 11000) {
-            return res.status(409).json({ error: "Email already exists" });
-        }
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Server error", details: err.message });
     }
 });
+
 
 // GET /admin/users
 router.get("/users", async (req, res) => {

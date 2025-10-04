@@ -63,4 +63,4 @@ const permitSchema = new mongoose.Schema({
 });
 
 // 🔹 Export model
-module.exports = mongoose.model('PermitData', permitSchema);
+module.exports = mongoose.model('Permit', permitSchema);
