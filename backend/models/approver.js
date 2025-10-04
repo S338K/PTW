@@ -7,11 +7,11 @@ const preapproverSchema = new mongoose.Schema({
     company: { type: String, trim: true },
     department: { type: String, trim: true },
     designation: { type: String, trim: true },
-    role: { type: String, enum: ["Pre-Approver", "Approver"], required: true },
+    role: { type: String, enum: ["PreApprover", "Approver"], required: true },
     passwordHash: { type: String, required: true },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     lastLogin: { type: Date }
 }, { timestamps: true });
 
 // model name here is "preapprover"
-module.exports = mongoose.model("approver", preapproverSchema);
+module.exports = mongoose.model("Approver", preapproverSchema);

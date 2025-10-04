@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const Permit = require("../models/permit");
-const User = require("../models/user");
+const Permit = require("../models/Permit");
+const User = require("../models/User");
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer");
 const { requireAuth } = require("../middleware/authMiddleware");

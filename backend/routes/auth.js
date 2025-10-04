@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const User = require("../models/user");
+const express = require("express");
+const User = require("../models/User");
+const Approver = require("../models/Approver");
 require("dotenv").config();
 
 // ----- REGISTER -----
@@ -65,6 +67,12 @@ router.post("/register", async (req, res) => {
 });
 
 // ----- LOGIN -----
+
+// Import your models
+const Admin = require("../models/Admin");
+const Approver = require("../models/Approver");
+const PreApprover = require("../models/preApprover");
+
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -76,7 +84,11 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ email });
+        // 🔎 Try each collection in turn
+        let user = await Admin.findOne({ email });
+        if (!user) user = await Approver.findOne({ email });
+        if (!user) user = await PreApprover.findOne({ email });
+
         if (!user) {
             return res.status(400).json({
                 field: "email",
@@ -84,7 +96,8 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const passwordMatch = await bcrypt.compare(password, user.password);
+        // ✅ Compare against passwordHash
+        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
         if (!passwordMatch) {
             return res.status(400).json({
                 field: "password",
@@ -110,7 +123,7 @@ router.post("/login", async (req, res) => {
                 message: "Login successful",
                 user: {
                     id: user._id,
-                    username: user.username,
+                    fullName: user.fullName,
                     email: user.email,
                     company: user.company,
                     role: user.role,
@@ -126,6 +139,8 @@ router.post("/login", async (req, res) => {
         });
     }
 });
+
+module.exports = router;
 
 
 // ----- PROFILE -----
@@ -182,7 +197,7 @@ router.post("/forgot-password", async (req, res, next) => {
         await user.save();
 
         const frontendBase = process.env.FRONTEND_BASE_URL || "https://s338k.github.io";
-        const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
+        const resetLink = `${frontendBase} /PTW/reset - password.html ? token = ${rawToken} `;
 
         if (process.env.NODE_ENV !== "production") {
             console.log("[DEV MODE] Reset link:", resetLink);

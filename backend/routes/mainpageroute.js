@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Permit = require('../models/permit');
+const Permit = require('../models/Permit');
 
 // POST form data
 router.post('/submit', async (req, res) => {
