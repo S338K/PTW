@@ -12,6 +12,9 @@ const apiRoutes = require('./routes/api');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 const path = require("path");
+const User = require("../models/User");
+const Admin = require("../models/Admin");
+const Approver = require("../models/Approver");
 
 const isProd = process.env.NODE_ENV === 'production';
 const app = express();

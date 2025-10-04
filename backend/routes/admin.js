@@ -1,8 +1,9 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-
+const User = require("../models/User");
 const Approver = require("../models/Approver");
 const Admin = require("../models/Admin");
+
 
 const router = express.Router();
 
@@ -17,8 +18,8 @@ function requireAdmin(req, res, next) {
 // Apply to all routes in this file
 router.use(requireAdmin);
 
-// POST /admin/register-user
-router.post("/register-user", async (req, res) => {
+// POST /admin/register-User
+router.post("/register-User", async (req, res) => {
     try {
         const {
             fullName,
@@ -66,7 +67,7 @@ router.post("/register-user", async (req, res) => {
             });
             await approver.save();
         } else {
-            return res.status(400).json({ error: "Invalid user type" });
+            return res.status(400).json({ error: "Invalid User type" });
         }
 
         res.status(201).json({ message: "User registered successfully" });
@@ -151,19 +152,19 @@ router.post("/toggle-status/:id", async (req, res) => {
         const { id } = req.params;
 
         // Try Approver first
-        let user = await Approver.findById(id);
-        if (user) {
-            user.status = user.status === "Active" ? "Inactive" : "Active";
-            await user.save();
-            return res.json({ message: "Status updated", status: user.status });
+        let User = await Approver.findById(id);
+        if (User) {
+            User.status = User.status === "Active" ? "Inactive" : "Active";
+            await User.save();
+            return res.json({ message: "Status updated", status: User.status });
         }
 
         // Try Admin
-        user = await Admin.findById(id);
-        if (user) {
-            user.status = user.status === "Active" ? "Inactive" : "Active";
-            await user.save();
-            return res.json({ message: "Status updated", status: user.status });
+        User = await Admin.findById(id);
+        if (User) {
+            User.status = User.status === "Active" ? "Inactive" : "Active";
+            await User.save();
+            return res.json({ message: "Status updated", status: User.status });
         }
 
         res.status(404).json({ error: "User not found" });
@@ -186,18 +187,18 @@ router.post("/reset-password/:id", async (req, res) => {
         const passwordHash = await bcrypt.hash(newPassword, 10);
 
         // Try Approver first
-        let user = await Approver.findById(id);
-        if (user) {
-            user.passwordHash = passwordHash;
-            await user.save();
+        let User = await Approver.findById(id);
+        if (User) {
+            User.passwordHash = passwordHash;
+            await User.save();
             return res.json({ message: "Password reset successfully" });
         }
 
         // Try Admin
-        user = await Admin.findById(id);
-        if (user) {
-            user.passwordHash = passwordHash;
-            await user.save();
+        User = await Admin.findById(id);
+        if (User) {
+            User.passwordHash = passwordHash;
+            await User.save();
             return res.json({ message: "Password reset successfully" });
         }
 
