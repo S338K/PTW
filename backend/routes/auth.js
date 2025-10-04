@@ -2,9 +2,8 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const Admin = require("../models/Admin");
-const Approver = require("../models/Approver");
-const user = require("../models/user");
+const Admin = require("../models/admin");
+const Approver = require("../models/approver");
 require("dotenv").config();
 
 // ----- REGISTER -----

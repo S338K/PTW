@@ -1,5 +1,5 @@
 const express = require("express");
-const user = require("../models/user");
+const User = require("../models/User");
 const Approver = require("../models/approver");
 const Admin = require("../models/admin");
 
@@ -60,10 +60,10 @@ router.post("/register-user", async (req, res) => {
             });
             await approver.save();
         } else {
-            return res.status(400).json({ error: "Invalid user type" });
+            return res.status(400).json({ error: "Invalid User type" });
         }
 
-        res.status(201).json({ message: "user registered successfully" });
+        res.status(201).json({ message: "User registered successfully" });
     } catch (err) {
         console.error(err);
         if (err.code === 11000) {
@@ -129,21 +129,21 @@ router.post("/toggle-status/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
-        let user = await Approver.findById(id);
-        if (user) {
-            user.status = user.status === "Active" ? "Inactive" : "Active";
-            await user.save();
-            return res.json({ message: "Status updated", status: user.status });
+        let User = await Approver.findById(id);
+        if (User) {
+            User.status = User.status === "Active" ? "Inactive" : "Active";
+            await User.save();
+            return res.json({ message: "Status updated", status: User.status });
         }
 
-        user = await Admin.findById(id);
-        if (user) {
-            user.status = user.status === "Active" ? "Inactive" : "Active";
-            await user.save();
-            return res.json({ message: "Status updated", status: user.status });
+        User = await Admin.findById(id);
+        if (User) {
+            User.status = User.status === "Active" ? "Inactive" : "Active";
+            await User.save();
+            return res.json({ message: "Status updated", status: User.status });
         }
 
-        res.status(404).json({ error: "user not found" });
+        res.status(404).json({ error: "User not found" });
     } catch (err) {
         console.error("Error toggling status:", err);
         res.status(500).json({ error: "Failed to toggle status" });
@@ -160,21 +160,21 @@ router.post("/reset-password/:id", async (req, res) => {
             return res.status(400).json({ error: "New password required" });
         }
 
-        let user = await Approver.findById(id);
-        if (user) {
-            user.password = newPassword; // plain text, pre-save hook will hash
-            await user.save();
+        let User = await Approver.findById(id);
+        if (User) {
+            User.password = newPassword; // plain text, pre-save hook will hash
+            await User.save();
             return res.json({ message: "Password reset successfully" });
         }
 
-        user = await Admin.findById(id);
-        if (user) {
-            user.password = newPassword; // plain text, pre-save hook will hash
-            await user.save();
+        User = await Admin.findById(id);
+        if (User) {
+            User.password = newPassword; // plain text, pre-save hook will hash
+            await User.save();
             return res.json({ message: "Password reset successfully" });
         }
 
-        res.status(404).json({ error: "user not found" });
+        res.status(404).json({ error: "User not found" });
     } catch (err) {
         console.error("Error resetting password:", err);
         res.status(500).json({ error: "Failed to reset password" });
