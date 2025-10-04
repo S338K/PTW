@@ -15,6 +15,7 @@ const path = require("path");
 const User = require("../models/User");
 const Admin = require("../models/Admin");
 const Approver = require("../models/Approver");
+const Approver = require("../models/preApprover");
 
 const isProd = process.env.NODE_ENV === 'production';
 const app = express();
