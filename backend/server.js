@@ -111,6 +111,10 @@ async function closeBrowser() {
   }
 }
 
+//=========ADMIN======= //
+const adminRoutes = require("./routes/admin");
+app.use("/admin", adminRoutes);
+
 //=========PRE APPROVER======= //
 const preApproverRoutes = require("./routes/preApprover");
 app.use("/preapprover", preApproverRoutes);

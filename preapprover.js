@@ -135,4 +135,16 @@ async function handleAction(permitId, action) {
         console.error(err);
         alert("Error performing action");
     }
+
+    /* ===== Logout Button ===== */
+    const logoutButton = document.getElementById('logoutBtn');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', async function () {
+            await fetch(`${API_BASE}/api/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            window.location.href = 'index.html';
+        });
+    }
 }

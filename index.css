@@ -2,10 +2,11 @@
    1. Reset & Base Styles
 ---------------------------------------- */
 body {
-  background-color: #0a0637e1;
+  background: #f7f8fa;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
+  color: #222;
 }
 
 * {
@@ -37,13 +38,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  background: #fff;
-  padding: 1.rem 1.5rem;
-  box-shadow: 0 5px 5px #080435;
-  margin-bottom: 1.2rem;
-  font: 600 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  border-radius: 5px;
+  justify-content: space-between;
+  background: #273172;
+  padding: 16px 20px;
+  margin-bottom: auto;
+  font: 500 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  border-radius: 2px;
   width: 100%;
   margin: auto;
 }
@@ -53,7 +53,7 @@ body {
   text-align: center;
   font-weight: 600;
   margin: 4px 0;
-  color: #273172;
+  color: #fff;
 }
 
 
@@ -154,21 +154,22 @@ input.valid {
    Button Styling
 ---------------------------------------- */
 #loginBtn {
-  background-color: #273172;
-  color: #fff;
-  border: 2px solid #273172;
+  background-color: #fff;
+  color: #273172;
+  border: 2px solid #080435;
   padding: 12px 24px;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #loginBtn:hover {
-  background-color: goldenrod;
-  color: #273172;
+  background-color: #1B244F;
+  color: #fff;
   border-radius: 25px;
+  border-color: goldenrod;
   transition: all 0.3s ease;
   transform: translateY(-5px);
 }
@@ -224,7 +225,7 @@ input.valid {
   text-align: center;
   margin-bottom: auto;
   margin-top: auto;
-  color: #fff;
+  color: #273172;
 }
 
 /* ===== Responsive Add-on ===== */
