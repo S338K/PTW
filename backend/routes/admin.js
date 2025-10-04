@@ -1,7 +1,7 @@
 const express = require("express");
 const user = require("../models/user");
-const Approver = require("../models/Approver");
-const Admin = require("../models/Admin");
+const Approver = require("../models/approver");
+const Admin = require("../models/admin");
 
 const router = express.Router();
 
