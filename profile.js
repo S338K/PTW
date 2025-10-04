@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitPtw = document.getElementById('sbmtptw');
   if (submitPtw) {
     submitPtw.addEventListener('click', function () {
-      window.location.href = 'mainpage.html';
+      window.location.href = 'admin.html';
     });
   }
 
