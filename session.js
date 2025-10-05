@@ -8,12 +8,11 @@ const API_BASE = "https://ptw-yu8u.onrender.com";
 
 export async function checkSession() {
     try {
-        const res = await fetch(`${API_BASE}/api/profile`, {
+        const res = await fetch(`/api/profile`, {
             method: "GET",
             credentials: "include"
         });
 
-        // ✅ Only redirect if truly unauthorized
         if (res.status === 401 || res.status === 403) {
             window.location.href = "index.html";
             return null;
@@ -21,15 +20,18 @@ export async function checkSession() {
 
         if (!res.ok) {
             console.error("Unexpected error from /api/profile:", res.status);
-            return null; // don’t redirect on other errors
+            return null;
         }
 
-        return await res.json();
+        const data = await res.json();
+        // Flatten: return user fields + role from session
+        return { ...data.user, role: data.session.role };
     } catch (err) {
         console.error("Session check failed:", err);
-        return null; // don’t redirect on network error
+        return null;
     }
 }
+
 
 
 /* ===== Idle Timeout Auto‑Logout ===== */

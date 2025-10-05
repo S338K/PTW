@@ -1,23 +1,23 @@
 // preapprover.js
-import { checkSession, initIdleTimer, logoutUser } from "./session/session.js";
+import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 
 let currentPermits = []; // store permits globally for modal use
 
 document.addEventListener("DOMContentLoaded", async () => {
     const user = await checkSession();
-    if (!user) return; // redirected if invalid
+    if (!user) return;
     initIdleTimer();
 
-    // Role guard
-    if (user.role !== "PreApprover") {
+    // ✅ Role guard (case-insensitive)
+    if (user.role.toLowerCase() !== "preapprover") {
         window.location.href = "index.html";
         return;
     }
 
-    // Wire logout button once
-    const logoutButton = document.getElementById("logoutBtn");
-    if (logoutButton) {
-        logoutButton.addEventListener("click", () => logoutUser());
+    // Wire logout button
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => logoutUser());
     }
 
     // Load initial data

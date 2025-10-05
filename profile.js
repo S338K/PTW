@@ -1,12 +1,13 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 
-console.log("✅ mainscript.js loaded");
-
 document.addEventListener('DOMContentLoaded', async function () {
+
+  console.log("✅ profile.js loaded");
 
   const user = await checkSession();
   if (!user) return;
   initIdleTimer();
+
 
   // Populate profile fields
   const nameEl = document.getElementById("fullName");
@@ -21,8 +22,17 @@ document.addEventListener('DOMContentLoaded', async function () {
   // 🔹 Update the single div with both Welcome + Last Login
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
-    lastLoginDiv.textContent = `Welcome : ${user.username} || Last login: ${formatLastLogin(prevLoginISO)}`;
+    const welcomeName = user.fullName || user.username;
+
+    // use the field your backend actually returns (lastLogin or prevLogin)
+    const lastLoginISO = user.lastLogin || user.prevLogin;
+    const formattedLastLogin = lastLoginISO
+      ? new Date(lastLoginISO).toLocaleString()
+      : "—";
+
+    lastLoginDiv.textContent = `Welcome: ${welcomeName} || Last login: ${formattedLastLogin}`;
   }
+
 
   /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {

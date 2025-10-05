@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (!user) return;
   initIdleTimer();
 
+
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
 
