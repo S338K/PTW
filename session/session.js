@@ -4,28 +4,32 @@
 const API_BASE = "https://ptw-yu8u.onrender.com";
 
 /* ===== Check if session is valid ===== */
+
 export async function checkSession() {
     try {
         const res = await fetch(`${API_BASE}/api/profile`, {
             method: "GET",
-            credentials: "include" // send cookies/session
+            credentials: "include"
         });
 
-        if (!res.ok) {
-            // Session invalid → redirect to login
+        // ✅ Only redirect if truly unauthorized
+        if (res.status === 401 || res.status === 403) {
             window.location.href = "index.html";
             return null;
         }
 
-        const user = await res.json();
-        console.log("✅ Session valid:", user);
-        return user;
+        if (!res.ok) {
+            console.error("Unexpected error from /api/profile:", res.status);
+            return null; // don’t redirect on other errors
+        }
+
+        return await res.json();
     } catch (err) {
-        console.error("❌ Session check failed:", err);
-        window.location.href = "index.html";
-        return null;
+        console.error("Session check failed:", err);
+        return null; // don’t redirect on network error
     }
 }
+
 
 /* ===== Idle Timeout Auto‑Logout ===== */
 const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
