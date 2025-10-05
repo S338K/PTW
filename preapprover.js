@@ -1,5 +1,5 @@
 // preapprover.js
-import { checkSession, initIdleTimer, logoutUser } from "./session.js";
+import { checkSession, initIdleTimer, logoutUser } from "./session/session.js";
 
 let currentPermits = []; // store permits globally for modal use
 

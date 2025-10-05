@@ -1,4 +1,5 @@
-import { checkSession, initIdleTimer } from "./session.js";
+import { checkSession, initIdleTimer, logoutUser } from "./session/session.js";
+
 
 document.addEventListener("DOMContentLoaded", async () => {
     const user = await checkSession();
