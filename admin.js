@@ -1,3 +1,10 @@
+// =========================
+// Admin Dashboard Script
+// =========================
+
+// 🔹 Base API URL
+const API_BASE = 'https://ptw-yu8u.onrender.com';
+
 // Drawer elements
 const modal = document.getElementById("userModal");
 const btn = document.getElementById("addUserBtn");
@@ -15,7 +22,7 @@ function showToast(message, type = "success", duration = 3000) {
     }, duration);
 }
 
-// Inline validation: floating error messages
+// Inline validation
 function showFieldError(input, message) {
     const msgEl = input.nextElementSibling;
     if (msgEl && msgEl.classList.contains("error-msg")) {
@@ -24,7 +31,6 @@ function showFieldError(input, message) {
         input.classList.add("error");
     }
 }
-
 function clearFieldError(input) {
     const msgEl = input.nextElementSibling;
     if (msgEl && msgEl.classList.contains("error-msg")) {
@@ -33,7 +39,6 @@ function clearFieldError(input) {
         input.classList.remove("error");
     }
 }
-
 function validateField(input) {
     const value = input.value.trim();
     const label = form.querySelector(`label[for="${input.id}"]`)?.textContent || input.name;
@@ -42,17 +47,14 @@ function validateField(input) {
         showFieldError(input, `${label} is required`);
         return false;
     }
-
     if (input.type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         showFieldError(input, `Please enter a valid ${label}`);
         return false;
     }
-
     if (input.name === "mobile" && value && !/^[0-9]{8,15}$/.test(value)) {
         showFieldError(input, `Please enter a valid ${label} (8–15 digits)`);
         return false;
     }
-
     if (input.name === "confirmPassword") {
         const pw = form.querySelector('[name="password"]').value;
         if (value && value !== pw) {
@@ -60,7 +62,6 @@ function validateField(input) {
             return false;
         }
     }
-
     clearFieldError(input);
     return true;
 }
@@ -71,92 +72,57 @@ form.querySelectorAll("input, select").forEach(input => {
     input.addEventListener("blur", () => validateField(input));
 });
 
-// Reset form + validation state
+// Reset form
 function resetForm() {
     form.reset();
     form.querySelectorAll("input, select").forEach(el => el.classList.remove("error"));
     form.querySelectorAll(".error-msg").forEach(el => el.classList.remove("active"));
 }
 
-// Open drawer
-btn.onclick = () => {
-    resetForm();
-    modal.style.display = "block";
-    setTimeout(() => modal.classList.add("open"), 10);
-};
-
-// Close drawer (X)
-closeBtn.onclick = () => {
-    modal.classList.remove("open");
-    setTimeout(() => {
-        modal.style.display = "none";
-        resetForm();
-    }, 300);
-};
-
-// Close on outside click
-window.addEventListener("click", e => {
-    if (e.target === modal) {
-        modal.classList.remove("open");
-        setTimeout(() => {
-            modal.style.display = "none";
-            resetForm();
-        }, 300);
-    }
-});
+// Open/close modal
+btn.onclick = () => { resetForm(); modal.style.display = "block"; setTimeout(() => modal.classList.add("open"), 10); };
+closeBtn.onclick = () => { modal.classList.remove("open"); setTimeout(() => { modal.style.display = "none"; resetForm(); }, 300); };
+window.addEventListener("click", e => { if (e.target === modal) { modal.classList.remove("open"); setTimeout(() => { modal.style.display = "none"; resetForm(); }, 300); } });
 
 // Submit handler
 form.addEventListener("submit", async e => {
     e.preventDefault();
     let valid = true;
-    form.querySelectorAll("input, select").forEach(input => {
-        if (!validateField(input)) valid = false;
-    });
-    if (!valid) {
-        showToast("Please fix the highlighted errors", "warning");
-        return;
-    }
+    form.querySelectorAll("input, select").forEach(input => { if (!validateField(input)) valid = false; });
+    if (!valid) { showToast("Please fix the highlighted errors", "warning"); return; }
 
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
     try {
-        const res = await fetch("/admin/register-user", {
+        const res = await fetch(`${API_BASE}/admin/register-user`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
             credentials: "include"
         });
-
         if (res.ok) {
             showToast("User registered successfully!", "success");
             modal.classList.remove("open");
-            setTimeout(() => {
-                modal.style.display = "none";
-                resetForm();
-            }, 300);
+            setTimeout(() => { modal.style.display = "none"; resetForm(); }, 300);
             loadUsers();
         } else {
             const errText = await res.text().catch(() => "");
             showToast(errText || "Error registering user", "error");
         }
-    } catch {
-        showToast("Network error. Please try again.", "error");
-    }
+    } catch { showToast("Network error. Please try again.", "error"); }
 });
 
 /* -----------------------
    Backend data rendering
 ------------------------ */
-
 async function loadUsers() {
     const tbody = document.querySelector("#usersTable tbody");
     tbody.innerHTML = "";
-    const headers = Array.from(document.querySelectorAll("#usersTable thead th"))
-        .map(th => th.textContent.trim().toLowerCase());
+    const headers = Array.from(document.querySelectorAll("#usersTable thead th")).map(th => th.textContent.trim().toLowerCase());
 
     try {
-        const res = await fetch("/admin/users", { credentials: "include" });
+        const res = await fetch(`${API_BASE}/admin/users`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load users");
         const users = await res.json();
 
@@ -173,27 +139,22 @@ async function loadUsers() {
                     case "actions":
                         td.classList.add("actions");
                         td.innerHTML = `
-              <button class="btn reset" data-id="${u.id}">Reset Password</button>
-              <button class="btn view" data-id="${u.id}">View Profile</button>
-              <button class="btn toggle" data-id="${u.id}">
-                ${u.status === "Active" ? "Disable" : "Enable"}
-              </button>
-            `;
+                          <button class="btn reset" data-id="${u.id}">Reset Password</button>
+                          <button class="btn view" data-id="${u.id}">View Profile</button>
+                          <button class="btn toggle" data-id="${u.id}">
+                            ${u.status === "Active" ? "Disable" : "Enable"}
+                          </button>`;
                         break;
-                    default:
-                        td.textContent = "—";
+                    default: td.textContent = "—";
                 }
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
 
-        tbody.querySelectorAll(".btn.reset").forEach(b =>
-            b.addEventListener("click", () => resetPassword(b.dataset.id)));
-        tbody.querySelectorAll(".btn.view").forEach(b =>
-            b.addEventListener("click", () => viewProfile(b.dataset.id)));
-        tbody.querySelectorAll(".btn.toggle").forEach(b =>
-            b.addEventListener("click", () => toggleUser(b.dataset.id)));
+        tbody.querySelectorAll(".btn.reset").forEach(b => b.addEventListener("click", () => resetPassword(b.dataset.id)));
+        tbody.querySelectorAll(".btn.view").forEach(b => b.addEventListener("click", () => viewProfile(b.dataset.id)));
+        tbody.querySelectorAll(".btn.toggle").forEach(b => b.addEventListener("click", () => toggleUser(b.dataset.id)));
 
     } catch {
         const tr = document.createElement("tr");
@@ -206,11 +167,10 @@ async function loadUsers() {
 async function loadPermits() {
     const tbody = document.querySelector("#permitsTable tbody");
     tbody.innerHTML = "";
-    const headers = Array.from(document.querySelectorAll("#permitsTable thead th"))
-        .map(th => th.textContent.trim().toLowerCase());
+    const headers = Array.from(document.querySelectorAll("#permitsTable thead th")).map(th => th.textContent.trim().toLowerCase());
 
     try {
-        const res = await fetch("/admin/permits", { credentials: "include" });
+        const res = await fetch(`${API_BASE}/admin/permits`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load permits");
         const permits = await res.json();
 
@@ -230,8 +190,7 @@ async function loadPermits() {
                         td.classList.add("actions");
                         td.innerHTML = `<button class="btn view" data-id="${p.id}">View</button>`;
                         break;
-                    default:
-                        td.textContent = "—";
+                    default: td.textContent = "—";
                 }
                 tr.appendChild(td);
             });
@@ -245,24 +204,10 @@ async function loadPermits() {
     }
 }
 
-// Count-up utility
-function countUp(el, target, duration = 800) {
-    const start = 0;
-    const startTime = performance.now();
-    function tick(now) {
-        const t = Math.min(1, (now - startTime) / duration);
-        const eased = 1 - Math.pow(1 - t, 3);
-        const value = Math.round(start + (target - start) * eased);
-        el.textContent = value;
-        if (t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-}
-
 // Stats + charts
 async function loadStats() {
     try {
-        const res = await fetch("/admin/stats", { credentials: "include" });
+        const res = await fetch(`${API_BASE}/admin/stats`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load stats");
         const stats = await res.json();
 
@@ -339,10 +284,8 @@ async function loadStats() {
 }
 
 /* -----------------------
-   Expand/Collapse Fix
+   Expand/Collapse Panels
 ------------------------ */
-
-// Initialize breakdown panels
 document.querySelectorAll(".breakdown").forEach(panel => {
     panel.style.maxHeight = "0";
     panel.style.opacity = "0";
@@ -353,7 +296,6 @@ function toggleDetails(id, btn) {
     const panel = document.getElementById(id);
     const isOpening = !panel.classList.contains("open");
 
-    // Button state
     if (btn) {
         btn.classList.toggle("active", isOpening);
         btn.textContent = isOpening ? "Collapse" : "Expand";
@@ -394,19 +336,19 @@ function toggleDetails(id, btn) {
    Actions
 ------------------------ */
 function viewProfile(userId) {
-    window.location.href = `/admin/users/${encodeURIComponent(userId)}`;
+    window.location.href = `${API_BASE}/admin/users/${encodeURIComponent(userId)}`;
 }
 
 async function toggleUser(userId) {
     try {
-        const res = await fetch(`/admin/toggle-status/${userId}`, {
+        const res = await fetch(`${API_BASE}/admin/toggle-status/${userId}`, {
             method: "POST",
             credentials: "include"
         });
         const data = await res.json();
         if (res.ok) {
             showToast(`Status updated: ${data.status}`, "success");
-            loadUsers(); // refresh table
+            loadUsers();
         } else {
             showToast(data.error || "Failed to update status", "error");
         }
@@ -421,7 +363,7 @@ async function resetPassword(userId) {
     if (!newPassword) return;
 
     try {
-        const res = await fetch(`/admin/reset-password/${userId}`, {
+        const res = await fetch(`${API_BASE}/admin/reset-password/${userId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -451,7 +393,7 @@ if (logoutButton) {
     });
 }
 
-// Init
+// Init dashboard
 loadUsers();
 loadPermits();
 loadStats();

@@ -48,54 +48,36 @@ document.addEventListener('DOMContentLoaded', async function () {
   ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetIdleTimer));
   resetIdleTimer();
 
-
   // Function to handle the visibility trigger for cards
   const revealCards = () => {
     const cards = document.querySelectorAll('.card');
-
     cards.forEach(card => {
       const rect = card.getBoundingClientRect();
-
-      // Check if the card is in the viewport
       if (rect.top < window.innerHeight && rect.bottom >= 0) {
-        card.classList.add('visible');  // Add 'visible' class when in viewport
+        card.classList.add('visible');
       } else {
-        card.classList.remove('visible');  // Remove it if out of viewport
+        card.classList.remove('visible');
       }
     });
   };
-
-  // Trigger on page load
   revealCards();
-
-  // Trigger on scroll
   window.addEventListener('scroll', revealCards);
 
-  // Add the 'in-view' class when the element comes into the viewport
   function addInViewClassOnScroll() {
     const elements = document.querySelectorAll('.card, .form-container, .form-group, .profile-navbar, .md-input');
-
     elements.forEach((element) => {
       const rect = element.getBoundingClientRect();
       const isInView = rect.top >= 0 && rect.top <= window.innerHeight;
-
       if (isInView && !element.classList.contains('in-view')) {
         element.classList.add('in-view');
       }
     });
   }
-
-  // Call the function on scroll and page load
   window.addEventListener('scroll', addInViewClassOnScroll);
   window.addEventListener('load', addInViewClassOnScroll);
-
-  // Run it immediately in case elements are already in view (on initial page load)
   addInViewClassOnScroll();
 
-
-  // =========================
   // Navbar buttons
-  // =========================
   const profileBtn = document.getElementById('profileBtn');
   if (profileBtn) {
     profileBtn.addEventListener('click', () => {
@@ -116,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   // =========================
-  // Utilities for validation
+  // Validation utilities (single copy only)
   // =========================
   function showErrorMessage(inputElement, errorMessage) {
     if (!inputElement) return;
@@ -153,46 +135,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     hideErrorMessage(inputElement);
     return true;
   }
-
-  // =========================
-  // Utilities for validation
-  // =========================
-  function showErrorMessage(inputElement, errorMessage) {
-    if (!inputElement) return;
-    let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
-    let error = container.querySelector('.error-message');
-    if (!error) {
-      error = document.createElement('span');
-      error.className = 'error-message';
-      error.style.color = 'darkred';
-      error.style.fontSize = '0.9em';
-      error.style.display = 'block';
-      error.style.marginTop = '4px';
-      container.appendChild(error);
-    }
-    error.textContent = errorMessage;
-    inputElement.style.border = '2px solid red';
-  }
-
-  function hideErrorMessage(inputElement) {
-    if (!inputElement) return;
-    let container = inputElement.closest('.md-input') || inputElement.parentElement || inputElement;
-    const error = container.querySelector('.error-message');
-    if (error) error.remove();
-    inputElement.style.border = '';
-  }
-
-  function validateField(inputElement, regex, errorMessage) {
-    if (!inputElement) return true;
-    const v = (inputElement.value || '').trim();
-    if (!regex.test(v)) {
-      showErrorMessage(inputElement, errorMessage);
-      return false;
-    }
-    hideErrorMessage(inputElement);
-    return true;
-  }
-
 
   // =========================
   // Requester details validation
@@ -217,7 +159,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       return el ? validateField(el, regex, msg) : true;
     });
   }
-
 
   // =========================
   // Facility list update
