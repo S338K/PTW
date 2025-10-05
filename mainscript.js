@@ -1,4 +1,4 @@
-import { checkSession, initIdleTimer, logoutUser } from "./session/session.js";
+import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 c
 onsole.log("✅ mainscript.js loaded");
 
