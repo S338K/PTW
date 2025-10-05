@@ -58,7 +58,6 @@ export async function logoutUser() {
     } catch (err) {
         console.error("Logout request failed:", err);
     } finally {
-        alert("Session expired or logged out. Please login again.");
         window.location.href = "index.html";
     }
 }

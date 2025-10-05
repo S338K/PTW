@@ -12,7 +12,8 @@ const adminSchema = new mongoose.Schema(
         role: { type: String, enum: ["Admin"], default: "Admin" },
         password: { type: String, required: true },   // ✅ unified with User.js
         status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
-        lastLogin: { type: Date }
+        lastLogin: { type: Date },
+        prevLogin: { type: Date }
     },
 
     {

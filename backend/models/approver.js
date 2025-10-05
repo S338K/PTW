@@ -12,7 +12,8 @@ const approverSchema = new mongoose.Schema(
     role: { type: String, enum: ["Pre-Approver", "Approver"], required: true },
     password: { type: String, required: true },   // ✅ unified with User/Admin
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
-    lastLogin: { type: Date }
+    lastLogin: { type: Date },
+    prevLogin: { type: Date }
   },
   { timestamps: true }
 );

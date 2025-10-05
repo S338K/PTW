@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // use the field your backend actually returns (lastLogin or prevLogin)
     const lastLoginISO = user.lastLogin || user.prevLogin;
-    const formattedLastLogin = lastLoginISO
-      ? new Date(lastLoginISO).toLocaleString()
+    const formattedLastLogin = this.prevLogin
+      ? new Date(user.prevLogin).toLocaleString()
       : "—";
 
     lastLoginDiv.textContent = `Welcome: ${welcomeName} || Last login: ${formattedLastLogin}`;

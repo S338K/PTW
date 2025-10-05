@@ -112,7 +112,13 @@ router.post("/login", async (req, res) => {
         req.session.userRole = account.role;
         req.session.cookie.maxAge = 2 * 60 * 60 * 1000; // 2 hours
 
+        // Save previous login before updating
         const previousLogin = account.lastLogin;
+
+        // Move lastLogin → prevLogin
+        account.prevLogin = previousLogin;
+
+        // Update lastLogin to now
         account.lastLogin = new Date();
         await account.save();
 
@@ -121,18 +127,24 @@ router.post("/login", async (req, res) => {
                 console.error("Session save error:", err);
                 return res.status(500).json({ message: "Failed to save session" });
             }
+
             res.json({
                 message: "Login successful",
                 user: {
                     id: account._id,
-                    fullName: account.fullName || account.username,
+                    username: account.username,   // use username consistently
                     email: account.email,
                     company: account.company,
                     role: account.role,
-                    lastLogin: previousLogin ? previousLogin.toISOString() : new Date().toISOString()
+                    // current login time (just saved)
+                    lastLogin: account.lastLogin?.toISOString(),
+                    // previous login time (if any)
+                    prevLogin: previousLogin ? previousLogin.toISOString() : account.lastLogin?.toISOString()
                 }
             });
         });
+
+
     } catch (err) {
         console.error("Login error:", err);
         res.status(500).json({
