@@ -1,3 +1,6 @@
+/* ===========================
+   Theme Variables (Light Mode)
+   =========================== */
 :root {
     --text-primary: #1E245E;
     --text-secondary: #666666;
@@ -16,7 +19,9 @@
     --success-color: #28a745;
 }
 
-/* Dark mode automatically follows system preference */
+/* ===========================
+   Dark Mode (System Preference)
+   =========================== */
 @media (prefers-color-scheme: dark) {
     :root {
         --text-primary: #e0e3ff;
@@ -37,16 +42,30 @@
     }
 }
 
-/* Smooth transition for theme changes */
-body,
-.form-container,
-.header-container,
-input,
-#loginBtn {
-    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+/* ===========================
+   Manual Override (via JS toggle)
+   =========================== */
+:root[data-theme="dark"] {
+    --text-primary: #e0e3ff;
+    --text-secondary: #bbbbbb;
+    --text-muted: #888888;
+    --bg-surface: #1c1c28;
+
+    --button-bg: #3f4b9a;
+    --button-text: #ffffff;
+    --button-hover-bg: #5a66c5;
+    --button-border: #555;
+
+    --input-border: #555;
+    --input-focus-border: #7a86ff;
+
+    --error-color: #ff6b6b;
+    --success-color: #4cd964;
 }
 
-/* Material Design style switch */
+/* ===========================
+   Material Design Switch
+   =========================== */
 .md-switch {
     position: fixed;
     bottom: 20px;
@@ -95,4 +114,15 @@ input,
 .md-switch input:checked+.slider::before {
     transform: translateX(24px);
     background-color: var(--button-text);
+}
+
+/* ===========================
+   Smooth transitions
+   =========================== */
+body,
+.form-container,
+.header-container,
+input,
+#loginBtn {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
