@@ -1,52 +1,12 @@
+import { checkSession, initIdleTimer } from "./session.js";
+
 document.addEventListener('DOMContentLoaded', async function () {
+  const user = await checkSession();
+  if (!user) return;
+  initIdleTimer();
+
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-  /* ===== SESSION CHECK ===== */
-  async function checkSession() {
-    try {
-      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
-      if (!res.ok) {
-        window.location.href = 'index.html'; // redirect if session expired
-        return null;
-      }
-      const data = await res.json();
-      return data.user;
-    } catch (err) {
-      console.error('Session check failed:', err);
-      window.location.href = 'index.html';
-      return null;
-    }
-  }
-
-  const user = await checkSession();
-  if (user) {
-    const fullName = document.getElementById('userFullName');
-    if (fullName) {
-      fullName.textContent = user.username;
-    }
-  }
-
-  /* ===== IDLE TIMEOUT SETUP ===== */
-  const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
-  let idleTimer;
-
-  function resetIdleTimer() {
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(logoutUser, IDLE_LIMIT);
-  }
-
-  async function logoutUser() {
-    await fetch(`${API_BASE}/api/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    }).finally(() => {
-      alert('Logged out due to inactivity');
-      window.location.href = 'index.html';
-    });
-  }
-
-  ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetIdleTimer));
-  resetIdleTimer();
 
   // Function to handle the visibility trigger for cards
   const revealCards = () => {
@@ -85,15 +45,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  /* ===== LOGOUT BUTTON ===== */
-  const logoutButton = document.getElementById('logoutBtn');
-  if (logoutButton) {
-    logoutButton.addEventListener('click', async function () {
-      await fetch(`${API_BASE}/api/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      window.location.href = 'index.html';
+  // Logout button
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      logoutUser();
     });
   }
 
@@ -615,6 +571,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
       }
     });
+
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.textContent = `Welcome, ${user.fullName}`;
 
     // Explicitly wire the button too (in case it's outside the <form>)
     if (submitBtn) {

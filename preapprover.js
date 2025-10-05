@@ -1,4 +1,26 @@
-document.addEventListener("DOMContentLoaded", () => {
+// preapprover.js
+import { checkSession, initIdleTimer, logoutUser } from "./session.js";
+
+let currentPermits = []; // store permits globally for modal use
+
+document.addEventListener("DOMContentLoaded", async () => {
+    const user = await checkSession();
+    if (!user) return; // redirected if invalid
+    initIdleTimer();
+
+    // Role guard
+    if (user.role !== "PreApprover") {
+        window.location.href = "index.html";
+        return;
+    }
+
+    // Wire logout button once
+    const logoutButton = document.getElementById("logoutBtn");
+    if (logoutButton) {
+        logoutButton.addEventListener("click", () => logoutUser());
+    }
+
+    // Load initial data
     loadStats();
     loadPermits();
 });
@@ -9,15 +31,13 @@ async function loadStats() {
         const res = await fetch("/pre-approver/stats", { credentials: "include" });
         const stats = await res.json();
 
-        // Update counters
         document.getElementById("statPending").textContent = stats.pending || 0;
         document.getElementById("statInProgress").textContent = stats.inProgress || 0;
         document.getElementById("statApproved").textContent = stats.approved || 0;
         document.getElementById("statRejected").textContent = stats.rejected || 0;
 
-        // Render chart
         const ctx = document.getElementById("permitStatusChart").getContext("2d");
-        if (window.permitChart) window.permitChart.destroy(); // avoid duplicates
+        if (window.permitChart) window.permitChart.destroy();
 
         window.permitChart = new Chart(ctx, {
             type: "doughnut",
@@ -47,8 +67,6 @@ async function loadStats() {
 }
 
 // 🔹 Load permits into table
-let currentPermits = []; // store permits globally for modal use
-
 async function loadPermits() {
     try {
         const res = await fetch("/pre-approver/permits", { credentials: "include" });
@@ -65,26 +83,20 @@ async function loadPermits() {
 
         permits.forEach((permit, index) => {
             const tr = document.createElement("tr");
-
             tr.innerHTML = `
         <td>${index + 1}</td>
         <td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : ""}</td>
         <td>${permit.permitTitle || ""}</td>
         <td>${permit.requester?.username || ""}</td>
         <td><span class="status-badge ${permit.status.toLowerCase()}">${permit.status}</span></td>
-        <td>
-          <button class="viewBtn" data-id="${permit._id}">View</button>
-        </td>
+        <td><button class="viewBtn" data-id="${permit._id}">View</button></td>
       `;
-
             tbody.appendChild(tr);
         });
 
-        // Attach modal openers
         document.querySelectorAll(".viewBtn").forEach(btn =>
             btn.addEventListener("click", () => openModal(btn.dataset.id))
         );
-
     } catch (err) {
         console.error("Failed to load permits", err);
     }
@@ -101,7 +113,6 @@ function openModal(permitId) {
     document.getElementById("modalSubmitted").textContent = permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : "";
     document.getElementById("modalComments").textContent = permit.preApproverComments || "";
 
-    // Wire modal buttons
     document.getElementById("modalApproveBtn").onclick = () => handleAction(permit._id, "approve");
     document.getElementById("modalRejectBtn").onclick = () => handleAction(permit._id, "reject");
 
@@ -134,17 +145,5 @@ async function handleAction(permitId, action) {
     } catch (err) {
         console.error(err);
         alert("Error performing action");
-    }
-
-    /* ===== Logout Button ===== */
-    const logoutButton = document.getElementById('logoutBtn');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async function () {
-            await fetch(`${API_BASE}/api/logout`, {
-                method: 'POST',
-                credentials: 'include'
-            });
-            window.location.href = 'index.html';
-        });
     }
 }

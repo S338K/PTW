@@ -1,89 +1,26 @@
+import { checkSession, initIdleTimer } from "./session.js";
+
 document.addEventListener('DOMContentLoaded', async function () {
-  const API_BASE = 'https://ptw-yu8u.onrender.com';
-
-
-  /* ===== SESSION CHECK ===== */
-  async function checkSession() {
-    try {
-      const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' }); // 🔹 include session cookie
-      if (!res.ok) {
-        window.location.href = 'index.html'; // redirect if session expired
-        return null;
-      }
-      const data = await res.json();
-      return data.user; // logged-in user info
-    } catch (err) {
-      console.error('Session check failed:', err);
-      window.location.href = 'index.html';
-      return null;
-    }
-  }
 
   const user = await checkSession();
-  if (!user) return; // stop execution if not logged in
+  if (!user) return;
+  initIdleTimer();
 
-  // 🔹 Retrieve previous login from sessionStorage
-  const prevLoginISO = sessionStorage.getItem('previousLogin') || '';
+  // Populate profile fields
+  const nameEl = document.getElementById("fullName");
+  if (nameEl) nameEl.textContent = user.fullName;
 
-  // 🔹 Helper to format last login
-  function formatLastLogin(dateString) {
-    if (!dateString) return 'First login';
+  const emailEl = document.getElementById("email");
+  if (emailEl) emailEl.textContent = user.email;
 
-    const date = new Date(dateString);
-    const now = new Date();
+  const API_BASE = 'https://ptw-yu8u.onrender.com';
 
-    const isToday = date.toDateString() === now.toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(now.getDate() - 1);
-    const isYesterday = date.toDateString() === yesterday.toDateString();
-
-    const time = date.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    if (isToday) return `Today at ${time}`;
-    if (isYesterday) return `Yesterday at ${time}`;
-
-    return date.toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  }
 
   // 🔹 Update the single div with both Welcome + Last Login
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
     lastLoginDiv.textContent = `Welcome : ${user.username} || Last login: ${formatLastLogin(prevLoginISO)}`;
   }
-
-
-  /* ===== IDLE TIMEOUT SETUP ===== */
-  const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
-  let idleTimer;
-
-  function resetIdleTimer() {
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(logoutUser, IDLE_LIMIT);
-  }
-
-  async function logoutUser() {
-    await fetch(`${API_BASE}/api/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    }).finally(() => {
-      alert('Session expired, please login again');
-      window.location.href = 'index.html';
-    });
-  }
-
-  ['mousemove', 'keydown', 'click'].forEach(evt => document.addEventListener(evt, resetIdleTimer));
-  resetIdleTimer(); // start timer
 
   /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {
@@ -123,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             link.textContent = permit.permitNumber;
 
             // Tooltip hint
-            link.title = "Click to download • Ctrl+Click to preview";
+            link.title = "Click to download";
 
             // Intercept normal clicks for download
             link.addEventListener('click', (e) => {
@@ -203,19 +140,15 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitPtw = document.getElementById('sbmtptw');
   if (submitPtw) {
     submitPtw.addEventListener('click', function () {
-      window.location.href = 'admin.html';
+      window.location.href = 'mainpage.html';
     });
   }
 
-  /* ===== Logout Button ===== */
-  const logoutButton = document.getElementById('logoutBtn');
-  if (logoutButton) {
-    logoutButton.addEventListener('click', async function () {
-      await fetch(`${API_BASE}/api/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      window.location.href = 'index.html';
+  // Logout button
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      logoutUser();
     });
   }
 

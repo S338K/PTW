@@ -17,6 +17,8 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serve frontend folder
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 // ===== CORS Setup =====
 const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);

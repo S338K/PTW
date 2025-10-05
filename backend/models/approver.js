@@ -9,7 +9,7 @@ const approverSchema = new mongoose.Schema(
     company: { type: String, trim: true },
     department: { type: String, trim: true },
     designation: { type: String, trim: true },
-    role: { type: String, enum: ["PreApprover", "Approver"], required: true },
+    role: { type: String, enum: ["Pre-Approver", "Approver"], required: true },
     password: { type: String, required: true },   // ✅ unified with User/Admin
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     lastLogin: { type: Date }
