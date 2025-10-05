@@ -1,37 +1,41 @@
 document.addEventListener("DOMContentLoaded", () => {
     const root = document.documentElement;
     const toggle = document.getElementById("themeToggle");
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
 
     if (!toggle) return;
 
-    // Initialize based on system preference
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    toggle.checked = prefersDark;
-
-    // Apply saved override if exists
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-        root.setAttribute("data-theme", savedTheme);
-        toggle.checked = savedTheme === "dark";
+    // Apply saved override from sessionStorage, or system if none
+    const saved = sessionStorage.getItem("theme");
+    if (saved === "dark" || saved === "light") {
+        root.setAttribute("data-theme", saved);
+        toggle.checked = saved === "dark";
+    } else {
+        root.removeAttribute("data-theme"); // system decides
+        toggle.checked = media.matches;
     }
 
-    // Listen for system changes (only if no manual override)
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
-        if (!localStorage.getItem("theme")) {
-            const isDark = e.matches;
-            toggle.checked = isDark;
-            root.removeAttribute("data-theme"); // let system CSS apply
+    // Listen for system changes (only if no override)
+    function systemChange(e) {
+        if (!sessionStorage.getItem("theme")) {
+            root.removeAttribute("data-theme");
+            toggle.checked = e.matches;
         }
-    });
+    }
+    if (media.addEventListener) {
+        media.addEventListener("change", systemChange);
+    } else if (media.addListener) {
+        media.addListener(systemChange); // legacy fallback
+    }
 
     // Manual toggle
     toggle.addEventListener("change", () => {
         if (toggle.checked) {
             root.setAttribute("data-theme", "dark");
-            localStorage.setItem("theme", "dark");
+            sessionStorage.setItem("theme", "dark");
         } else {
             root.setAttribute("data-theme", "light");
-            localStorage.setItem("theme", "light");
+            sessionStorage.setItem("theme", "light");
         }
     });
 });

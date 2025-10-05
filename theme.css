@@ -1,78 +1,77 @@
-/* ===========================
-   Theme Variables (Light Mode)
-   =========================== */
+/* Light mode defaults */
 :root {
-    --text-primary: #1E245E;
-    --text-secondary: #666666;
-    --text-muted: #999999;
     --bg-surface: #ffffff;
-
+    --text-primary: #1E245E;
     --button-bg: #273172;
     --button-text: #ffffff;
     --button-hover-bg: #1a245a;
     --button-border: #ccc;
-
     --input-border: #ccc;
     --input-focus-border: #273172;
-
     --error-color: #d9534f;
     --success-color: #28a745;
 }
 
-/* ===========================
-   Dark Mode (System Preference)
-   =========================== */
+/* System dark mode */
 @media (prefers-color-scheme: dark) {
     :root {
-        --text-primary: #e0e3ff;
-        --text-secondary: #bbbbbb;
-        --text-muted: #888888;
         --bg-surface: #1c1c28;
-
+        --text-primary: #e0e3ff;
         --button-bg: #3f4b9a;
         --button-text: #ffffff;
         --button-hover-bg: #5a66c5;
         --button-border: #555;
-
         --input-border: #555;
         --input-focus-border: #7a86ff;
-
         --error-color: #ff6b6b;
         --success-color: #4cd964;
     }
 }
 
-/* ===========================
-   Manual Override (via JS toggle)
-   =========================== */
-:root[data-theme="dark"] {
-    --text-primary: #e0e3ff;
-    --text-secondary: #bbbbbb;
-    --text-muted: #888888;
-    --bg-surface: #1c1c28;
+/* Manual overrides */
+:root[data-theme="light"] {
+    --bg-surface: #ffffff;
+    --text-primary: #1E245E;
+    --button-bg: #273172;
+    --button-text: #ffffff;
+    --button-hover-bg: #1a245a;
+    --button-border: #ccc;
+    --input-border: #ccc;
+    --input-focus-border: #273172;
+    --error-color: #d9534f;
+    --success-color: #28a745;
+}
 
+:root[data-theme="dark"] {
+    --bg-surface: #1c1c28;
+    --text-primary: #e0e3ff;
     --button-bg: #3f4b9a;
     --button-text: #ffffff;
     --button-hover-bg: #5a66c5;
     --button-border: #555;
-
     --input-border: #555;
     --input-focus-border: #7a86ff;
-
     --error-color: #ff6b6b;
     --success-color: #4cd964;
 }
 
-/* ===========================
-   Material Design Switch
-   =========================== */
+/* Smooth transitions */
+body,
+.form-container,
+.header-container,
+input,
+button {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Material switch */
 .md-switch {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    display: inline-block;
     width: 52px;
     height: 28px;
+    display: inline-block;
     z-index: 9999;
 }
 
@@ -84,45 +83,32 @@
 
 .md-switch .slider {
     position: absolute;
-    cursor: pointer;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background-color: var(--button-border);
-    transition: background-color 0.3s ease;
     border-radius: 34px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .md-switch .slider::before {
-    position: absolute;
     content: "";
+    position: absolute;
     height: 20px;
     width: 20px;
     left: 4px;
     bottom: 4px;
     background-color: var(--button-text);
-    transition: transform 0.3s ease, background-color 0.3s ease;
     border-radius: 50%;
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
 
-/* Checked state */
 .md-switch input:checked+.slider {
     background-color: var(--button-bg);
 }
 
 .md-switch input:checked+.slider::before {
     transform: translateX(24px);
-    background-color: var(--button-text);
-}
-
-/* ===========================
-   Smooth transitions
-   =========================== */
-body,
-.form-container,
-.header-container,
-input,
-#loginBtn {
-    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
