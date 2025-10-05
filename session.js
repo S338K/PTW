@@ -8,10 +8,7 @@ const API_BASE = "https://ptw-yu8u.onrender.com";
 
 export async function checkSession() {
     try {
-        const res = await fetch(`/api/profile`, {
-            method: "GET",
-            credentials: "include"
-        });
+        const res = await fetch(`${API_BASE}/api/profile`, { credentials: "include" });
 
         if (res.status === 401 || res.status === 403) {
             window.location.href = "index.html";

@@ -1,6 +1,6 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session.js";
-c
-onsole.log("✅ mainscript.js loaded");
+
+console.log("✅ mainscript.js loaded");
 
 document.addEventListener('DOMContentLoaded', async function () {
   const user = await checkSession();
