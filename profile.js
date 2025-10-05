@@ -1,6 +1,6 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session/session.js";
 
-console.log("profile.js loaded");
+console.log("✅ mainscript.js loaded");
 
 document.addEventListener('DOMContentLoaded', async function () {
 

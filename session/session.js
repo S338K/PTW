@@ -4,6 +4,7 @@
 const API_BASE = "https://ptw-yu8u.onrender.com";
 
 /* ===== Check if session is valid ===== */
+// session/session.js
 
 export async function checkSession() {
     try {
