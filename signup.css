@@ -1,23 +1,9 @@
 body {
-  background-color: #0d122e;
+  background-color: var(--bg-surface);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
   width: 100%;
-}
-
-:root {
-  --text-primary: #1E245E;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --bg-surface: #ffffff;
-  --button-bg: #273172;
-  --button-hover-bg: #1a245a;
-  --button-border: transparent;
-  --input-border: #ccc;
-  --input-focus-border: #273172;
-  --error-color: #d9534f;
-  --success-color: #28a745;
 }
 
 /* ===== Page Header ===== */
@@ -26,29 +12,33 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  color: #0d122e;
+  background: var(--bg-surface);
+  color: var(--text-primary);
   font-weight: 500;
   text-align: center;
   padding: 1px;
   z-index: 1000;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   margin-bottom: 10px;
-  border-radius: 10px;
+  border-radius: 4px;
+  box-shadow: 0 4px 4px rgba(134, 170, 174, 0.675);
+}
+
+.page-header .subtitle {
+  font-size: 15px;
 }
 
 /* ===== Form Container ===== */
 .form-container {
   width: 90%;
-  background: #f9f9f9;
+  background: var(--bg-surface);
   padding: 30px;
-  border-radius: 8px;
-  border: 2px solid #080435;
+  border-radius: 4px;
   margin: 0 auto;
-  box-shadow: 0 25px 25px;
+  box-shadow: 0 10px 10px rgba(21, 153, 170, 0.675);
 }
 
-/* Optional: Responsive Adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .form-container {
     width: 95%;
@@ -58,9 +48,13 @@ body {
   .page-header {
     padding: 8px;
   }
+
+  #officeAddressSection {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px 20px;
+  }
 }
 
-/* Optional: Responsive Adjustments */
 @media (max-width: 480px) {
   .form-container {
     width: 95%;
@@ -70,8 +64,12 @@ body {
   .page-header {
     padding: 8px;
   }
-}
 
+  #officeAddressSection {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px 20px;
+  }
+}
 
 fieldset {
   border: 0.1rem solid var(--text-primary);
@@ -85,7 +83,7 @@ legend {
   font-size: 18px;
   font-weight: 600;
   padding: 0 10px;
-  color: #080435;
+  color: var(--text-primary);
 }
 
 .card legend {
@@ -93,7 +91,7 @@ legend {
   font-size: 14px;
   font-weight: 400;
   padding: 10px;
-  color: #080435;
+  color: var(--text-primary);
 }
 
 .card fieldset {
@@ -110,15 +108,14 @@ legend {
 
 .form-group {
   margin-bottom: 30px;
-  /* extra space for floating error */
   width: 90%;
   position: relative;
-  /* for floating error positioning */
 }
 
 label {
   display: block;
   margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 input[type="text"],
@@ -130,6 +127,8 @@ input[type="password"] {
   border-radius: 25px;
   font-size: 15px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--bg-surface);
+  color: var(--text-primary);
 }
 
 input:focus {
@@ -176,9 +175,9 @@ input:focus {
 
 /* ===== Button Styling ===== */
 #signupBtn {
-  background-color: #273172;
-  color: #fff;
-  border: 2px solid #273172;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 2px solid var(--button-bg);
   padding: 12px 24px;
   font-size: 1rem;
   font-weight: 600;
@@ -188,7 +187,7 @@ input:focus {
 
 #signupBtn:hover {
   background-color: goldenrod;
-  color: #273172;
+  color: var(--text-primary);
   border-radius: 25px;
   transition: all 0.3s ease;
   transform: translateY(-5px);
@@ -206,20 +205,19 @@ input:focus {
 
 .log-in-link a {
   font-weight: 400;
-  color: #273172;
+  color: var(--button-bg);
   text-decoration: none;
 }
 
 .log-in-link a:hover {
   text-decoration: underline;
-  color: #d9534f;
+  color: var(--error-color);
 }
-
 
 /* ===== Floating Error Messages ===== */
 .error-message {
   position: absolute;
-  left: 0;
+  left: 10px;
   bottom: -18px;
   color: var(--error-color);
   padding: 0;
@@ -231,6 +229,8 @@ input:focus {
   transform: translateY(4px);
   transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 10;
+  font-style: normal;
+  font-weight: 500;
 }
 
 .error-message:not(:empty) {
@@ -256,7 +256,7 @@ input.valid {
   max-width: calc(100% -25px);
 }
 
-/* ===== Floating Labels with Blue Border Style ===== */
+/* ===== Floating Labels ===== */
 .floating-label {
   position: relative;
   margin-bottom: 30px;
@@ -268,16 +268,15 @@ input.valid {
   padding: 15px;
   border: 2px solid var(--input-border);
   border-radius: 25px;
-  /* keep your rounded corners */
   font-size: 15px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--bg-surface);
+  color: var(--text-primary);
 }
 
-/* Blue border when focused */
 .floating-label input:focus {
-  border-color: #0d122e;
-  /* DodgerBlue */
-  box-shadow: 0 0 5px rgb(5, 27, 50);
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 5px rgba(5, 27, 50, 0.5);
   outline: none;
 }
 
@@ -290,18 +289,15 @@ input.valid {
   font-size: 15px;
   pointer-events: none;
   transition: 0.3s ease all;
-  /* matches form background */
   padding: 0 6px;
   border-radius: 4px;
 }
 
-/* Float label on focus or when input has value */
 .floating-label input:focus+label,
 .floating-label input:not(:placeholder-shown)+label {
   top: -10px;
   left: 14px;
   font-size: 14px;
   font-weight: 500;
-  color: #0d122e;
-  /* match the blue border */
+  color: var(--text-primary);
 }
