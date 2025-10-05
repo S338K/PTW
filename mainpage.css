@@ -97,7 +97,7 @@ fieldset {
   opacity: 0;
   transform: translateY(75px);
   /* Start position */
-  transition: opacity 1s ease, transform 1s ease;
+  transition: opacity 0.5s ease, transform 0.5s ease;
   /* Smooth transition for opacity and position */
 }
 
@@ -139,6 +139,7 @@ fieldset {
 .md-input {
   position: relative;
   width: 95%;
+  margin-top: 25px;
 }
 
 .md-input input,
@@ -151,7 +152,7 @@ fieldset {
   border-radius: 5px;
   background-color: white;
   color: #273172;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.3s ease;
   box-sizing: border-box;
 }
 
@@ -269,7 +270,7 @@ button[type="submit"]:hover {
   color: white;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease, border 0.3s ease, transform 0.2s ease;
+  transition: background-color 0.3s ease, border 0.3s ease, transform 0.3s ease;
 }
 
 .upload-icon:hover {
@@ -331,7 +332,7 @@ button[type="submit"]:hover {
   /* Start invisible */
   transform: translateY(100px);
   /* Start below the normal position */
-  transition: all 0.6s ease-out;
+  transition: all 0.5s ease-out;
   /* Smooth transition when visible */
 }
 
