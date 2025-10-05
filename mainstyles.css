@@ -8,26 +8,27 @@ body {
 
 /* ===== Navbar Layout and Buttons ===== */
 .profile-navbar {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #ffffff;
-  padding: 12px;
+  background: #273172;
+  padding: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  color: #273172;
+  color: #fff;
   font-weight: 500;
   font-size: 18px;
   top: 0;
-  border-radius: 10px;
+  border-radius: 2px;
   width: auto;
   margin: 0 auto;
   /* <--- This centers it */
 }
 
 .profile-navbar button {
-  background-color: #273172;
-  color: #fff;
-  border: 2px solid #080435;
+  background-color: #fff;
+  color: #273172;
+  border: 2px solid;
   border-radius: 6px;
   padding: 10px 18px;
   font-size: 15px;
@@ -37,9 +38,10 @@ body {
 }
 
 .profile-navbar button:hover {
-  background-color: goldenrod;
-  color: #080435;
+  background-color: #273172;
+  color: #fff;
   border-radius: 25px;
+  border-color: goldenrod;
 }
 
 /* ===== Responsive Navbar ===== */
@@ -48,6 +50,14 @@ body {
     flex-direction: column;
     align-items: stretch;
   }
+
+  @media (max-width: 768px) {
+    .profile-navbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
 
   .profile-navbar .nav-left,
   .profile-navbar .nav-center,
@@ -68,7 +78,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background-color: #b3cfd0;
+  background-color: #f0f6f6;
   border-radius: 10px;
 }
 
