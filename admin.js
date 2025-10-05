@@ -151,7 +151,7 @@ async function loadUsers() {
             headers.forEach(h => {
                 const td = document.createElement("td");
                 switch (h) {
-                    case "username": td.textContent = u.username ?? "—"; break;
+                    case "username": td.textContent = u.username || u.fullName ?? "—"; break;
                     case "role": td.textContent = u.role ?? "—"; break;
                     case "status": td.textContent = u.status ?? "—"; break;
                     case "registered": td.textContent = u.registered ?? "—"; break;
@@ -201,7 +201,6 @@ async function loadPermits() {
                 switch (h) {
                     case "id": td.textContent = p.id ?? "—"; break;
                     case "title": td.textContent = p.title ?? "—"; break;
-                    case "permit #":
                     case "permit number": td.textContent = p.permitNumber ?? "—"; break;
                     case "submitted": td.textContent = p.submitted ?? "—"; break;
                     case "requester": td.textContent = p.requester ?? "—"; break;
