@@ -6,16 +6,37 @@ body {
   color: #222;
 }
 
+/* ===== Navbar Layout ===== */
+.profile-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #273172;
+  padding: 5px 20px;
+  color: #273172;
+  font-weight: 500;
+  border-radius: 2px;
+}
+
+.profile-navbar .nav-left {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 15px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
 /* ===== Navbar Buttons ===== */
 .profile-navbar .nav-center button,
 .profile-navbar .nav-right button {
-  background-color: #273172;
-  /* dark blue */
-  color: #fff;
-  /* white text */
-  border-radius: 6px;
-  padding: 10px 18px;
-  font-size: 15px;
+  background-color: #fff;
+  color: #273172;
+  border-radius: 25px;
+  border: 2px solid;
+  padding: 10px 20px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -23,48 +44,15 @@ body {
 
 .profile-navbar .nav-center button:hover,
 .profile-navbar .nav-right button:hover {
-  background-color: goldenrod;
-  color: #273172;
+  background-color: #273172;
+  color: #fff;
   border-radius: 25px;
-}
-
-/* ===== Navbar Layout ===== */
-.profile-navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff;
-  padding: 12px 20px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  color: #273172;
-  font-weight: 500;
-}
-
-.profile-navbar .nav-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  font-size: 18px;
-  font-weight: 500;
-  color: #273172;
-}
-
-/* Buttons (duplicate selector kept for compatibility) */
-.profile-signout-btn,
-.profile-sbmtptw-btn {
-  background: #fff;
-  color: #273172;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+  border-color: goldenrod;
 }
 
 .profile-signout-btn:hover,
 .profile-sbmtptw-btn:hover {
-  background-color: #e6e6e6;
+  background-color: #eeebeb;
 }
 
 /* ===== Form container spacing ===== */
@@ -72,7 +60,7 @@ body {
   display: flex;
   flex-direction: column;
   /* space between cards */
-  background-color: #273172;
+  background-color: #e6e6e6a7;
   width: 95%;
   margin: 0 auto;
   margin-top: 20px;
@@ -83,7 +71,7 @@ body {
 /* ===== Card Styling ===== */
 .card {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 5px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
   width: 95%;
@@ -94,7 +82,7 @@ body {
 .card legend {
   margin-top: 0;
   color: #080435;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   margin-bottom: 15px;
 }
@@ -125,7 +113,7 @@ fieldset {
 #permitTable th,
 #permitTable td {
   border: 2px solid #ddd;
-  padding: 10px;
+  padding: 8px;
   text-align: center;
 }
 
@@ -202,13 +190,11 @@ fieldset {
 }
 
 .status-badge.pending {
-  background-color: #f0ad4e;
-  /* amber */
+  color: #f0ad4e;
 }
 
 .status-badge.approved {
-  background-color: #5cb85c;
-  /* green */
+  color: #5cb85c;
 }
 
 .status-badge.rejected {

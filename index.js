@@ -75,11 +75,11 @@ document.addEventListener('DOMContentLoaded', function () {
     switch (inputEl.id) {
       case 'email':
         isValid = validateEmail(inputEl.value);
-        showError(inputEl, isValid ? '' : 'Enter a valid email address 📧.');
+        showError(inputEl, isValid ? '' : 'Enter a valid email address 📧');
         break;
       case 'password':
         isValid = validatePassword(inputEl.value);
-        showError(passwordEl, isValid ? '' : 'Enter valid password 🔑.');
+        showError(passwordEl, isValid ? '' : 'Enter valid password 🔑');
         break;
     }
     return isValid;

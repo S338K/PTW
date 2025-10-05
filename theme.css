@@ -1,0 +1,38 @@
+:root {
+    --text-primary: #1E245E;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --bg-surface: #ffffff;
+
+    --button-bg: #273172;
+    --button-text: #ffffff;
+    --button-hover-bg: #1a245a;
+    --button-border: #ccc;
+
+    --input-border: #ccc;
+    --input-focus-border: #273172;
+
+    --error-color: #d9534f;
+    --success-color: #28a745;
+}
+
+/* Dark mode automatically follows system preference */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-primary: #e0e3ff;
+        --text-secondary: #bbbbbb;
+        --text-muted: #888888;
+        --bg-surface: #1c1c28;
+
+        --button-bg: #3f4b9a;
+        --button-text: #ffffff;
+        --button-hover-bg: #5a66c5;
+        --button-border: #555;
+
+        --input-border: #555;
+        --input-focus-border: #7a86ff;
+
+        --error-color: #ff6b6b;
+        --success-color: #4cd964;
+    }
+}

@@ -4,22 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - HIA Baggage Handling System</title>
+  <link rel="stylesheet" href="theme.css"/>
   <link rel="stylesheet" href="index.css" />
 </head>
 
 <body>
   <!-- ===== HEADER START ===== -->
   <header class="header-container">
-    <div id="dateTimeDisplay"></div>
-    <div id="tempDisplay"></div>
+    <img src="images/HIA_logo.svg" id="logo" alt="Company Logo">
+
+    <!-- Centered info -->
+    <div class="header-center">
+      <div id="dateTimeDisplay"></div>
+      <div id="tempDisplay"></div>
+    </div>
   </header>
   <!-- ===== HEADER END ===== -->
 
+  <!-- ===== APP TITLE START ===== -->
   <div class="app-title">
-    <h1>Welcome to HIA Baggage Handling System</h1>
-    <h3>A gateway to access the BHS</h3>
+    <h2>
+      Welcome to HIA Baggage Handling System
+      <span class="subtitle">- A gateway to access the BHS</span>
+    </h2>
   </div>
+  <!-- ===== APP TITLE END ===== -->
 
+  <!-- ===== MAIN CONTENT START ===== -->
   <main>
     <div class="form-container auth-container">
       <fieldset>
@@ -28,16 +39,18 @@
           
           <!-- Email -->
           <div class="form-group">
-  <label for="email">Email id</label>
-  <input type="email"  id="email"    name="email"   placeholder="Enter your email address"   required />
-  <span class="error-message" aria-live="polite"></span>
-</div>
+            <label for="email">Email id</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email address" required />
+            <span class="error-message" aria-live="polite"></span>
+          </div>
 
-<div class="form-group">
-  <label for="password">Password</label>
-  <input    type="password"    id="password"    name="password"    placeholder="Enter your password"    required  />
-  <span class="error-message" aria-live="polite"></span>
-</div>
+          <!-- Password -->
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required />
+            <span class="error-message" aria-live="polite"></span>
+          </div>
+
           <button id="loginBtn" type="submit">Login</button>
         </form>
 
@@ -60,7 +73,9 @@
       </fieldset>
     </div>
   </main>
+  <!-- ===== MAIN CONTENT END ===== -->
 
+  <script src="theme.js"></script>
   <script src="index.js"></script>
   <script src="forgot-password.js"></script>
 </body>

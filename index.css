@@ -1,111 +1,118 @@
-/* ----------------------------------------
-   1. Reset & Base Styles
----------------------------------------- */
 body {
-  background: #f7f8fa;
+  background: var(--bg-surface);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  color: #222;
+  color: var(--text-primary);
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* ----------------------------------------
-   2. Define CSS Variables (Light mode only)
----------------------------------------- */
-:root {
-  --text-primary: #1E245E;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --bg-surface: #ffffff;
-  --button-bg: #273172;
-  --button-hover-bg: #1a245a;
-  --button-border: transparent;
-  --input-border: #ccc;
-  --input-focus-border: #273172;
-  --error-color: #d9534f;
-  --success-color: #28a745;
-}
-
-
-/* ----------------------------------------
-   Header Container
----------------------------------------- */
+/* Header */
 .header-container {
+  position: relative;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  background: #273172;
-  padding: 16px 20px;
-  margin-bottom: auto;
-  font: 500 1.1rem 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-surface);
+  padding: 10px 20px;
   border-radius: 2px;
   width: 100%;
-  margin: auto;
+  height: 70px;
+  box-shadow: 0 2px 4px rgba(39, 49, 114, 0.4);
+}
+
+#logo {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 60px;
+  width: auto;
+  max-height: 100%;
+}
+
+.header-center {
+  text-align: center;
+  color: var(--text-primary);
 }
 
 #dateTimeDisplay,
 #tempDisplay {
-  text-align: center;
-  font-weight: 600;
-  margin: 4px 0;
-  color: #fff;
+  font-weight: 500;
+  margin: 2px 0;
+  color: var(--text-primary);
 }
 
+/* Title */
+.app-title {
+  text-align: center;
+  margin: 15px auto;
+  color: var(--text-primary);
+}
 
-/* ----------------------------------------
-   Form Card Layout
----------------------------------------- */
+.app-title h2 {
+  font-size: 22px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.app-title .subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+/* Form card */
 .form-container {
   width: 95%;
-  margin: 30px auto;
-  background: #fff;
-  padding: 50px;
+  max-width: 450px;
+  margin: 20px auto;
+  background: var(--bg-surface);
+  padding: 40px;
   border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(142, 134, 199, 0.4);
 }
 
 fieldset {
-  border: 2px solid #080435;
+  border: 2px solid var(--text-primary);
   border-radius: 5px;
   padding: 20px;
-  color: #080435;
+  color: var(--text-primary);
 }
 
 legend {
   text-align: center;
   font-size: 1.2em;
   font-weight: bold;
-  color: #080435;
-
+  color: var(--text-primary);
 }
 
 .form-group {
-  margin-bottom: 30px;
+  margin-bottom: 25px;
   width: 100%;
   position: relative;
 }
 
-
 label {
   display: block;
   margin-bottom: 8px;
-  color: #080435;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 input[type="email"],
 input[type="password"] {
   width: 100%;
-  padding: 15px;
+  padding: 14px;
   border: 2px solid var(--input-border);
   border-radius: 25px;
   font-size: 15px;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background: var(--bg-surface);
+  color: var(--text-primary);
 }
 
 input[type="email"]:focus,
@@ -114,13 +121,11 @@ input[type="password"]:focus {
   outline: none;
 }
 
-/* ----------------------------------------
-   Floating Error Messages
----------------------------------------- */
+/* Floating error messages */
 .error-message {
   position: absolute;
-  left: 0;
-  bottom: -18px;
+  left: 10px;
+  bottom: -20px;
   color: var(--error-color);
   font-weight: 500;
   font-size: 0.9em;
@@ -128,7 +133,7 @@ input[type="password"]:focus {
   pointer-events: none;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 10;
 }
 
@@ -137,56 +142,46 @@ input[type="password"]:focus {
   transform: translateY(0);
 }
 
-/* ----------------------------------------
-   Input States
----------------------------------------- */
+/* Input states */
 input.invalid {
   border-color: var(--error-color);
-  box-shadow: 0 0 5px rgba(217, 83, 79, 0.5);
+  box-shadow: 0 4px 8px rgba(217, 83, 79, 0.5);
 }
 
 input.valid {
   border-color: var(--success-color);
-  box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+  box-shadow: 0 4px 5px rgba(40, 167, 69, 0.5);
 }
 
-/* ----------------------------------------
-   Button Styling
----------------------------------------- */
+/* Button */
 #loginBtn {
-  background-color: #fff;
-  color: #273172;
-  border: 2px solid #080435;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 2px solid var(--button-border);
   padding: 12px 24px;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: 25px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #loginBtn:hover {
-  background-color: #1B244F;
-  color: #fff;
-  border-radius: 25px;
+  background-color: var(--button-hover-bg);
+  color: var(--button-text);
   border-color: goldenrod;
-  transition: all 0.3s ease;
-  transform: translateY(-5px);
+  transform: scale(1.10);
 }
 
 #loginBtn:active {
   transform: translateY(0);
 }
 
-/* ----------------------------------------
-   Sign-Up-Link
----------------------------------------- */
+/* Links */
 .login-signup-container {
   display: flex;
   justify-content: space-between;
-  /* pushes them to opposite ends */
   align-items: center;
-  /* vertical alignment */
 }
 
 .sign-up-link {
@@ -194,7 +189,7 @@ input.valid {
 }
 
 .sign-up-link a {
-  color: #273172;
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 400;
 }
@@ -209,7 +204,7 @@ input.valid {
 
 .forgot-password-link a {
   font-weight: 400;
-  color: #273172;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -217,31 +212,65 @@ input.valid {
   text-decoration: underline;
 }
 
-
-/* ----------------------------------------
-   App Title
----------------------------------------- */
-.app-title {
-  text-align: center;
-  margin-bottom: auto;
-  margin-top: auto;
-  color: #273172;
-}
-
-/* ===== Responsive Add-on ===== */
+/* Responsive */
 @media (max-width: 768px) {
   .header-container {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    height: auto;
+    padding: 15px;
+  }
+
+  #logo {
+    position: static;
+    transform: none;
+    margin-bottom: 10px;
+    height: 50px;
+  }
+
+  .form-container {
+    width: 90%;
+    padding: 25px;
   }
 }
 
 @media (max-width: 480px) {
+  .app-title h2 {
+    font-size: 18px;
+  }
+
+  .app-title .subtitle {
+    font-size: 14px;
+  }
 
   input[type="email"],
   input[type="password"] {
     padding: 12px;
+    font-size: 14px;
+  }
+
+  #loginBtn {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .form-container {
+    padding: 15px;
+  }
+
+  .login-signup-container {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .sign-up-link,
+  .forgot-password-link {
+    font-weight: 600;
+  }
+
+  .sign-up-link a,
+  .forgot-password-link a {
     font-size: 14px;
   }
 }
