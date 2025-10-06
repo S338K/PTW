@@ -64,8 +64,8 @@ app.use((req, res, next) => {
 if (isProd) app.set('trust proxy', 1);
 
 // Ensure a session secret is provided in production for cryptographic safety
-const sessionSecret = process.env.SESSION_SECRET || 'supersecret';
-if (isProd && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'supersecret')) {
+const sessionSecret = process.env.SESSION_SECRET || 'xj7L!@vY5tW#pM4zN0hF8eKd3A';
+if (isProd && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'xj7L!s2QbR9@vY5tW#pM4zN0hF8eKd3A')) {
   throw new Error('SESSION_SECRET must be set to a strong value in production');
 }
 
