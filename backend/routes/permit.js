@@ -141,58 +141,63 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 // ----- GET PDF for an approved permit -----
 router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
   let browser;
+  let page;
+  let launchedOwnBrowser = false;
   try {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const launchOptions = {
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none', '--disable-gpu'],
-      headless: true,
-    };
-
-    try {
-      // Prefer Sparticuz Chromium in serverless/production
-      const execPath = await chromium.executablePath();
-      console.log('[PDF] Launching with @sparticuz/chromium at', execPath);
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: execPath,
-        headless: chromium.headless,
-      });
-    } catch (e) {
-      console.warn('[PDF] Sparticuz chromium launch failed, falling back. Reason:', e?.message || e);
-      // Fallback to Puppeteer's bundled Chromium or system Chrome in local dev
+    const getBrowser = req.app.get('getBrowser');
+    if (typeof getBrowser === 'function') {
+      // Reuse the shared browser from server.js for stability
+      browser = await getBrowser();
+    } else {
+      // Fallback to launching our own browser instance (Windows/dev friendly)
+      const launchOptions = {
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none', '--disable-gpu'],
+        headless: true,
+      };
       try {
-        browser = await puppeteer.launch(launchOptions);
-        console.log('[PDF] Launched Puppeteer bundled Chromium fallback');
-      } catch (e2) {
-        console.warn('[PDF] Bundled Chromium launch failed, trying system Chrome/Edge. Reason:', e2?.message || e2);
-        const candidates = [
-          // Chrome
-          'C:/Program Files/Google/Chrome/Application/chrome.exe',
-          'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-          // Edge
-          'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-          'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-        ];
-        let launched = false;
-        for (const execPath of candidates) {
-          try {
-            browser = await puppeteer.launch({ ...launchOptions, executablePath: execPath });
-            console.log('[PDF] Launched system browser at', execPath);
-            launched = true;
-            break;
-          } catch (e3) {
-            console.warn('[PDF] Failed to launch at', execPath, 'Reason:', e3?.message || e3);
+        const execPath = await chromium.executablePath();
+        console.log('[PDF] Launching with @sparticuz/chromium at', execPath);
+        browser = await puppeteer.launch({
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: execPath,
+          headless: chromium.headless,
+        });
+        launchedOwnBrowser = true;
+      } catch (e) {
+        console.warn('[PDF] Sparticuz chromium launch failed, falling back. Reason:', e?.message || e);
+        try {
+          browser = await puppeteer.launch(launchOptions);
+          console.log('[PDF] Launched Puppeteer bundled Chromium fallback');
+          launchedOwnBrowser = true;
+        } catch (e2) {
+          console.warn('[PDF] Bundled Chromium launch failed, trying system Chrome/Edge. Reason:', e2?.message || e2);
+          const candidates = [
+            'C:/Program Files/Google/Chrome/Application/chrome.exe',
+            'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+            'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+            'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+          ];
+          let launched = false;
+          for (const execPath of candidates) {
+            try {
+              browser = await puppeteer.launch({ ...launchOptions, executablePath: execPath });
+              console.log('[PDF] Launched system browser at', execPath);
+              launchedOwnBrowser = true;
+              launched = true;
+              break;
+            } catch (e3) {
+              console.warn('[PDF] Failed to launch at', execPath, 'Reason:', e3?.message || e3);
+            }
           }
-        }
-        if (!launched) {
-          console.error('[PDF] All launch strategies failed.');
-          throw e2;
+          if (!launched) {
+            console.error('[PDF] All launch strategies failed.');
+            throw e2;
+          }
         }
       }
     }
 
-    const page = await browser.newPage();
     const permit = await Permit.findOne({
       _id: req.params.id,
       requester: req.session.userId,
@@ -289,9 +294,15 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       </html>
     `;
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    await browser.close();
+    page = await browser.newPage();
+    await page.emulateMediaType('screen');
+    const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+    await page.goto(dataUrl, { waitUntil: 'load' });
+    await page.waitForSelector('body', { timeout: 3000 });
+    await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, { timeout: 3000 }).catch(() => { });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+    await page.close();
+    if (launchedOwnBrowser) await browser.close();
 
     res.setHeader('Content-Type', 'application/pdf');
     const safeName = (permit.permitNumber || `permit-${permit._id}`).replace(/[^a-zA-Z0-9._-]+/g, '-');
@@ -299,7 +310,8 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     res.send(pdfBuffer);
   } catch (err) {
     console.error('Error generating PDF:', err);
-    if (browser) await browser.close();
+    try { if (page) await page.close(); } catch { }
+    if (launchedOwnBrowser && browser) await browser.close();
     const payload = { message: 'Error generating PDF' };
     if (process.env.NODE_ENV !== 'production') {
       payload.detail = err?.message || String(err);
