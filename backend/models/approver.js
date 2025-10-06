@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const approverSchema = new mongoose.Schema(
   {
@@ -13,13 +13,13 @@ const approverSchema = new mongoose.Schema(
     // Normalize to the canonical 'PreApprover' when saving.
     role: {
       type: String,
-      enum: ["Pre-Approver", "PreApprover", "Approver"],
+      enum: ['Pre-Approver', 'PreApprover', 'Approver'],
       required: true,
     },
-    password: { type: String, required: true },   // ✅ unified with User/Admin
-    status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+    password: { type: String, required: true }, // ✅ unified with User/Admin
+    status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
     lastLogin: { type: Date },
-    prevLogin: { type: Date }
+    prevLogin: { type: Date },
   },
   { timestamps: true }
 );
@@ -27,8 +27,8 @@ const approverSchema = new mongoose.Schema(
 // Note: email field is marked unique at the schema path; avoid duplicate explicit index creation here.
 
 // 🔹 Pre-save hook to hash password if modified or new
-approverSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+approverSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -42,7 +42,11 @@ approverSchema.pre("save", async function (next) {
 approverSchema.pre('validate', function (next) {
   if (this.role && typeof this.role === 'string') {
     const r = this.role.trim();
-    if (r.toLowerCase() === 'pre-approver' || r.toLowerCase() === 'preapprover' || r.toLowerCase() === 'pre approver') {
+    if (
+      r.toLowerCase() === 'pre-approver' ||
+      r.toLowerCase() === 'preapprover' ||
+      r.toLowerCase() === 'pre approver'
+    ) {
       this.role = 'PreApprover';
     }
   }
@@ -54,4 +58,4 @@ approverSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model("Approver", approverSchema);
+module.exports = mongoose.model('Approver', approverSchema);

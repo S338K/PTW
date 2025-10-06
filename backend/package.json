@@ -25,13 +25,13 @@
     "mongoose": "^8.18.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
-    "puppeteer": "^21.3.8",
+    "puppeteer": "^24.22.3",
     "pino": "^8.20.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
     "eslint": "^8.50.0",
-    "prettier": "^2.10.0"
+    "prettier": "^2.8.8"
   },
   "jest": {
     "testEnvironment": "node"

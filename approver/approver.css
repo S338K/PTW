@@ -1,0 +1,12 @@
+/* Minimal approver styles */
+.container {
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 16px;
+}
+
+#approverContent {
+    background: #fff;
+    padding: 12px;
+    border-radius: 6px;
+}

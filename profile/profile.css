@@ -1,0 +1,13 @@
+/* Profile specific styles - small, derived from theme */
+.container {
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 16px;
+}
+
+#profileDetails {
+    border: 1px solid var(--muted);
+    padding: 12px;
+    border-radius: 6px;
+    background: #fff;
+}
