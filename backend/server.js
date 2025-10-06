@@ -1,10 +1,13 @@
 require('dotenv').config();
+const logger = require('./logger');
 
-console.log('MONGO_URI from env:', process.env.MONGO_URI);
+// Do not print sensitive environment variables to logs in any environment.
+// If you need to verify env vars during development, use a local-only debug flag.
 
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const apiRoutes = require('./routes/api');
@@ -19,6 +22,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Serve frontend folder
 app.use(express.static(path.join(__dirname, "../frontend")));
+
+// Use Helmet for sensible security headers
+app.use(helmet());
 
 // ===== CORS Setup =====
 const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
@@ -55,9 +61,15 @@ app.use((req, res, next) => {
 // Only set trust proxy when in production (e.g., behind a proxy like Render)
 if (isProd) app.set('trust proxy', 1);
 
+// Ensure a session secret is provided in production for cryptographic safety
+const sessionSecret = process.env.SESSION_SECRET || 'supersecret';
+if (isProd && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'supersecret')) {
+  throw new Error('SESSION_SECRET must be set to a strong value in production');
+}
+
 app.use(session({
   name: 'sessionId',
-  secret: process.env.SESSION_SECRET || 'supersecret',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
@@ -75,19 +87,21 @@ app.use(session({
   }
 }));
 
-// 🔎 Debug middleware: log session on every request
-app.use((req, res, next) => {
-  if (req.session) {
-    console.log('📦 Session check:', {
-      id: req.session.id,
-      userId: req.session.userId || null,
-      cookie: req.session.cookie
-    });
-  } else {
-    console.log('⚠️ No session object on request');
-  }
-  next();
-});
+// 🔎 Debug middleware: log session on every request in non-production only
+if (!isProd) {
+  app.use((req, res, next) => {
+    if (req.session) {
+      logger.debug({
+        id: req.session.id,
+        userId: req.session.userId || null,
+        cookie: req.session.cookie
+      }, '📦 Session check');
+    } else {
+      logger.debug('⚠️ No session object on request');
+    }
+    next();
+  });
+}
 
 // ===== Puppeteer Browser Reuse ===== //
 let browser;
@@ -99,7 +113,7 @@ async function getBrowser() {
       executablePath: await chromium.executablePath(),
       headless: chromium.headless
     });
-    console.log('✅ Chromium launched and cached');
+    logger.info('✅ Chromium launched and cached');
   }
   return browser;
 }
@@ -110,7 +124,7 @@ app.set('getBrowser', getBrowser);
 async function closeBrowser() {
   if (browser) {
     await browser.close();
-    console.log('🛑 Chromium closed');
+    logger.info('🛑 Chromium closed');
     browser = null;
   }
 }
@@ -136,14 +150,13 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
   dbName: 'PTW'
 })
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+  .then(() => logger.info('MongoDB Connected'))
+  .catch(err => logger.error(err));
 
 // ===== GLOBAL ERROR HANDLER ===== //
 app.use((err, req, res, next) => {
   const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] ${req.method} ${req.originalUrl}`);
-  console.error('Error stack:', err.stack);
+  logger.error({ method: req.method, url: req.originalUrl, stack: err.stack }, `[${timestamp}] Error handler`);
 
   res.status(err.status || 500).json({
     message: isProd ? 'An unexpected error occurred' : err.message,
@@ -154,10 +167,10 @@ app.use((err, req, res, next) => {
 // ===== START SERVER ======= //
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`CORS allowed for origins: ${allowedOrigins}`);
+  logger.info(`Server running on port ${PORT}`);
+  logger.debug(`CORS allowed for origins: ${allowedOrigins}`);
   // Warm up Chromium so first request is fast
-  getBrowser().then(() => console.log('Chromium warmed up 🚀'));
+  getBrowser().then(() => logger.info('Chromium warmed up 🚀'));
 
   // Graceful shutdown
   process.on('SIGINT', async () => { await closeBrowser(); process.exit(0); });

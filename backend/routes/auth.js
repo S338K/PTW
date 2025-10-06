@@ -5,6 +5,7 @@ const Admin = require("../models/admin");
 const Approver = require("../models/approver");
 const User = require("../models/user");
 require("dotenv").config();
+const logger = require('../logger');
 
 // ----- REGISTER -----
 router.post("/register", async (req, res) => {
@@ -60,7 +61,7 @@ router.post("/register", async (req, res) => {
             }
         });
     } catch (err) {
-        console.error("Registration error:", err);
+        logger.error({ err }, 'Registration error');
         res.status(500).json({ message: "Something went wrong", error: err.message });
     }
 });
@@ -90,13 +91,13 @@ router.post("/login", async (req, res) => {
         }
 
         // Debug logging
-        console.log("Login attempt:", {
+        logger.debug({
             emailFromBody: email,
             passwordProvided: !!password,
             accountRole: account.role,
             accountHasPassword: !!account.password,
-            accountPasswordSample: account.password ? account.password.slice(0, 20) + "..." : null
-        });
+            accountPasswordSample: account.password ? account.password.slice(0, 20) + '...' : null
+        }, 'Login attempt');
 
         // ✅ Compare using schema method
         const passwordMatch = await account.comparePassword(password);
@@ -124,7 +125,7 @@ router.post("/login", async (req, res) => {
 
         req.session.save(err => {
             if (err) {
-                console.error("Session save error:", err);
+                logger.error({ err }, 'Session save error');
                 return res.status(500).json({ message: "Failed to save session" });
             }
 
@@ -146,7 +147,7 @@ router.post("/login", async (req, res) => {
 
 
     } catch (err) {
-        console.error("Login error:", err);
+        logger.error({ err }, 'Login error');
         res.status(500).json({
             message: "Something went wrong, try again",
             error: err.message
@@ -192,7 +193,7 @@ router.get("/profile", async (req, res) => {
             session: { id: req.session.userId, role: req.session.userRole }
         });
     } catch (err) {
-        console.error("Profile fetch error:", err);
+        logger.error({ err }, 'Profile fetch error');
         res.status(500).json({ message: "Unable to fetch profile", error: err.message });
     }
 });
@@ -201,7 +202,7 @@ router.get("/profile", async (req, res) => {
 router.post("/logout", (req, res) => {
     req.session.destroy(err => {
         if (err) {
-            console.error("Logout error:", err);
+            logger.error({ err }, 'Logout error');
             return res.status(500).json({ message: "Logout failed" });
         }
         res.clearCookie("sessionId", {
@@ -234,7 +235,7 @@ router.post("/forgot-password", async (req, res, next) => {
         const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
 
         if (process.env.NODE_ENV !== "production") {
-            console.log("[DEV MODE] Reset link:", resetLink);
+            logger.debug({ resetLink, token: rawToken }, '[DEV MODE] Reset link');
             return res.status(200).json({ message: "Password reset link (dev mode)", resetLink, token: rawToken });
         }
         return res.status(200).json(genericOk);
@@ -269,7 +270,7 @@ router.post("/reset-password", async (req, res) => {
 
         res.json({ message: "Password updated successfully" });
     } catch (err) {
-        console.error("[Reset Password] Error:", err);
+        logger.error({ err }, '[Reset Password] Error');
         res.status(500).json({ message: "Error resetting password", error: err.message });
     }
 });

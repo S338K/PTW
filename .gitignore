@@ -6,3 +6,49 @@ node_modules/
 
 # Backup files
 package-backup.json
+ 
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+pids
+*.pid
+*.seed
+
+# Build / Dist
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Local env files
+*.local
+# Ignore env files in any subfolder (backend/.env etc.)
+**/.env
+
+# Ignore node_modules in any folder (backend/node_modules)
+**/node_modules/
+
+# Example env template
+# .env.example  <-- keep a template file in repo, do NOT add real secrets
+
+# Coverage
+coverage/
+
+# Puppeteer Chromium cache
+.local-chromium/
+
+# Ignore temporary seeder scripts that may contain credentials
+backend/seedAdmin.js
+scripts/seed*.js
+
+

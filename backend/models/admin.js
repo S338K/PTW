@@ -25,8 +25,7 @@ const adminSchema = new mongoose.Schema(
 );
 
 
-// Unique index on email
-adminSchema.index({ email: 1 }, { unique: true });
+// Note: email field is marked unique at the schema path; avoid duplicate explicit index creation here.
 
 // 🔹 Pre-save hook to hash password if modified or new
 adminSchema.pre("save", async function (next) {

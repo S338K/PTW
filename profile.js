@@ -1,4 +1,5 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session.js";
+import { formatDate24, formatLastLogin } from "./date-utils.js";
 
 document.addEventListener('DOMContentLoaded', async function () {
   console.log("✅ profile.js loaded");
@@ -24,13 +25,20 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (lastLoginDiv) {
     const welcomeName = user.fullName || user.username || "User";
 
+    // 24-hour formatter
+    function formatDate24(d) {
+      if (!d) return "";
+      const date = (d instanceof Date) ? d : new Date(d);
+      const fmtOptions = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+      return date.toLocaleString(undefined, fmtOptions);
+    }
+
     let message;
     if (user.prevLogin) {
-      // Repetitive user: show previous login
-      const formattedPrev = new Date(user.prevLogin).toLocaleString();
-      message = `Welcome: ${welcomeName} || Last login: ${formattedPrev}`;
+      message = `Welcome: ${welcomeName} || Last login at ${formatLastLogin(user.prevLogin)}`;
+    } else if (user.lastLogin) {
+      message = `Welcome: ${welcomeName} || Last login at ${formatLastLogin(user.lastLogin)}`;
     } else {
-      // First-time login
       message = `Welcome: ${welcomeName} || First time login`;
     }
 
@@ -55,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
           // Submitted date/time
           const submittedTd = document.createElement('td');
-          submittedTd.textContent = new Date(permit.createdAt).toLocaleString();
+          submittedTd.textContent = formatDate24(permit.createdAt);
 
           // Permit title
           const titleTd = document.createElement('td');

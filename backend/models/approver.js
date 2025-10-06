@@ -24,8 +24,7 @@ const approverSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Unique index on email
-approverSchema.index({ email: 1 }, { unique: true });
+// Note: email field is marked unique at the schema path; avoid duplicate explicit index creation here.
 
 // 🔹 Pre-save hook to hash password if modified or new
 approverSchema.pre("save", async function (next) {

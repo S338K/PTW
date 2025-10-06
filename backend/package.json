@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "lint": "eslint . --ext .js",
+    "format": "prettier --write \"**/*.js\"",
+    "test": "jest --passWithNoTests",
     "postinstall": "puppeteer install"
   },
   "dependencies": {
@@ -22,10 +25,16 @@
     "mongoose": "^8.18.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
-    "puppeteer": "^21.3.8"
+    "puppeteer": "^21.3.8",
+    "pino": "^8.20.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "eslint": "^8.50.0",
+    "prettier": "^2.10.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
   },
   "description": "",
   "keywords": [],

@@ -1,4 +1,5 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session.js";
+import { formatDate24, formatLastLogin } from "./date-utils.js";
 
 /* ===== Constants ===== */
 const API_BASE = "https://ptw-yu8u.onrender.com";
@@ -108,6 +109,14 @@ function getThemeColors() {
     };
 }
 
+// Format a Date in 24-hour format consistently across the UI
+function formatDate24(d) {
+    if (!d) return "";
+    const date = (d instanceof Date) ? d : new Date(d);
+    const fmtOptions = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    return date.toLocaleString(undefined, fmtOptions);
+}
+
 /* ===== Wait for Chart.js (since HTML loads it after admin.js) ===== */
 function waitForChart(maxWaitMs = 3000) {
     return new Promise((resolve, reject) => {
@@ -153,13 +162,13 @@ async function loadUsers() {
                         break;
                     case "registered":
                         td.textContent = u.registered
-                            ? new Date(u.registered).toLocaleString()
+                            ? formatDate24(u.registered)
                             : u.createdAt
-                                ? new Date(u.createdAt).toLocaleString()
+                                ? formatDate24(u.createdAt)
                                 : "—";
                         break;
                     case "last login":
-                        td.textContent = u.lastLogin ? new Date(u.lastLogin).toLocaleString() : "—";
+                        td.textContent = u.lastLogin ? formatLastLogin(u.lastLogin) : "—";
                         break;
                     case "actions":
                         td.classList.add("actions");
@@ -230,9 +239,9 @@ async function loadPermits() {
                         break;
                     case "submitted":
                         td.textContent = p.submitted
-                            ? new Date(p.submitted).toLocaleString()
+                            ? formatDate24(p.submitted)
                             : p.createdAt
-                                ? new Date(p.createdAt).toLocaleString()
+                                ? formatDate24(p.createdAt)
                                 : "—";
                         break;
                     case "requester name":

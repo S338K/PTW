@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("./models/user"); // adjust path if needed
+const logger = require('./logger');
 
 async function seedAdmin() {
     await mongoose.connect("mongodb+srv://doha:Doha2o2o@cluster0.ixohqzy.mongodb.net/PTW?retryWrites=true&w=majority&appName=Cluster0");
@@ -21,8 +22,8 @@ async function seedAdmin() {
 
 
     await admin.save();
-    console.log("✅ Admin user created");
+    logger.info('✅ Admin user created');
     mongoose.disconnect();
 }
 
-seedAdmin().catch(err => console.error(err));
+seedAdmin().catch(err => logger.error(err));
