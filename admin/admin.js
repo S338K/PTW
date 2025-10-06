@@ -109,13 +109,7 @@ function getThemeColors() {
     };
 }
 
-// Format a Date in 24-hour format consistently across the UI
-function formatDate24(d) {
-    if (!d) return "";
-    const date = (d instanceof Date) ? d : new Date(d);
-    const fmtOptions = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-    return date.toLocaleString(undefined, fmtOptions);
-}
+// ...existing code...
 
 /* ===== Wait for Chart.js (since HTML loads it after admin.js) ===== */
 function waitForChart(maxWaitMs = 3000) {
@@ -550,7 +544,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) logoutBtn.addEventListener("click", () => logoutUser());
 
-    console.log("✅ Admin page loaded for:", user.fullName || user.username || "Admin");
 
     // Modal elements
     const modal = document.getElementById("userModal");
