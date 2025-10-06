@@ -2,8 +2,8 @@
 body {
     font-family: system-ui, sans-serif;
     margin: 0;
-    background: #f7f8fa;
-    color: #222;
+    background: var(--bg-surface);
+    color: var(--text-primary);
 }
 
 /* Header */
@@ -12,8 +12,8 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: #273172;
-    color: #fff;
+    background: var(--button-bg);
+    color: var(--button-text);
 }
 
 header h1 {
@@ -24,16 +24,16 @@ header h1 {
 header button {
     padding: 8px 12px;
     border-radius: 4px;
-    border: 2px solid;
+    border: 2px solid var(--button-bg);
     cursor: pointer;
-    background: #fff;
-    color: #273172;
+    background: var(--bg-surface);
+    color: var(--button-bg);
     font-weight: 600;
 }
 
 header button:hover {
-    background-color: #1B244F;
-    color: #fff;
+    background-color: var(--button-hover-bg);
+    color: var(--button-text);
     border-radius: 25px;
     border-color: goldenrod;
     transition: all 0.3s ease;
@@ -51,8 +51,8 @@ main {
 
 /* Section cards */
 section {
-    background: #fff;
-    border: 1px solid #e3e6ea;
+    background: var(--bg-surface);
+    border: 1px solid var(--input-border);
     border-radius: 8px;
     padding: 16px;
     display: flex;
@@ -62,9 +62,9 @@ section {
 section h2 {
     font-size: 18px;
     font-weight: 600;
-    color: #273172;
+    color: var(--text-primary);
     margin-bottom: 12px;
-    border-bottom: 1px solid #e3e6ea;
+    border-bottom: 1px solid var(--input-border);
     padding-bottom: 6px;
 }
 
@@ -77,13 +77,13 @@ table {
 
 th,
 td {
-    border: 1px solid #e3e6ea;
+    border: 1px solid var(--input-border);
     padding: 8px;
     font-size: 14px;
 }
 
 thead th {
-    background: #f7f8fa;
+    background: var(--bg-surface);
     font-weight: 600;
 }
 
@@ -109,15 +109,14 @@ td.actions .btn {
     transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-
 .btn:active {
     transform: scale(0.97);
 }
 
 /* Reset Password (red) */
 .btn.reset {
-    background: #b42318;
-    color: #fff;
+    background: var(--error-color);
+    color: var(--button-text);
 }
 
 .btn.reset:hover {
@@ -127,8 +126,8 @@ td.actions .btn {
 
 /* View Profile (blue) */
 .btn.view {
-    background: #273172;
-    color: #fff;
+    background: var(--button-bg);
+    color: var(--button-text);
 }
 
 .btn.view:hover {
@@ -139,7 +138,7 @@ td.actions .btn {
 /* Enable/Disable (gray) */
 .btn.toggle {
     background: #888;
-    color: #fff;
+    color: var(--button-text);
 }
 
 .btn.toggle:hover {
@@ -158,8 +157,8 @@ td.actions .btn {
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
-    background: #273172;
-    color: #fff;
+    background: var(--button-bg);
+    color: var(--button-text);
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
@@ -182,8 +181,8 @@ td.actions .btn {
 }
 
 .card {
-    background: #f2f4f8;
-    border: 1px solid #e3e6ea;
+    background: var(--bg-surface);
+    border: 1px solid var(--input-border);
     border-radius: 8px;
     padding: 14px;
     text-align: center;
@@ -192,14 +191,14 @@ td.actions .btn {
 .card h3 {
     margin: 0 0 6px;
     font-size: 14px;
-    color: #556;
+    color: var(--text-secondary);
 }
 
 /* Totals (big numbers) */
 .card .value {
     font-size: 32px;
     font-weight: 700;
-    color: #273172;
+    color: var(--button-bg);
     margin: 8px 0;
     letter-spacing: -0.5px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -210,7 +209,7 @@ td.actions .btn {
     display: block;
     width: 40px;
     height: 3px;
-    background: #273172;
+    background: var(--button-bg);
     margin: 6px auto 0;
     border-radius: 2px;
     opacity: 0.6;
@@ -221,13 +220,13 @@ td.actions .btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #f2f4f8;
-    border: 1px solid #d0d5dd;
+    background: var(--bg-surface);
+    border: 1px solid var(--input-border);
     border-radius: 6px;
     padding: 6px 12px;
     font-size: 13px;
     font-weight: 600;
-    color: #273172;
+    color: var(--button-bg);
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -268,14 +267,14 @@ td.actions .btn {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #f9fafc;
-    border: 1px solid #e3e6ea;
+    background: var(--bg-surface);
+    border: 1px solid var(--input-border);
     border-radius: 6px;
     padding: 8px 12px;
     margin: 6px 0;
     font-size: 14px;
     font-weight: 500;
-    color: #273172;
+    color: var(--button-bg);
     transition: background 0.2s ease;
 }
 
@@ -290,11 +289,11 @@ td.actions .btn {
 
 /* Status-based colors */
 .breakdown p.active span {
-    color: #1a7f37;
+    color: var(--success-color);
 }
 
 .breakdown p.inactive span {
-    color: #b42318;
+    color: var(--error-color);
 }
 
 .breakdown p.pending span {
@@ -306,7 +305,7 @@ td.actions .btn {
 }
 
 .breakdown p.rejected span {
-    color: #b42318;
+    color: var(--error-color);
 }
 
 .breakdown p.inprogress span {
@@ -325,8 +324,8 @@ td.actions .btn {
     flex: 1;
     min-width: 250px;
     max-width: 350px;
-    background: #f9fafc;
-    border: 1px solid #e3e6ea;
+    background: var(--bg-surface);
+    border: 1px solid var(--input-border);
     border-radius: 8px;
     padding: 12px;
     text-align: center;
@@ -335,7 +334,7 @@ td.actions .btn {
 .chart-card h3 {
     font-size: 14px;
     margin-bottom: 10px;
-    color: #273172;
+    color: var(--text-primary);
 }
 
 .chart-card canvas {
@@ -365,11 +364,10 @@ td.actions .btn {
     width: 400px;
     max-width: 100%;
     height: 100%;
-    background: #fff;
+    background: var(--bg-surface);
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-    /* header, body, footer stack */
     transform: translateX(100%);
     transition: transform 0.3s ease;
 }
@@ -380,8 +378,8 @@ td.actions .btn {
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    border-bottom: 1px solid #e3e6ea;
-    background: #f9fafc;
+    border-bottom: 1px solid var(--input-border);
+    background: var(--bg-surface);
     flex-shrink: 0;
     z-index: 2;
 }
@@ -389,17 +387,17 @@ td.actions .btn {
 .modal-header h2 {
     margin: 0;
     font-size: 18px;
-    color: #273172;
+    color: var(--text-primary);
 }
 
 .modal-header .close {
     font-size: 22px;
     cursor: pointer;
-    color: #888;
+    color: var(--text-secondary);
 }
 
 .modal-header .close:hover {
-    color: #000;
+    color: var(--text-primary);
 }
 
 /* Body scrolls */
@@ -418,23 +416,25 @@ td.actions .btn {
 .modal-body label {
     font-weight: 500;
     font-size: 14px;
-    color: #273172;
+    color: var(--text-primary);
 }
 
 .modal-body input,
 .modal-body select {
     padding: 8px;
-    border: 1px solid #d0d5dd;
+    border: 1px solid var(--input-border);
     border-radius: 4px;
     font-size: 14px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
 }
 
 /* Footer pinned with slide-in animation */
 .modal-footer {
     flex-shrink: 0;
     padding: 12px 16px;
-    border-top: 1px solid #e3e6ea;
-    background: #f9fafc;
+    border-top: 1px solid var(--input-border);
+    background: var(--bg-surface);
     box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
     z-index: 2;
     transform: translateY(100%);
@@ -482,7 +482,7 @@ td.actions .btn {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.4s ease, transform 0.4s ease;
-    color: #fff;
+    color: var(--button-text);
 }
 
 #toast.show {
@@ -492,11 +492,11 @@ td.actions .btn {
 }
 
 #toast.success {
-    background-color: #1a7f37;
+    background-color: var(--success-color);
 }
 
 #toast.error {
-    background-color: #b42318;
+    background-color: var(--error-color);
 }
 
 #toast.warning {
@@ -505,7 +505,7 @@ td.actions .btn {
 
 /* Floating inline error messages */
 .error-msg {
-    color: #b42318;
+    color: var(--error-color);
     font-size: 12px;
     margin-top: 4px;
     max-height: 0;
@@ -523,6 +523,6 @@ td.actions .btn {
 
 input.error,
 select.error {
-    border-color: #b42318;
+    border-color: var(--error-color);
     background: #fff5f5;
 }

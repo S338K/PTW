@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     dateTimeEl.textContent = `${dateStr} | ${timeStr}`;
   }
 
+  /* ===== HEADER: Weather ===== */
   async function fetchWeather() {
     if (!weatherEl) return;
     const city = 'Doha';
@@ -32,10 +33,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  /* ===== Carousel Rotation ===== */
+  function initCarousel() {
+    const items = document.querySelectorAll('.header-carousel .carousel-item');
+    if (!items.length) return;
+
+    let index = 0;
+
+    function showNext() {
+      items.forEach((el, i) => {
+        el.classList.toggle('active', i === index);
+      });
+      index = (index + 1) % items.length;
+    }
+
+    showNext(); // show first item
+    setInterval(showNext, 4000); // rotate every 4s
+  }
+
+  /* ===== Init ===== */
   updateDateTime();
   setInterval(updateDateTime, 1000);
+
   fetchWeather();
   setInterval(fetchWeather, 600000); // every 10 minutes
+
+  initCarousel();
 
   /* ===== LOGIN FUNCTIONALITY ===== */
   const form = document.getElementById('loginForm');

@@ -9,7 +9,7 @@
     --input-border: #ccc;
     --input-focus-border: #273172;
     --error-color: #d9534f;
-    --success-color: #28a745;
+    --success-color: #008000;
 }
 
 /* System dark mode */
@@ -24,7 +24,7 @@
         --input-border: #555;
         --input-focus-border: #7a86ff;
         --error-color: #ff6b6b;
-        --success-color: #4cd964;
+        --success-color: #008000;
     }
 }
 
@@ -39,7 +39,7 @@
     --input-border: #ccc;
     --input-focus-border: #273172;
     --error-color: #d9534f;
-    --success-color: #28a745;
+    --success-color: #008000;
 }
 
 :root[data-theme="dark"] {
@@ -52,7 +52,7 @@
     --input-border: #555;
     --input-focus-border: #7a86ff;
     --error-color: #ff6b6b;
-    --success-color: #4cd964;
+    --success-color: #008000;
 }
 
 /* Smooth transitions */
@@ -64,51 +64,73 @@ button {
     transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* Material switch */
-.md-switch {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 52px;
-    height: 28px;
-    display: inline-block;
-    z-index: 9999;
-}
-
-.md-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.md-switch .slider {
+/* ===== Floating Theme Toggle Slider (top-left under header) ===== */
+.theme-toggle-slider {
     position: absolute;
+    top: 100%;
+    left: 20px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 120px;
+    height: 44px;
+    background: var(--bg-surface);
+    border: 2px solid var(--button-bg);
+    border-radius: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    z-index: 1500;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+
+.theme-toggle-slider .toggle-text {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+.theme-toggle-slider .toggle-thumb {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    background: var(--button-bg);
+    border-radius: 20px;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--button-border);
-    border-radius: 34px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: left 0.3s ease, background 0.3s ease;
+    z-index: 0;
 }
 
-.md-switch .slider::before {
-    content: "";
-    position: absolute;
-    height: 20px;
-    width: 20px;
-    left: 4px;
-    bottom: 4px;
-    background-color: var(--button-text);
-    border-radius: 50%;
-    transition: transform 0.3s ease, background-color 0.3s ease;
+/* Active states */
+:root[data-theme="light"] .theme-toggle-slider .light {
+    opacity: 1;
 }
 
-.md-switch input:checked+.slider {
-    background-color: var(--button-bg);
+:root[data-theme="light"] .theme-toggle-slider .toggle-thumb {
+    left: 0;
 }
 
-.md-switch input:checked+.slider::before {
-    transform: translateX(24px);
+:root[data-theme="dark"] .theme-toggle-slider .dark {
+    opacity: 1;
+}
+
+:root[data-theme="dark"] .theme-toggle-slider .toggle-thumb {
+    left: 50%;
+}
+
+/* Draggable state */
+.theme-toggle-slider {
+    cursor: grab;
+}
+
+.theme-toggle-slider.dragging {
+    cursor: grabbing;
 }

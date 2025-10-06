@@ -1,38 +1,41 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 
 document.addEventListener('DOMContentLoaded', async function () {
-
   console.log("✅ profile.js loaded");
 
   const user = await checkSession();
   if (!user) return;
   initIdleTimer();
 
-
-  // Populate profile fields
-  const nameEl = document.getElementById("fullName");
-  if (nameEl) nameEl.textContent = user.fullName;
-
-  const emailEl = document.getElementById("email");
-  if (emailEl) emailEl.textContent = user.email;
-
   const API_BASE = 'https://ptw-yu8u.onrender.com';
 
+  /* ===== Populate Profile Card ===== */
+  const fullNameEl = document.getElementById("profileFullName");
+  if (fullNameEl) fullNameEl.textContent = user.fullName || user.username || "—";
 
-  // 🔹 Update the single div with both Welcome + Last Login
+  const emailEl = document.getElementById("profileEmail");
+  if (emailEl) emailEl.textContent = user.email || "—";
+
+  const companyEl = document.getElementById("profileCompany");
+  if (companyEl) companyEl.textContent = user.company || "—";
+
+  /* ===== Welcome + Last Login ===== */
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
-    const welcomeName = user.fullName || user.username;
+    const welcomeName = user.fullName || user.username || "User";
 
-    // use the field your backend actually returns (lastLogin or prevLogin)
-    const lastLoginISO = user.lastLogin || user.prevLogin;
-    const formattedLastLogin = this.prevLogin
-      ? new Date(user.prevLogin).toLocaleString()
-      : "—";
+    let message;
+    if (user.prevLogin) {
+      // Repetitive user: show previous login
+      const formattedPrev = new Date(user.prevLogin).toLocaleString();
+      message = `Welcome: ${welcomeName} || Last login: ${formattedPrev}`;
+    } else {
+      // First-time login
+      message = `Welcome: ${welcomeName} || First time login`;
+    }
 
-    lastLoginDiv.textContent = `Welcome: ${welcomeName} || Last login: ${formattedLastLogin}`;
+    lastLoginDiv.textContent = message;
   }
-
 
   /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {
@@ -65,16 +68,14 @@ document.addEventListener('DOMContentLoaded', async function () {
           badge.classList.add('status-badge', (permit.status || 'pending').toLowerCase());
           statusTd.appendChild(badge);
 
+          // Permit number (download link if approved)
           const numberTd = document.createElement('td');
           if (permit.status === 'Approved' && permit.permitNumber) {
             const link = document.createElement('a');
             link.href = `${API_BASE}/api/permit/${permit._id}/pdf`;
             link.textContent = permit.permitNumber;
-
-            // Tooltip hint
             link.title = "Click to download";
 
-            // Intercept normal clicks for download
             link.addEventListener('click', (e) => {
               handlePermitClick(e, permit._id, permit.permitNumber);
             });
@@ -102,13 +103,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   //===============PDF Download============//
-
   async function handlePermitClick(e, permitId, permitNumber) {
-    // Let browser handle new tab/window clicks
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
       return;
     }
-
     e.preventDefault();
 
     try {
@@ -118,14 +116,11 @@ document.addEventListener('DOMContentLoaded', async function () {
       });
 
       if (!res.ok) {
-        // Try to parse backend error message
         let message = 'Failed to download PDF';
         try {
           const data = await res.json();
           if (data.message) message = data.message;
-        } catch (_) {
-          // ignore parse errors, fallback to generic
-        }
+        } catch (_) { }
         alert(message);
         return;
       }
@@ -133,7 +128,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
 
-      // Trigger download
       const a = document.createElement('a');
       a.href = url;
       a.download = `${permitNumber}.pdf`;
@@ -156,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // Logout button
+  // ===== Logout button =====
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
@@ -164,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
+  // ===== Session overlay =====
   (function createSessionOverlay() {
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';

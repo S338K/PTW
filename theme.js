@@ -5,37 +5,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!toggle) return;
 
-    // Apply saved override from sessionStorage, or system if none
-    const saved = sessionStorage.getItem("theme");
-    if (saved === "dark" || saved === "light") {
-        root.setAttribute("data-theme", saved);
-        toggle.checked = saved === "dark";
+    // === THEME LOGIC ===
+    const savedTheme = sessionStorage.getItem("theme");
+    if (savedTheme === "dark" || savedTheme === "light") {
+        root.setAttribute("data-theme", savedTheme);
     } else {
-        root.removeAttribute("data-theme"); // system decides
-        toggle.checked = media.matches;
+        root.removeAttribute("data-theme");
     }
 
-    // Listen for system changes (only if no override)
+    // Apply system preference if no override
+    if (!savedTheme) {
+        root.setAttribute("data-theme", media.matches ? "dark" : "light");
+    }
+
+    // Listen for system changes if no override
     function systemChange(e) {
         if (!sessionStorage.getItem("theme")) {
-            root.removeAttribute("data-theme");
-            toggle.checked = e.matches;
+            root.setAttribute("data-theme", e.matches ? "dark" : "light");
         }
     }
-    if (media.addEventListener) {
-        media.addEventListener("change", systemChange);
-    } else if (media.addListener) {
-        media.addListener(systemChange); // legacy fallback
-    }
+    media.addEventListener?.("change", systemChange);
 
     // Manual toggle
-    toggle.addEventListener("change", () => {
-        if (toggle.checked) {
-            root.setAttribute("data-theme", "dark");
-            sessionStorage.setItem("theme", "dark");
-        } else {
-            root.setAttribute("data-theme", "light");
-            sessionStorage.setItem("theme", "light");
-        }
+    toggle.addEventListener("click", () => {
+        const currentTheme = root.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", newTheme);
+        sessionStorage.setItem("theme", newTheme);
     });
+
+    // === RESTORE POSITION ===
+    const savedPos = localStorage.getItem("togglePos");
+    if (savedPos) {
+        const { left, top } = JSON.parse(savedPos);
+        toggle.style.left = left + "px";
+        toggle.style.top = top + "px";
+        toggle.style.right = "auto";
+        toggle.style.bottom = "auto";
+    }
 });

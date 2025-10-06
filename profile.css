@@ -1,40 +1,40 @@
 body {
-  background-color: #f7f8fa;
+  background-color: var(--bg-surface);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  color: #222;
+  color: var(--text-primary);
 }
 
 /* ===== Navbar Layout ===== */
-.profile-navbar {
+.header-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #273172;
+  background: var(--button-bg);
   padding: 5px 20px;
-  color: #273172;
+  color: var(--button-text);
   font-weight: 500;
   border-radius: 2px;
 }
 
-.profile-navbar .nav-left {
+.header-container .header-left {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
   gap: 15px;
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: var(--button-text);
 }
 
 /* ===== Navbar Buttons ===== */
-.profile-navbar .nav-center button,
-.profile-navbar .nav-right button {
-  background-color: #fff;
-  color: #273172;
+.header-container .header-center button,
+.header-container .header-right button {
+  background-color: var(--bg-surface);
+  color: var(--button-bg);
   border-radius: 25px;
-  border: 2px solid;
+  border: 2px solid var(--button-bg);
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
@@ -42,25 +42,24 @@ body {
   transition: all 0.3s ease;
 }
 
-.profile-navbar .nav-center button:hover,
-.profile-navbar .nav-right button:hover {
-  background-color: #273172;
-  color: #fff;
+.header-container .header-center button:hover,
+.header-container .header-right button:hover {
+  background-color: var(--button-bg);
+  color: var(--button-text);
   border-radius: 25px;
   border-color: goldenrod;
 }
 
 .profile-signout-btn:hover,
 .profile-sbmtptw-btn:hover {
-  background-color: #eeebeb;
+  background-color: var(--bg-surface);
 }
 
 /* ===== Form container spacing ===== */
 .profile-form-container {
   display: flex;
   flex-direction: column;
-  /* space between cards */
-  background-color: #e6e6e6a7;
+  background-color: var(--bg-surface);
   width: 95%;
   margin: 0 auto;
   margin-top: 20px;
@@ -70,7 +69,7 @@ body {
 
 /* ===== Card Styling ===== */
 .card {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 5px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
@@ -81,7 +80,7 @@ body {
 
 .card legend {
   margin-top: 0;
-  color: #080435;
+  color: var(--text-primary);
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 15px;
@@ -90,17 +89,16 @@ body {
 .card:hover {
   transition: all 0.3s ease;
   box-shadow: 0 10px 12px rgba(39, 49, 114, 0.2);
-  background-color: #edffed;
+  background-color: var(--bg-surface);
   transform: scale(1.01);
-  /* Slight zoom-in effect */
 }
 
+/* Fieldset */
 fieldset {
-  color: #080435;
+  color: var(--text-primary);
   border-radius: 5px;
   border-width: 2px;
-  border-color: #080435;
-
+  border-color: var(--text-primary);
 }
 
 /* ===== Table Styling for Submitted Permits ===== */
@@ -112,14 +110,14 @@ fieldset {
 
 #permitTable th,
 #permitTable td {
-  border: 2px solid #ddd;
+  border: 2px solid var(--input-border);
   padding: 8px;
   text-align: center;
 }
 
 #permitTable th {
-  background-color: #273172;
-  color: #fff;
+  background-color: var(--button-bg);
+  color: var(--button-text);
 }
 
 /* ===== Status Badge Colors ===== */
@@ -128,37 +126,33 @@ fieldset {
   padding: 5px 10px;
   border-radius: 4px;
   display: inline-block;
+  color: var(--button-text);
 }
 
 .status.approved {
-  background-color: #28a745;
-  color: #fff;
+  background-color: var(--success-color);
 }
 
 .status.pending {
-  background-color: orange;
-  color: #fff;
+  background-color: var(--error-color);
 }
 
 .status.verification {
   background-color: #17a2b8;
-  color: #fff;
 }
 
 .status.closed {
   background-color: #6c757d;
-  color: #fff;
 }
 
-.profile-navbar .nav-left,
-.profile-navbar .nav-center,
-.profile-navbar .nav-right {
+.header-container .header-left,
+.header-container .header-center,
+.header-container .header-right {
   justify-content: center;
   margin: 5px 0;
 }
 
-
-/* Optional: Responsive Adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .form-container {
     width: 95%;
@@ -170,7 +164,6 @@ fieldset {
   }
 }
 
-/* Optional: Responsive Adjustments */
 @media (max-width: 480px) {
   .form-container {
     width: 95%;
@@ -182,11 +175,12 @@ fieldset {
   }
 }
 
+/* ===== Status Badge Variants ===== */
 .status-badge {
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: bold;
-  color: #fff;
+  color: var(--button-text);
 }
 
 .status-badge.pending {
@@ -194,10 +188,9 @@ fieldset {
 }
 
 .status-badge.approved {
-  color: #5cb85c;
+  color: var(--success-color);
 }
 
 .status-badge.rejected {
-  background-color: #d9534f;
-  /* red */
+  background-color: var(--error-color);
 }

@@ -1,8 +1,9 @@
 body {
-    background-color: #fff;
+    background-color: var(--bg-surface);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
+    color: var(--text-primary);
 }
 
 /* ===== Navbar ===== */
@@ -10,10 +11,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #fff;
+    background: var(--bg-surface);
     padding: 12px 20px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    color: #273172;
+    color: var(--button-bg);
     font-weight: 500;
 }
 
@@ -25,14 +26,14 @@ body {
 }
 
 .profile-navbar h2 {
-    color: #273172;
+    color: var(--button-bg);
     margin: 0;
 }
 
 /* ===== Buttons ===== */
 .profile-signout-btn {
-    background: #fff;
-    color: #273172;
+    background: var(--bg-surface);
+    color: var(--button-bg);
     border: none;
     border-radius: 4px;
     padding: 8px 18px;
@@ -42,14 +43,14 @@ body {
 }
 
 .profile-signout-btn:hover {
-    background-color: #e6e6e6;
+    background-color: var(--input-border);
 }
 
 /* ===== Form container ===== */
 .profile-form-container {
     display: flex;
     flex-direction: column;
-    background-color: #273172;
+    background-color: var(--button-bg);
     width: 95%;
     margin: 0 auto;
     margin-top: 20px;
@@ -59,7 +60,7 @@ body {
 
 /* ===== Card Styling ===== */
 .card {
-    background: #fff;
+    background: var(--bg-surface);
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     padding: 20px;
@@ -70,7 +71,7 @@ body {
 
 .card legend {
     margin-top: 0;
-    color: #080435;
+    color: var(--text-primary);
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 15px;
@@ -79,15 +80,15 @@ body {
 .card:hover {
     transition: all 0.3s ease;
     box-shadow: 0 10px 12px rgba(39, 49, 114, 0.2);
-    background-color: #edffed;
+    background-color: var(--success-color);
     transform: scale(1.01);
 }
 
 fieldset {
-    color: #080435;
+    color: var(--text-primary);
     border-radius: 5px;
     border-width: 2px;
-    border-color: #080435;
+    border-color: var(--text-primary);
 }
 
 /* ===== Chart Container ===== */
@@ -104,7 +105,7 @@ fieldset {
 }
 
 #permitStats strong {
-    color: #273172;
+    color: var(--button-bg);
 }
 
 /* ===== Permit List Styling ===== */
@@ -115,17 +116,17 @@ fieldset {
 }
 
 #preApproverPermitList li {
-    border: 1px solid #ddd;
+    border: 1px solid var(--input-border);
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 12px;
-    background-color: #fafafa;
+    background-color: var(--bg-surface);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     transition: background-color 0.3s ease;
 }
 
 #preApproverPermitList li:hover {
-    background-color: #f5fff5;
+    background-color: var(--success-color);
 }
 
 /* ===== Approve/Reject Buttons ===== */
@@ -142,8 +143,8 @@ fieldset {
 }
 
 .approveBtn {
-    background-color: #2ecc71;
-    color: #fff;
+    background-color: var(--success-color);
+    color: var(--button-text);
 }
 
 .approveBtn:hover {
@@ -151,8 +152,8 @@ fieldset {
 }
 
 .rejectBtn {
-    background-color: #e74c3c;
-    color: #fff;
+    background-color: var(--error-color);
+    color: var(--button-text);
 }
 
 .rejectBtn:hover {
@@ -185,7 +186,6 @@ fieldset {
 /* ===== Modal Styling ===== */
 .modal {
     display: none;
-    /* hidden by default */
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -196,7 +196,7 @@ fieldset {
 }
 
 .modal-content {
-    background: #fff;
+    background: var(--bg-surface);
     margin: 8% auto;
     padding: 20px;
     border-radius: 8px;
@@ -208,6 +208,7 @@ fieldset {
     float: right;
     font-size: 22px;
     cursor: pointer;
+    color: var(--text-secondary);
 }
 
 .modal-actions {
@@ -224,11 +225,11 @@ fieldset {
 }
 
 #modalApproveBtn {
-    background-color: #2ecc71;
-    color: #fff;
+    background-color: var(--success-color);
+    color: var(--button-text);
 }
 
 #modalRejectBtn {
-    background-color: #e74c3c;
-    color: #fff;
+    background-color: var(--error-color);
+    color: var(--button-text);
 }

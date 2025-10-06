@@ -2,29 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>User Profile</title>
-  <link rel="stylesheet" href="profile.css">
+  <title>User Profile Dashboard</title>
+  <link rel="stylesheet" href="theme.css"/>
+  <link rel="stylesheet" href="profile.css"/>
 </head>
 
 <body style="margin:0; padding:0;">
   
-  <nav class="profile-navbar">
-    <div class="nav-left">
+  <nav class="header-container">
+    <div class="header-left">
       <div id="profileLastLogin">Last login:</div>
   </div>
 
-    <div class="nav-center">
+    <div class="header-center">
       <button class="profile-sbmtptw-btn" type="button" id="sbmtptw">Submit a new request</button>
     </div>
 
-    <div class="nav-right">
+    <div class="header-center">
       <button class="profile-signout-btn" type="button" id="logoutBtn">Sign Out</button>
     </div>
   </nav>
+  
+  <!-- Theme toggle lives right below header --
+<div id="themeToggle" class="theme-toggle-slider">
+  <span class="toggle-text light">Light</span>
+  <div class="toggle-thumb"></div>
+  <span class="toggle-text dark">Dark</span>
+</div>
+-->
 
   <div class="form-container profile-form-container">
-
-    <!-- Card 1: User Profile -->
 <!-- Card 1: User Profile -->
 <div class="card" id="userProfileCard">
   <fieldset>
