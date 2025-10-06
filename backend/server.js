@@ -52,7 +52,8 @@ app.use((req, res, next) => {
 });
 
 // ===== SESSION SETUP ===== //
-app.set('trust proxy', 1); // important when behind Render's proxy
+// Only set trust proxy when in production (e.g., behind a proxy like Render)
+if (isProd) app.set('trust proxy', 1);
 
 app.use(session({
   name: 'sessionId',
@@ -67,8 +68,10 @@ app.use(session({
   cookie: {
     maxAge: 2 * 60 * 60 * 1000, // 2 hours
     httpOnly: true,
-    sameSite: 'none', // required for cross-site cookies
-    secure: true      // must be true on HTTPS (Render provides HTTPS)
+    // Use permissive sameSite in development to allow local dev over HTTP.
+    sameSite: isProd ? 'none' : 'lax',
+    // Only require secure cookies in production (HTTPS). In dev we allow insecure for localhost.
+    secure: isProd
   }
 }));
 
