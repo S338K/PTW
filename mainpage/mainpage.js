@@ -1,4 +1,5 @@
 import { checkSession, initIdleTimer, logoutUser } from "../session.js";
+import { API_BASE } from '../config.js';
 
 console.log("✅ mainscript.js loaded");
 
@@ -6,9 +7,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const user = await checkSession();
     if (!user) return;
     initIdleTimer();
-
-
-    const API_BASE = 'https://ptw-yu8u.onrender.com';
 
 
     // Function to handle the visibility trigger for cards

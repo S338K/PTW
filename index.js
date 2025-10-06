@@ -1,7 +1,8 @@
+import { API_BASE } from './config.js';
+
 document.addEventListener('DOMContentLoaded', function () {
   const dateTimeEl = document.getElementById('dateTimeDisplay');
   const weatherEl = document.getElementById('tempDisplay');
-  const API_BASE = 'https://ptw-yu8u.onrender.com';
 
   /* ===== HEADER: Live Date/Time ===== */
   function updateDateTime() {

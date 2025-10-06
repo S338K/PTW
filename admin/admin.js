@@ -1,8 +1,8 @@
 import { checkSession, initIdleTimer, logoutUser } from "../session.js";
 import { formatDate24, formatLastLogin } from "../date-utils.js";
+import { API_BASE } from '../config.js';
 
 /* ===== Constants ===== */
-const API_BASE = "https://ptw-yu8u.onrender.com";
 
 /* ===== Role normalization (fix Pre-Approver mismatch) =====
    Adjust the right-hand values to match your backend enum if needed.

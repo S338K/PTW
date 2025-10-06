@@ -3,78 +3,7 @@ import '../theme.js';
 document.addEventListener('DOMContentLoaded', function () {
     const dateTimeEl = document.getElementById('dateTimeDisplay');
     const weatherEl = document.getElementById('tempDisplay');
-    const API_BASE = '';
-
-    function updateDateTime() {
-        if (!dateTimeEl) return;
-        const now = new Date();
-        const month = now.toLocaleString('en-US', { month: 'long' });
-        const day = String(now.getDate()).padStart(2, '0');
-        const year = now.getFullYear();
-        const dateStr = `${month} ${day}, ${year}`;
-        const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
-        dateTimeEl.textContent = `${dateStr} | ${timeStr}`;
-    }
-
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
-
-    /* ===== LOGIN ===== */
-    const form = document.getElementById('loginForm');
-    const emailEl = document.getElementById('email');
-    const passwordEl = document.getElementById('password');
-    const loginBtn = document.getElementById('loginBtn');
-
-    function showError(inputEl, message) {
-        const group = inputEl.closest('.form-group');
-        if (!group) return;
-        let span = group.querySelector('.error-message');
-        if (!span) {
-            span = document.createElement('span');
-            span.className = 'error-message';
-            span.setAttribute('aria-live', 'polite');
-            group.appendChild(span);
-        }
-        span.textContent = message || '';
-        if (message) {
-            inputEl.classList.add('invalid');
-            inputEl.classList.remove('valid');
-        } else {
-            inputEl.classList.remove('invalid');
-            inputEl.classList.add('valid');
-        }
-    }
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = emailEl.value.trim();
-        const password = passwordEl.value.trim();
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }), credentials: 'include'
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                showError(emailEl, data.message || 'Login failed');
-                return;
-            }
-            loginBtn.textContent = 'Logged in';
-            setTimeout(() => {
-                const role = data.user.role;
-                if (role === 'PreApprover') window.location.href = '../preapprover/preapprover.html';
-                else if (role === 'Approver') window.location.href = '../approver/approver.html';
-                else if (role === 'Admin') window.location.href = '../admin/admin.html';
-                else window.location.href = '../profile/profile.html';
-            }, 700);
-        } catch (err) {
-            showError(passwordEl, 'Network error');
-        }
-    });
-});
-document.addEventListener('DOMContentLoaded', function () {
-    const dateTimeEl = document.getElementById('dateTimeDisplay');
-    const weatherEl = document.getElementById('tempDisplay');
-    const API_BASE = 'https://ptw-yu8u.onrender.com';
+    const API_BASE = 'http://localhost:5000';
 
     function updateDateTime() {
         if (!dateTimeEl) return;

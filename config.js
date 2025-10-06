@@ -6,7 +6,7 @@ if (
     window.location.hostname === "localhost"
 ) {
     // Local development backend
-    API_BASE = "http://localhost:3000";
+    API_BASE = "http://localhost:5000";
 } else {
     // Production backend (Render)
     API_BASE = "https://ptw-yu8u.onrender.com";

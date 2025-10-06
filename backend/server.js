@@ -185,8 +185,8 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.debug(`CORS allowed for origins: ${allowedOrigins}`);
-  // Warm up Chromium so first request is fast
-  getBrowser().then(() => logger.info('Chromium warmed up 🚀'));
+  // Warm up Chromium so first request is fast (disabled for local testing)
+  // getBrowser().then(() => logger.info('Chromium warmed up 🚀'));
 
   // Graceful shutdown
   process.on('SIGINT', async () => {

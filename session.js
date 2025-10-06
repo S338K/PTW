@@ -1,7 +1,7 @@
 // session.js
 // Centralized session management for all protected pages
 
-const API_BASE = "https://ptw-yu8u.onrender.com";
+import { API_BASE } from './config.js';
 
 /* ===== Check if session is valid ===== */
 // session/session.js

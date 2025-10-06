@@ -1,5 +1,6 @@
 import { checkSession, initIdleTimer, logoutUser } from "../session.js";
 import { formatDate24, formatLastLogin } from "../date-utils.js";
+import { API_BASE } from '../config.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
   console.log("✅ profile.js loaded");
@@ -7,8 +8,6 @@ document.addEventListener('DOMContentLoaded', async function () {
   const user = await checkSession();
   if (!user) return;
   initIdleTimer();
-
-  const API_BASE = 'https://ptw-yu8u.onrender.com';
 
   /* ===== Populate Profile Card ===== */
   const fullNameEl = document.getElementById("profileFullName");
