@@ -19,8 +19,8 @@ router.get('/ping', (req, res) => {
 router.get('/weather', async (req, res) => {
   try {
     const city = req.query.city || 'Doha';
-    const cfg = require('../config');
-    const apiKey = cfg.API_KEY;
+    const cfg = require('../config/config');
+    const apiKey = cfg.WEATHER_API_KEY;
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
       city
     )}&appid=${apiKey}&units=metric`;
