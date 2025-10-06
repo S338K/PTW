@@ -63,10 +63,15 @@ app.use((req, res, next) => {
 // Only set trust proxy when in production (e.g., behind a proxy like Render)
 if (isProd) app.set('trust proxy', 1);
 
+// Use environment-specific session secrets
+const DEFAULT_DEV_SECRET = 'PTW-2024-simple-dev-session-key-for-local-testing';
+const sessionSecret = isProd
+  ? process.env.SESSION_SECRET_PROD
+  : process.env.SESSION_SECRET_DEV || DEFAULT_DEV_SECRET;
+
 // Ensure a session secret is provided in production for cryptographic safety
-const sessionSecret = process.env.SESSION_SECRET || 'h+8Fls/N6OjfRu02FqDWn0BeuE+k2tDJKqKHYD0Bhr43TE2jstT8BSNVq74/DSwl';
-if (isProd && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'h+8Fls/N6OjfRu02FqDWn0BeuE+k2tDJKqKHYD0Bhr43TE2jstT8BSNVq74/DSwl')) {
-  throw new Error('SESSION_SECRET must be set to a strong value in production');
+if (isProd && !process.env.SESSION_SECRET_PROD) {
+  throw new Error('SESSION_SECRET_PROD must be set in production environment');
 }
 
 app.use(
