@@ -16,9 +16,12 @@ const upload = multer({ storage });
 // ----- GET all permits for current requester -----
 router.get('/permit', requireAuth, async (req, res) => {
   try {
+    console.log('🔍 Permit request - Session userId:', req.session.userId);
     const permits = await Permit.find({ requester: req.session.userId }).sort({ createdAt: -1 });
+    console.log('📋 Found permits:', permits.length);
     res.json(permits);
   } catch (err) {
+    console.error('❌ Permit fetch error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -202,26 +205,22 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
             <h2>Permit Status Report</h2>
           </header>
           <table>
-            <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${
-      permit.lastName || ''
-    }</td></tr>
+            <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${permit.lastName || ''
+      }</td></tr>
             <tr><td class="label">Mobile Number</td><td>${permit.contactDetails || ''}</td></tr>
-            <tr><td class="label">Alternate Mobile Number</td><td>${
-              permit.altContactDetails || ''
-            }</td></tr>
+            <tr><td class="label">Alternate Mobile Number</td><td>${permit.altContactDetails || ''
+      }</td></tr>
             <tr><td class="label">Designation</td><td>${permit.designation || ''}</td></tr>
             <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
             <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
-            <tr><td class="label">Start Date and Time</td><td>${
-              permit.startDateTime
-                ? new Date(permit.startDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
-                : ''
-            }</td></tr>
-            <tr><td class="label">End Date and Time</td><td>${
-              permit.endDateTime
-                ? new Date(permit.endDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
-                : ''
-            }</td></tr>
+            <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime
+        ? new Date(permit.startDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
+        : ''
+      }</td></tr>
+            <tr><td class="label">End Date and Time</td><td>${permit.endDateTime
+        ? new Date(permit.endDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
+        : ''
+      }</td></tr>
             <tr><td class="label">Work Description</td><td>${permit.workDescription || ''}</td></tr>
             <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
           </table>

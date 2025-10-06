@@ -1,9 +1,10 @@
 import '../theme.js';
 
+import { API_BASE } from '../config.js';
+
 document.addEventListener('DOMContentLoaded', function () {
     const dateTimeEl = document.getElementById('dateTimeDisplay');
     const weatherEl = document.getElementById('tempDisplay');
-    const API_BASE = 'http://localhost:5000';
 
     function updateDateTime() {
         if (!dateTimeEl) return;

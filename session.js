@@ -11,7 +11,7 @@ export async function checkSession() {
         const res = await fetch(`${API_BASE}/api/profile`, { credentials: "include" });
 
         if (res.status === 401 || res.status === 403) {
-            window.location.href = "index.html";
+            window.location.href = "/login/index.html";
             return null;
         }
 
