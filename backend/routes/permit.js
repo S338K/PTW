@@ -4,7 +4,7 @@ const multer = require('multer');
 const Permit = require('../models/permit');
 const User = require('../models/user');
 const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 require('dotenv').config();
@@ -295,12 +295,28 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     `;
 
     page = await browser.newPage();
-    await page.emulateMediaType('screen');
-    const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-    await page.goto(dataUrl, { waitUntil: 'load' });
+    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 1 });
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    await page.emulateMediaType('print');
     await page.waitForSelector('body', { timeout: 3000 });
     await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, { timeout: 3000 }).catch(() => { });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+    let pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+    // Fallback: if buffer suspiciously small, try data URL approach with screen media
+    if (!pdfBuffer || pdfBuffer.length < 2000) {
+      try {
+        await page.close();
+        page = await browser.newPage();
+        await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 1 });
+        await page.emulateMediaType('screen');
+        const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+        await page.goto(dataUrl, { waitUntil: 'load' });
+        await page.waitForSelector('body', { timeout: 3000 });
+        await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, { timeout: 3000 }).catch(() => { });
+        pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+      } catch (e) {
+        // keep original buffer if fallback fails
+      }
+    }
     await page.close();
     if (launchedOwnBrowser) await browser.close();
 
