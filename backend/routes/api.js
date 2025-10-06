@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const cfg = require('../config');
 
 // ✅ Mount new route modules
 router.use('/', require('./auth')); // /register, /login, /logout, /profile, /forgot-password, /reset-password
@@ -20,11 +19,7 @@ router.get('/ping', (req, res) => {
 router.get('/weather', async (req, res) => {
   try {
     const city = req.query.city || 'Doha';
-    // Centralized env: prefer API_KEY; fallback to WEATHER_API_KEY for compatibility
-    const apiKey = cfg.WEATHER_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ message: 'Weather API key is not configured' });
-    }
+    const apiKey = process.env.WEATHER_API_KEY;
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
       city
     )}&appid=${apiKey}&units=metric`;

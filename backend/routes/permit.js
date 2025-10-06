@@ -3,8 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const Permit = require('../models/permit');
 const User = require('../models/user');
-const puppeteer = require('puppeteer');
-const cfg = require('../config');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 require('dotenv').config();
@@ -149,66 +149,51 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       // Reuse the shared browser from server.js for stability
       browser = await getBrowser();
     } else {
-      // Fallback to launching our own browser instance (hybrid: prod/dev)
-      const baseArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none', '--disable-gpu'];
-      const tryLaunch = async (opts, label) => {
-        console.log('[PDF] Trying launch:', label);
-        const b = await puppeteer.launch(opts);
-        console.log('[PDF] Launch OK:', label);
-        return b;
+      // Fallback to launching our own browser instance (Windows/dev friendly)
+      const launchOptions = {
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none', '--disable-gpu'],
+        headless: true,
       };
-
-      // 1) Env executable path
-      if (cfg.PUPPETEER_EXECUTABLE_PATH) {
+      try {
+        const execPath = await chromium.executablePath();
+        console.log('[PDF] Launching with @sparticuz/chromium at', execPath);
+        browser = await puppeteer.launch({
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: execPath,
+          headless: chromium.headless,
+        });
+        launchedOwnBrowser = true;
+      } catch (e) {
+        console.warn('[PDF] Sparticuz chromium launch failed, falling back. Reason:', e?.message || e);
         try {
-          browser = await tryLaunch({ headless: true, args: baseArgs, executablePath: cfg.PUPPETEER_EXECUTABLE_PATH }, 'PUPPETEER_EXECUTABLE_PATH');
+          browser = await puppeteer.launch(launchOptions);
+          console.log('[PDF] Launched Puppeteer bundled Chromium fallback');
           launchedOwnBrowser = true;
-        } catch (e) {
-          console.warn('[PDF] Env executable launch failed:', e?.message || e);
-        }
-      }
-
-      // 2) Puppeteer-managed
-      if (!browser) {
-        try {
-          browser = await tryLaunch({ headless: true, args: baseArgs }, 'puppeteer-managed');
-          launchedOwnBrowser = true;
-        } catch (e) {
-          console.warn('[PDF] Puppeteer-managed launch failed:', e?.message || e);
-        }
-      }
-
-      // 3) System paths (Windows/Linux)
-      if (!browser) {
-        const isWin = process.platform === 'win32';
-        const candidates = isWin
-          ? [
+        } catch (e2) {
+          console.warn('[PDF] Bundled Chromium launch failed, trying system Chrome/Edge. Reason:', e2?.message || e2);
+          const candidates = [
             'C:/Program Files/Google/Chrome/Application/chrome.exe',
             'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-            'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
             'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-          ]
-          : [
-            '/usr/bin/google-chrome',
-            '/usr/bin/google-chrome-stable',
-            '/usr/bin/chromium-browser',
-            '/usr/bin/chromium',
-            '/usr/bin/microsoft-edge',
+            'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
           ];
-        let launched = false;
-        for (const execPath of candidates) {
-          try {
-            browser = await tryLaunch({ headless: true, args: baseArgs, executablePath: execPath }, `system: ${execPath}`);
-            launchedOwnBrowser = true;
-            launched = true;
-            break;
-          } catch (e3) {
-            console.warn('[PDF] System launch failed at', execPath, 'Reason:', e3?.message || e3);
+          let launched = false;
+          for (const execPath of candidates) {
+            try {
+              browser = await puppeteer.launch({ ...launchOptions, executablePath: execPath });
+              console.log('[PDF] Launched system browser at', execPath);
+              launchedOwnBrowser = true;
+              launched = true;
+              break;
+            } catch (e3) {
+              console.warn('[PDF] Failed to launch at', execPath, 'Reason:', e3?.message || e3);
+            }
           }
-        }
-        if (!launched) {
-          console.error('[PDF] All launch strategies failed.');
-          throw new Error('Unable to launch headless browser. Set PUPPETEER_EXECUTABLE_PATH or install Chrome/Chromium.');
+          if (!launched) {
+            console.error('[PDF] All launch strategies failed.');
+            throw e2;
+          }
         }
       }
     }
@@ -344,7 +329,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     try { if (page) await page.close(); } catch { }
     if (launchedOwnBrowser && browser) await browser.close();
     const payload = { message: 'Error generating PDF' };
-    if (!cfg.isProd) {
+    if (process.env.NODE_ENV !== 'production') {
       payload.detail = err?.message || String(err);
     }
     res.status(500).json(payload);

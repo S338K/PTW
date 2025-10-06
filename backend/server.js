@@ -1,6 +1,5 @@
 require('dotenv').config();
 const logger = require('./logger');
-const cfg = require('./config');
 
 // Do not print sensitive environment variables to logs in any environment.
 // If you need to verify env vars during development, use a local-only debug flag.
@@ -12,10 +11,11 @@ const helmet = require('helmet');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const apiRoutes = require('./routes/api');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const path = require('path');
 
-const isProd = cfg.isProd;
+const isProd = process.env.NODE_ENV === 'production';
 const app = express();
 
 app.use(express.json());
@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(helmet());
 
 // ===== CORS Setup =====
-const allowedOrigins = cfg.ALLOWED_ORIGIN;
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
 app.use(
   cors({
@@ -64,10 +64,13 @@ app.use((req, res, next) => {
 if (isProd) app.set('trust proxy', 1);
 
 // Use environment-specific session secrets
-const sessionSecret = isProd ? cfg.SESSION_SECRET_PROD : cfg.SESSION_SECRET_DEV;
+const DEFAULT_DEV_SECRET = 'PTW-2024-simple-dev-session-key-for-local-testing';
+const sessionSecret = isProd
+  ? process.env.SESSION_SECRET_PROD
+  : process.env.SESSION_SECRET_DEV || DEFAULT_DEV_SECRET;
 
 // Ensure a session secret is provided in production for cryptographic safety
-if (isProd && !cfg.SESSION_SECRET_PROD) {
+if (isProd && !process.env.SESSION_SECRET_PROD) {
   throw new Error('SESSION_SECRET_PROD must be set in production environment');
 }
 
@@ -78,7 +81,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: cfg.MONGO_URI,
+      mongoUrl: process.env.MONGO_URI,
       dbName: 'PTW',
       ttl: 2 * 60 * 60, // 2 hours in seconds
     }),
@@ -116,59 +119,13 @@ if (!isProd) {
 let browser;
 async function getBrowser() {
   if (!browser) {
-    const baseArgs = ['--no-sandbox', '--disable-setuid-sandbox'];
-    const launchWith = async (opts, label) => {
-      logger.info(`Attempting browser launch via: ${label}`);
-      const b = await puppeteer.launch(opts);
-      logger.info(`✅ Browser launch successful: ${label}`);
-      return b;
-    };
-
-    // 1) Prefer explicit executable path when provided (e.g., Render)
-    if (cfg.PUPPETEER_EXECUTABLE_PATH) {
-      try {
-        browser = await launchWith({ headless: true, args: baseArgs, executablePath: cfg.PUPPETEER_EXECUTABLE_PATH }, 'PUPPETEER_EXECUTABLE_PATH');
-        return browser;
-      } catch (e) {
-        logger.warn({ err: e?.message }, 'Env executable launch failed, will try defaults');
-      }
-    }
-
-    // 2) Try Puppeteer-managed browser (works when Chromium is available in cache)
-    try {
-      browser = await launchWith({ headless: true, args: baseArgs }, 'puppeteer-managed');
-      return browser;
-    } catch (e) {
-      logger.warn({ err: e?.message }, 'Puppeteer-managed launch failed, will try system paths');
-    }
-
-    // 3) Fallback: Try system Chrome/Edge based on platform
-    const isWin = process.platform === 'win32';
-    const candidates = isWin
-      ? [
-        'C:/Program Files/Google/Chrome/Application/chrome.exe',
-        'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-        'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-        'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-      ]
-      : [
-        '/usr/bin/google-chrome',
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/chromium',
-        '/usr/bin/microsoft-edge',
-      ];
-    for (const execPath of candidates) {
-      try {
-        browser = await launchWith({ headless: true, args: baseArgs, executablePath: execPath }, `system: ${execPath}`);
-        return browser;
-      } catch (e) {
-        logger.warn({ execPath, err: e?.message }, 'System executable launch failed');
-      }
-    }
-
-    // If everything failed, throw a clear error
-    throw new Error('Unable to launch a headless browser. Set PUPPETEER_EXECUTABLE_PATH or ensure a supported Chrome/Chromium is available.');
+    browser = await puppeteer.launch({
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+    logger.info('✅ Chromium launched and cached');
   }
   return browser;
 }
@@ -179,7 +136,7 @@ app.set('getBrowser', getBrowser);
 async function closeBrowser() {
   if (browser) {
     await browser.close();
-    logger.info('🛑 Browser closed');
+    logger.info('🛑 Chromium closed');
     browser = null;
   }
 }
@@ -201,7 +158,7 @@ app.use('/api', apiRoutes);
 
 // ===== MONGODB CONNECTION =====//
 mongoose
-  .connect(cfg.MONGO_URI, {
+  .connect(process.env.MONGO_URI, {
     dbName: 'PTW',
   })
   .then(() => logger.info('MongoDB Connected'))
@@ -222,7 +179,7 @@ app.use((err, req, res, next) => {
 });
 
 // ===== START SERVER ======= //
-const PORT = cfg.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.debug(`CORS allowed for origins: ${allowedOrigins}`);

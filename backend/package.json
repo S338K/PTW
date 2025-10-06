@@ -10,6 +10,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^138.0.2",
     "axios": "^1.12.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -25,7 +26,7 @@
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
     "pino": "^8.20.0",
-    "puppeteer": "21.3.8"
+    "puppeteer-core": "21.8.0"
   },
   "devDependencies": {
     "eslint": "^8.50.0",

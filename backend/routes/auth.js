@@ -1,5 +1,4 @@
 const express = require('express');
-const cfg = require('../config');
 const router = express.Router();
 const crypto = require('crypto');
 const Admin = require('../models/admin');
@@ -227,7 +226,7 @@ router.post('/logout', (req, res) => {
     res.clearCookie('sessionId', {
       httpOnly: true,
       sameSite: 'none',
-      secure: cfg.isProd,
+      secure: process.env.NODE_ENV === 'production',
     });
     res.json({ message: 'Logged out successfully' });
   });
@@ -250,10 +249,10 @@ router.post('/forgot-password', async (req, res, next) => {
     user.resetPasswordExpires = Date.now() + 1000 * 60 * 15;
     await user.save();
 
-    const frontendBase = cfg.FRONTEND_BASE_URL;
+    const frontendBase = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
     const resetLink = `${frontendBase}/PTW/reset-password.html?token=${rawToken}`;
 
-    if (!cfg.isProd) {
+    if (process.env.NODE_ENV !== 'production') {
       logger.debug({ resetLink, token: rawToken }, '[DEV MODE] Reset link');
       return res
         .status(200)
