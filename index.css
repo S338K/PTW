@@ -14,7 +14,7 @@ body {
 .header-container {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   background: var(--bg-surface);
   padding: 10px 20px;
   border-radius: 2px;
@@ -22,12 +22,17 @@ body {
   height: 80px;
   box-shadow: 0 2px 4px rgba(39, 49, 114, 0.4);
   gap: 20px;
+  position: relative;
 }
 
 #logo {
-  height: 200px;
+  height: 75px;
   width: auto;
   flex-shrink: 0;
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .header-right {

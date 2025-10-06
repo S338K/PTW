@@ -159,11 +159,34 @@ router.get("/profile", async (req, res) => {
     try {
         if (!req.session.userId) return res.status(401).json({ message: "Unauthorized - session expired" });
 
-        const user = await User.findById(req.session.userId).select("-password -resetPasswordToken -resetPasswordExpires");
+        // Fetch from the appropriate collection depending on role. Previously we only
+        // queried User which caused approver/admin sessions to appear invalid and get destroyed.
+        let user = null;
+        const role = req.session.userRole;
+        if (role === 'Admin') {
+            const Admin = require('../models/admin');
+            user = await Admin.findById(req.session.userId).select('-password');
+        } else if (role === 'Approver' || role === 'PreApprover') {
+            const Approver = require('../models/approver');
+            user = await Approver.findById(req.session.userId).select('-password');
+        } else {
+            user = await User.findById(req.session.userId).select('-password -resetPasswordToken -resetPasswordExpires');
+        }
+
+        if (!user) {
+            // if user not found in expected collection, try a broad search (safety)
+            const Admin = require('../models/admin');
+            const Approver = require('../models/approver');
+            user = await User.findById(req.session.userId).select('-password -resetPasswordToken -resetPasswordExpires')
+                || await Approver.findById(req.session.userId).select('-password')
+                || await Admin.findById(req.session.userId).select('-password');
+        }
+
         if (!user) {
             req.session.destroy();
             return res.status(401).json({ message: "Unauthorized - user not found" });
         }
+
         res.json({
             user,
             session: { id: req.session.userId, role: req.session.userRole }

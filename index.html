@@ -1,37 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login Page - HIA Baggage Handling System</title>
-  <link rel="stylesheet" href="theme.css"/>
-  <link rel="stylesheet" href="index.css"/>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="index.css" />
 </head>
 
 <body>
   <header class="header-container">
-  <!-- Left: Logo -->
-  <div class="header-left">
-    <img src="images/HIA_logo.svg" id="logo" alt="Company Logo">
-  </div>
-
-  <!-- Right: Title + carousel -->
-  <div class="header-right">
-    <h2 class="app-title">
-      Welcome to HIA Baggage Handling System
-      <span class="subtitle">- Your gateway to access the BHS</span>
-    </h2>
-
-    <!-- Carousel for date/time + weather -->
-    <div class="header-carousel">
-      <div class="carousel-item" id="dateTimeDisplay"></div>
-      <div class="carousel-item" id="tempDisplay"></div>
+    <!-- Left: Logo -->
+    <div class="header-left">
+      <img src="images/HIA_logo.png" id="logo" alt="Company Logo">
     </div>
-  </div>
-</header>
+
+    <!-- Right: Title + carousel -->
+    <div class="header-right">
+      <h2 class="app-title">
+        Welcome to HIA Baggage Handling System
+        <span class="subtitle">- Your gateway to access the BHS</span>
+      </h2>
+
+      <!-- Carousel for date/time + weather -->
+      <div class="header-carousel">
+        <div class="carousel-item" id="dateTimeDisplay"></div>
+        <div class="carousel-item" id="tempDisplay"></div>
+      </div>
+    </div>
+  </header>
 
 
-<!-- Theme toggle lives right below header --
+  <!-- Theme toggle lives right below header --
 <div id="themeToggle" class="theme-toggle-slider">
   <span class="toggle-text light">Light</span>
   <div class="toggle-thumb"></div>
@@ -45,7 +46,7 @@
       <fieldset>
         <legend>Login</legend>
         <form id="loginForm" method="POST" action="" novalidate>
-          
+
           <!-- Email -->
           <div class="form-group">
             <label for="email">Email id</label>
@@ -74,7 +75,7 @@
 
           <div class="sign-up-link">
             <p>
-              Don't have an account? 
+              Don't have an account?
               <a href="signup.html">Sign up here</a>
             </p>
           </div>
@@ -87,4 +88,5 @@
   <script src="index.js"></script>
   <script src="forgot-password.js"></script>
 </body>
+
 </html>
