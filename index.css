@@ -25,9 +25,8 @@ body {
 }
 
 #logo {
-  height: 60px;
+  height: 200px;
   width: auto;
-  max-height: 100%;
   flex-shrink: 0;
 }
 
@@ -242,9 +241,6 @@ input.valid {
 }
 
 @media (max-width: 480px) {
-  .app-title h2 {
-    font-size: 18px;
-  }
 
   input[type="email"],
   input[type="password"] {
@@ -260,6 +256,10 @@ input.valid {
 
   .form-container {
     padding: 15px;
+  }
+
+  #logo {
+    display: none;
   }
 
   .login-signup-container a {

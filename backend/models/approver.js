@@ -9,7 +9,13 @@ const approverSchema = new mongoose.Schema(
     company: { type: String, trim: true },
     department: { type: String, trim: true },
     designation: { type: String, trim: true },
-    role: { type: String, enum: ["Pre-Approver", "Approver"], required: true },
+    // Accept both hyphenated and non-hyphenated forms sent by various clients.
+    // Normalize to the canonical 'PreApprover' when saving.
+    role: {
+      type: String,
+      enum: ["Pre-Approver", "PreApprover", "Approver"],
+      required: true,
+    },
     password: { type: String, required: true },   // ✅ unified with User/Admin
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     lastLogin: { type: Date },
@@ -31,6 +37,17 @@ approverSchema.pre("save", async function (next) {
   } catch (err) {
     next(err);
   }
+});
+
+// Normalize role before validation/save
+approverSchema.pre('validate', function (next) {
+  if (this.role && typeof this.role === 'string') {
+    const r = this.role.trim();
+    if (r.toLowerCase() === 'pre-approver' || r.toLowerCase() === 'preapprover' || r.toLowerCase() === 'pre approver') {
+      this.role = 'PreApprover';
+    }
+  }
+  next();
 });
 
 // 🔹 Method to compare passwords during login

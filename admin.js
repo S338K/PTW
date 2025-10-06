@@ -1,60 +1,42 @@
 import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 
-document.addEventListener("DOMContentLoaded", async () => {
-    // ===== Session and role guard =====
-    const user = await checkSession();
-    if (!user) return; // session.js should redirect if invalid
-    initIdleTimer();
-
-    // Case-insensitive admin-only access
-    if ((user.role || "").toLowerCase() !== "admin") {
-        window.location.href = "index.html";
-        return;
-    }
-
-    // Wire logout
-    const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => logoutUser());
-    }
-
-    console.log("✅ Admin page loaded for:", user.fullName || user.username || "Admin");
-
-    // ===== Ensure dashboard content mounts after auth =====
-    await safeInitDashboard();
-});
-
-// 🔹 Base API URL
+/* ===== Constants ===== */
 const API_BASE = "https://ptw-yu8u.onrender.com";
 
-/* =========================
-   Drawer / Modal elements
-========================= */
-const modal = document.getElementById("userModal");
-const btn = document.getElementById("addUserBtn");
-const closeBtn = modal ? modal.querySelector(".close") : null;
-const form = document.getElementById("userForm");
+/* ===== Role normalization (fix Pre-Approver mismatch) =====
+   Adjust the right-hand values to match your backend enum if needed.
+   If your backend expects "PreApprover" (no hyphen), this mapping ensures compatibility.
+*/
+const ROLE_MAP = {
+    "admin": "Admin",
+    "approver": "Approver",
+    "pre-approver": "PreApprover",
+    "preapprover": "PreApprover",
+    "pre approver": "PreApprover",
+    "requester": "Requester",
+    "user": "User",
+};
 
-/* =========================
-   Toast helper
-========================= */
+/* ===== Toast ===== */
 function showToast(message, type = "success", duration = 3000) {
     const toast = document.getElementById("toast");
     if (!toast) {
         console[type === "error" ? "error" : "log"](message);
         return;
     }
+    // reset
     toast.textContent = message;
-    toast.className = "";
+    toast.classList.remove("error", "success", "warning", "show");
+    // force reflow to restart animation
+    void toast.offsetWidth;
     toast.classList.add("show", type);
+    // remove show after duration
     setTimeout(() => {
-        toast.className = toast.className.replace("show", "").trim();
+        toast.classList.remove("show");
     }, duration);
 }
 
-/* =========================
-   Inline validation
-========================= */
+/* ===== Validation helpers ===== */
 function showFieldError(input, message) {
     const msgEl = input.nextElementSibling;
     if (msgEl && msgEl.classList.contains("error-msg")) {
@@ -71,7 +53,7 @@ function clearFieldError(input) {
         input.classList.remove("error");
     }
 }
-function validateField(input) {
+function validateField(form, input) {
     const value = input.value.trim();
     const label = form?.querySelector(`label[for="${input.id}"]`)?.textContent || input.name;
 
@@ -98,122 +80,47 @@ function validateField(input) {
     return true;
 }
 
-/* =========================
-   Real-time listeners
-========================= */
-if (form) {
-    form.querySelectorAll("input, select").forEach((input) => {
-        input.addEventListener("input", () => validateField(input));
-        input.addEventListener("blur", () => validateField(input));
-    });
+/* ===== Count-up animation ===== */
+function countUp(el, target, duration = 800) {
+    if (!el) return;
+    const start = Number(el.textContent) || 0;
+    const startTime = performance.now();
+    const diff = target - start;
+
+    function tick(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const value = Math.round(start + diff * progress);
+        el.textContent = String(value);
+        el.setAttribute("data-value", String(value));
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
 }
 
-/* =========================
-   Reset form
-========================= */
-function resetForm() {
-    if (!form) return;
-    form.reset();
-    form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
-    form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
-}
-
-/* =========================
-   Open/close modal
-========================= */
-if (btn && modal) {
-    btn.onclick = () => {
-        resetForm();
-        modal.style.display = "block";
-        setTimeout(() => modal.classList.add("open"), 10);
+/* ===== Theme colors for charts ===== */
+function getThemeColors() {
+    const root = document.documentElement;
+    const getVar = (name) => getComputedStyle(root).getPropertyValue(name).trim() || "";
+    return {
+        text: getVar("--text-primary") || "#273172",
+        primary: getVar("--button-bg") || "#273172",
+        surface: getVar("--bg-surface") || "#ffffff",
     };
 }
-if (closeBtn && modal) {
-    closeBtn.onclick = () => {
-        modal.classList.remove("open");
-        setTimeout(() => {
-            modal.style.display = "none";
-            resetForm();
-        }, 300);
-    };
-}
-if (modal) {
-    window.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            modal.classList.remove("open");
-            setTimeout(() => {
-                modal.style.display = "none";
-                resetForm();
-            }, 300);
-        }
+
+/* ===== Wait for Chart.js (since HTML loads it after admin.js) ===== */
+function waitForChart(maxWaitMs = 3000) {
+    return new Promise((resolve, reject) => {
+        const started = performance.now();
+        (function check() {
+            if (window.Chart) return resolve(window.Chart);
+            if (performance.now() - started > maxWaitMs) return resolve(null);
+            setTimeout(check, 50);
+        })();
     });
 }
 
-/* =========================
-   Role normalization (fix Pre-Approver mismatch)
-========================= */
-const ROLE_MAP = {
-    admin: "Admin",
-    approver: "Approver",
-    "pre-approver": "Pre-Approver", // normalize hyphenated UI to canonical string
-    preapprover: "Pre-Approver",
-    "pre approver": "Pre-Approver",
-    requester: "Requester",
-    user: "User",
-};
-
-/* =========================
-   Submit handler
-========================= */
-if (form) {
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        let valid = true;
-        form.querySelectorAll("input, select").forEach((input) => {
-            if (!validateField(input)) valid = false;
-        });
-        if (!valid) {
-            showToast("Please fix the highlighted errors", "warning");
-            return;
-        }
-
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        // Normalize role to backend enum
-        if (data.role) {
-            const key = String(data.role).trim().toLowerCase();
-            data.role = ROLE_MAP[key] || data.role;
-        }
-
-        try {
-            const res = await fetch(`${API_BASE}/admin/register-user`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-                credentials: "include",
-            });
-            if (res.ok) {
-                showToast("User registered successfully!", "success");
-                modal?.classList.remove("open");
-                setTimeout(() => {
-                    if (modal) modal.style.display = "none";
-                    resetForm();
-                }, 300);
-                await loadUsers(); // refresh list so “nothing after login” isn’t a thing
-            } else {
-                const errText = await res.text().catch(() => "");
-                showToast(errText || "Error registering user", "error");
-            }
-        } catch {
-            showToast("Network error. Please try again.", "error");
-        }
-    });
-}
-
-/* =========================
-   Backend data rendering
-========================= */
+/* ===== Users table ===== */
 async function loadUsers() {
     const table = document.getElementById("usersTable");
     const tbody = table?.querySelector("tbody");
@@ -221,7 +128,9 @@ async function loadUsers() {
     if (!table || !tbody || !thead) return;
 
     tbody.innerHTML = "";
-    const headers = Array.from(thead.querySelectorAll("th")).map((th) => th.textContent.trim().toLowerCase());
+    const headers = Array.from(thead.querySelectorAll("th")).map((th) =>
+        th.textContent.trim().toLowerCase()
+    );
 
     try {
         const res = await fetch(`${API_BASE}/admin/users`, { credentials: "include" });
@@ -233,8 +142,8 @@ async function loadUsers() {
             headers.forEach((h) => {
                 const td = document.createElement("td");
                 switch (h) {
-                    case "username":
-                        td.textContent = u.username || u.fullName || "—";
+                    case "name":
+                        td.textContent = u.fullName || u.username || "—";
                         break;
                     case "role":
                         td.textContent = u.role || "—";
@@ -254,10 +163,11 @@ async function loadUsers() {
                         break;
                     case "actions":
                         td.classList.add("actions");
+                        const idAttr = u.id || u._id;
                         td.innerHTML = `
-              <button class="btn reset" data-id="${u.id || u._id}">Reset Password</button>
-              <button class="btn view" data-id="${u.id || u._id}">View Profile</button>
-              <button class="btn toggle" data-id="${u.id || u._id}" data-status="${u.status || ""}">
+              <button class="btn reset" data-id="${idAttr}">Reset Password</button>
+              <button class="btn view" data-id="${idAttr}">View Profile</button>
+              <button class="btn toggle" data-id="${idAttr}" data-status="${u.status || ""}">
                 ${u.status === "Active" ? "Disable" : "Enable"}
               </button>`;
                         break;
@@ -269,7 +179,7 @@ async function loadUsers() {
             tbody.appendChild(tr);
         });
 
-        // Wire row actions
+        // Wire actions
         tbody.querySelectorAll(".btn.reset").forEach((b) =>
             b.addEventListener("click", () => resetPassword(b.dataset.id))
         );
@@ -281,12 +191,13 @@ async function loadUsers() {
         );
     } catch (err) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="${headers.length}">Failed to load users</td>`;
+        tr.innerHTML = `<td colspan="${thead.querySelectorAll("th").length}">Failed to load users</td>`;
         tbody.appendChild(tr);
         showToast("⚠️ Failed to load users", "error");
     }
 }
 
+/* ===== Permits table ===== */
 async function loadPermits() {
     const table = document.getElementById("permitsTable");
     const tbody = table?.querySelector("tbody");
@@ -294,7 +205,9 @@ async function loadPermits() {
     if (!table || !tbody || !thead) return;
 
     tbody.innerHTML = "";
-    const headers = Array.from(thead.querySelectorAll("th")).map((th) => th.textContent.trim().toLowerCase());
+    const headers = Array.from(thead.querySelectorAll("th")).map((th) =>
+        th.textContent.trim().toLowerCase()
+    );
 
     try {
         const res = await fetch(`${API_BASE}/admin/permits`, { credentials: "include" });
@@ -312,7 +225,7 @@ async function loadPermits() {
                     case "title":
                         td.textContent = p.title || p.permitTitle || "—";
                         break;
-                    case "permit number":
+                    case "permit no.":
                         td.textContent = p.permitNumber || "—";
                         break;
                     case "submitted":
@@ -322,8 +235,8 @@ async function loadPermits() {
                                 ? new Date(p.createdAt).toLocaleString()
                                 : "—";
                         break;
-                    case "requester":
-                        td.textContent = p.requester || p.requesterName || "—";
+                    case "requester name":
+                        td.textContent = p.requesterName || p.requester || "—";
                         break;
                     case "status":
                         td.textContent = p.status || "—";
@@ -340,26 +253,42 @@ async function loadPermits() {
             tbody.appendChild(tr);
         });
 
-        // Wire view buttons
         tbody.querySelectorAll(".btn.view").forEach((b) =>
             b.addEventListener("click", () => viewPermit(b.dataset.id))
         );
     } catch (err) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="${headers.length}">Failed to load permits</td>`;
+        tr.innerHTML = `<td colspan="${thead.querySelectorAll("th").length}">Failed to load permits</td>`;
         tbody.appendChild(tr);
         showToast("⚠️ Failed to load permits", "error");
     }
 }
 
-/* =========================
-   Stats + charts
-========================= */
+/* ===== Stats + Charts ===== */
+let charts = {
+    userStatusChart: null,
+    userRoleChart: null,
+    permitStatusChart: null,
+};
+
 async function loadStats() {
     try {
         const res = await fetch(`${API_BASE}/admin/stats`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load stats");
         const stats = await res.json();
+
+        // Ensure numeric defaults to avoid NaN and chart errors
+        stats.totalUsers = Number(stats.totalUsers || 0);
+        stats.totalPermits = Number(stats.totalPermits || 0);
+        stats.activeUsers = Number(stats.activeUsers || 0);
+        stats.requesters = Number(stats.requesters || 0);
+        stats.preApprovers = Number(stats.preApprovers || 0);
+        stats.approvers = Number(stats.approvers || 0);
+        stats.pending = Number(stats.pending || 0);
+        stats.inProgress = Number(stats.inProgress || 0);
+        stats.approved = Number(stats.approved || 0);
+        stats.rejected = Number(stats.rejected || 0);
+        stats.closedPermits = Number(stats.closedPermits || 0);
 
         const setVal = (id, val) => {
             const el = document.getElementById(id);
@@ -389,14 +318,17 @@ async function loadStats() {
         setVal("statApproved", stats.approved);
         setVal("statRejected", stats.rejected);
 
-        // Theme-aware colors
+        // Wait for Chart.js (HTML loads it after admin.js)
+        const ChartLib = await waitForChart();
         const theme = getThemeColors();
 
-        // Charts
+        // User Status doughnut
         const userStatusCanvas = document.getElementById("userStatusChart");
         if (userStatusCanvas) {
-            destroyChart(charts.userStatusChart);
-            charts.userStatusChart = new Chart(userStatusCanvas, {
+            if (charts.userStatusChart?.destroy) charts.userStatusChart.destroy();
+            const ChartCtor = ChartLib || window.Chart;
+            if (!ChartCtor) throw new Error('Chart.js not available');
+            charts.userStatusChart = new ChartCtor(userStatusCanvas, {
                 type: "doughnut",
                 data: {
                     labels: ["Active", "Inactive"],
@@ -416,10 +348,13 @@ async function loadStats() {
             });
         }
 
+        // User Roles bar
         const userRoleCanvas = document.getElementById("userRoleChart");
         if (userRoleCanvas) {
-            destroyChart(charts.userRoleChart);
-            charts.userRoleChart = new Chart(userRoleCanvas, {
+            if (charts.userRoleChart?.destroy) charts.userRoleChart.destroy();
+            const ChartCtor2 = ChartLib || window.Chart;
+            if (!ChartCtor2) throw new Error('Chart.js not available');
+            charts.userRoleChart = new ChartCtor2(userRoleCanvas, {
                 type: "bar",
                 data: {
                     labels: ["Requester", "Pre‑Approver", "Approver"],
@@ -444,10 +379,13 @@ async function loadStats() {
             });
         }
 
+        // Permit Status bar
         const permitStatusCanvas = document.getElementById("permitStatusChart");
         if (permitStatusCanvas) {
-            destroyChart(charts.permitStatusChart);
-            charts.permitStatusChart = new Chart(permitStatusCanvas, {
+            if (charts.permitStatusChart?.destroy) charts.permitStatusChart.destroy();
+            const ChartCtor3 = ChartLib || window.Chart;
+            if (!ChartCtor3) throw new Error('Chart.js not available');
+            charts.permitStatusChart = new ChartCtor3(permitStatusCanvas, {
                 type: "bar",
                 data: {
                     labels: ["Pending", "In Progress", "Approved", "Rejected", "Closed"],
@@ -471,20 +409,12 @@ async function loadStats() {
                 },
             });
         }
-    } catch {
+    } catch (err) {
         showToast("⚠️ Failed to load stats", "error");
     }
 }
 
-/* =========================
-   Expand/Collapse Panels
-========================= */
-document.querySelectorAll(".breakdown").forEach((panel) => {
-    panel.style.maxHeight = "0";
-    panel.style.opacity = "0";
-    panel.classList.remove("open");
-});
-
+/* ===== Expand/Collapse Panels (exposed globally for inline onclick) ===== */
 function toggleDetails(id, btn) {
     const panel = document.getElementById(id);
     if (!panel) return;
@@ -525,21 +455,20 @@ function toggleDetails(id, btn) {
         });
     }
 }
+// Expose globally for inline HTML onclick
+window.toggleDetails = toggleDetails;
 
-/* =========================
-   Actions
-========================= */
-// Keep your original viewProfile (API route). If you use a page view, swap the URL.
+/* ===== Actions ===== */
 function viewProfile(userId) {
+    // Your HTML expects a server-side profile route; keep as provided
     window.location.href = `${API_BASE}/admin/users/${encodeURIComponent(userId)}`;
 }
-
 function viewPermit(permitId) {
     if (!permitId) return;
     window.location.href = `admin-permit.html?id=${encodeURIComponent(permitId)}`;
 }
 
-// Dual-strategy toggle to avoid backend mismatch; tries Part 2 endpoint first, falls back to PATCH.
+// Try POST toggle endpoint first; fallback to PATCH if needed
 async function toggleUser(userId, currentStatus) {
     if (!userId) return;
     try {
@@ -553,7 +482,7 @@ async function toggleUser(userId, currentStatus) {
             await loadUsers();
             return;
         }
-        // Fallback to PATCH style if first fails
+        // Fallback
         const newStatus = currentStatus === "Active" ? "Disabled" : "Active";
         const res2 = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
             method: "PATCH",
@@ -575,7 +504,6 @@ async function toggleUser(userId, currentStatus) {
 }
 
 async function resetPassword(userId) {
-    // Keep both flows: prompt + API call as provided
     const newPassword = prompt("Enter new password for this user:");
     if (!newPassword) return;
 
@@ -598,16 +526,7 @@ async function resetPassword(userId) {
     }
 }
 
-/* =========================
-   Modal + Registration wiring
-========================= */
-function resetForm(form) {
-    if (!form) return;
-    form.reset();
-    form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
-    form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
-}
-
+/* ===== DOMContentLoaded init ===== */
 document.addEventListener("DOMContentLoaded", async () => {
     // Session and role guard
     const user = await checkSession();
@@ -630,7 +549,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const closeBtn = modal ? modal.querySelector(".close") : null;
     const form = document.getElementById("userForm");
 
-    // Real-time validation
+    // Start closed breakdown panels
+    document.querySelectorAll(".breakdown").forEach((panel) => {
+        panel.style.maxHeight = "0";
+        panel.style.opacity = "0";
+        panel.classList.remove("open");
+    });
+
+    // Validation bindings
     if (form) {
         form.querySelectorAll("input, select").forEach((input) => {
             input.addEventListener("input", () => validateField(form, input));
@@ -670,7 +596,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                         modal.classList.remove("open");
                         setTimeout(() => {
                             modal.style.display = "none";
-                            resetForm(form);
+                            // reset form fields/errors
+                            form.reset();
+                            form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
+                            form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
                         }, 300);
                     }
                     await loadUsers();
@@ -687,7 +616,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Open/close modal
     if (btn && modal) {
         btn.onclick = () => {
-            resetForm(form);
+            // reset form state
+            if (form) {
+                form.reset();
+                form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
+                form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
+            }
             modal.style.display = "block";
             setTimeout(() => modal.classList.add("open"), 10);
         };
@@ -697,7 +631,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             modal.classList.remove("open");
             setTimeout(() => {
                 modal.style.display = "none";
-                resetForm(form);
+                if (form) {
+                    form.reset();
+                    form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
+                    form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
+                }
             }, 300);
         };
     }
@@ -707,13 +645,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 modal.classList.remove("open");
                 setTimeout(() => {
                     modal.style.display = "none";
-                    resetForm(form);
+                    if (form) {
+                        form.reset();
+                        form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
+                        form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
+                    }
                 }, 300);
             }
         });
     }
 
-    // Init dashboard only after guard passes
+    // Initialize dashboard
     await loadUsers();
     await loadPermits();
     await loadStats();

@@ -36,7 +36,16 @@ router.post("/register-user", async (req, res) => {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        if (role === "Admin") {
+        // Defensive normalization: accept hyphenated or spaced variants and normalize to canonical values
+        let normalizedRole = role;
+        if (typeof normalizedRole === 'string') {
+            const r = normalizedRole.trim().toLowerCase();
+            if (r === 'pre-approver' || r === 'preapprover' || r === 'pre approver') normalizedRole = 'PreApprover';
+            else if (r === 'approver') normalizedRole = 'Approver';
+            else if (r === 'admin') normalizedRole = 'Admin';
+        }
+
+        if (normalizedRole === "Admin") {
             const exists = await Admin.findOne({ email });
             if (exists) return res.status(409).json({ error: "Email already exists" });
 
@@ -51,7 +60,7 @@ router.post("/register-user", async (req, res) => {
                 role: "Admin"
             });
             await admin.save();
-        } else if (role === "PreApprover" || role === "Approver") {
+        } else if (normalizedRole === "PreApprover" || normalizedRole === "Approver") {
             const exists = await Approver.findOne({ email });
             if (exists) return res.status(409).json({ error: "Email already exists" });
 
@@ -63,7 +72,7 @@ router.post("/register-user", async (req, res) => {
                 department,
                 designation,
                 password, // pre-save hook will hash
-                role
+                role: normalizedRole
             });
             await approver.save();
         } else {
