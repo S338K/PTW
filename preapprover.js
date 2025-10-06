@@ -20,6 +20,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         logoutBtn.addEventListener("click", () => logoutUser());
     }
 
+    // ===== Welcome + Last Login =====
+    const preApproverLastLoginEl = document.getElementById('preApproverLastLogin');
+    if (preApproverLastLoginEl) {
+        const welcomeName = user.fullName || user.username || "User";
+        let message;
+        // Prefer prevLogin (previous login time) if available, otherwise show lastLogin
+        if (user.prevLogin) {
+            const formattedPrev = new Date(user.prevLogin).toLocaleString();
+            message = `Welcome: ${welcomeName} || Last login: ${formattedPrev}`;
+        } else if (user.lastLogin) {
+            const formattedLast = new Date(user.lastLogin).toLocaleString();
+            message = `Welcome: ${welcomeName} || Last login: ${formattedLast}`;
+        } else {
+            message = `Welcome: ${welcomeName} || First time login`;
+        }
+        preApproverLastLoginEl.textContent = message;
+    }
+
     // Load initial data
     loadStats();
     loadPermits();
