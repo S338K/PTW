@@ -194,6 +194,4 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // removed old session overlay (replaced by idle warning modal in session.js)
-
 });
