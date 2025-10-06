@@ -3,7 +3,7 @@ import { formatLastLogin } from '../date-utils.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const user = await checkSession();
-    if (!user) return window.location.href = '/login/';
+    if (!user) return window.location.href = '/login/index.html';
     initIdleTimer();
     document.getElementById('userFullName').textContent = user.fullName || user.username || '';
     document.getElementById('approverContent').textContent = 'Welcome ' + (user.fullName || user.username || '');

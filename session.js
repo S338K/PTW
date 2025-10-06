@@ -64,9 +64,17 @@ function createIdleWarning() {
     const modal = document.createElement('div');
     modal.id = 'idleWarningModal';
     modal.className = '';
+    Object.assign(modal.style, {
+        position: 'fixed', inset: '0', display: 'none', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.45)', zIndex: '99999', backdropFilter: 'blur(3px)'
+    });
 
     const box = document.createElement('div');
     box.className = 'iw-box';
+    Object.assign(box.style, {
+        background: '#fff', color: '#111', padding: '20px 24px', borderRadius: '12px', width: 'min(520px, 92vw)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.25)', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
+    });
 
     const title = document.createElement('h3');
     title.textContent = 'Session Expiration Warning';
@@ -82,14 +90,16 @@ function createIdleWarning() {
 
     const btnRow = document.createElement('div');
     btnRow.className = 'iw-btn-row';
+    Object.assign(btnRow.style, { display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' });
 
     const extendBtn = document.createElement('button');
     extendBtn.textContent = 'Extend Session';
     extendBtn.className = 'iw-btn extend';
+    Object.assign(extendBtn.style, { padding: '8px 14px', borderRadius: '8px', border: '1px solid #28a745', background: '#28a745', color: '#fff', cursor: 'pointer' });
     extendBtn.onclick = async () => {
         try {
             // call backend to touch session
-            await fetch('/api/ping', { credentials: 'include' });
+            await fetch(`${API_BASE}/api/ping`, { credentials: 'include' });
         } catch (err) {
             console.warn('Keepalive ping failed', err);
         }
@@ -102,6 +112,7 @@ function createIdleWarning() {
     const logoutBtn = document.createElement('button');
     logoutBtn.textContent = 'Logout Now';
     logoutBtn.className = 'iw-btn logout';
+    Object.assign(logoutBtn.style, { padding: '8px 14px', borderRadius: '8px', border: '1px solid #dc3545', background: '#dc3545', color: '#fff', cursor: 'pointer' });
     logoutBtn.onclick = () => {
         hideIdleWarning();
         logoutUser();
@@ -127,11 +138,14 @@ function showIdleWarning() {
 
     // Time until logout from now: compute remaining from idleTimer
     // We'll re-use IDLE_LIMIT to show remaining up to 3 minutes
-    let remainingMs = Math.max(IDLE_LIMIT - (IDLE_LIMIT - (parseInt((new Date()).getTime()) - 0)), 0);
-    // Instead of trying to compute from idleTimer, show a default 3 minutes countdown
-    remainingMs = Math.min(3 * 60 * 1000, IDLE_LIMIT);
+    // Always show a 3-minute countdown window before auto logout
+    let remainingMs = Math.min(3 * 60 * 1000, IDLE_LIMIT);
 
     modal.style.display = 'flex';
+    // Block page scroll/interactions while visible
+    const prevOverflow = document.body.style.overflow;
+    document.body.dataset.prevOverflow = prevOverflow;
+    document.body.style.overflow = 'hidden';
     msgEl.textContent = 'Your session will expire soon. Would you like to extend it?';
 
     function update() {
@@ -158,6 +172,11 @@ function hideIdleWarning() {
     if (!modal) return;
     modal.style.display = 'none';
     clearInterval(countdownInterval);
+    // Restore scroll/interactions
+    if (document.body.dataset.prevOverflow !== undefined) {
+        document.body.style.overflow = document.body.dataset.prevOverflow;
+        delete document.body.dataset.prevOverflow;
+    }
 }
 
 /* ===== Logout Helper ===== */
@@ -170,6 +189,6 @@ export async function logoutUser() {
     } catch (err) {
         console.error("Logout request failed:", err);
     } finally {
-        window.location.href = "index.html";
+        window.location.href = "/login/index.html";
     }
 }

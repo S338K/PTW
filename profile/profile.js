@@ -23,25 +23,17 @@ document.addEventListener('DOMContentLoaded', async function () {
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
     const welcomeName = user.fullName || user.username || "User";
-
-    // 24-hour formatter
-    function formatDate24(d) {
-      if (!d) return "";
-      const date = (d instanceof Date) ? d : new Date(d);
-      const fmtOptions = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-      return date.toLocaleString(undefined, fmtOptions);
-    }
-
-    let message;
+    // Pattern: Welcome: Full Name || Last Login: Today at HH:MM:SS
+    // Use formatLastLogin utility to render time; ensure wording matches pattern
+    let lastLoginText;
     if (user.prevLogin) {
-      message = `Welcome: ${welcomeName} || Last login at ${formatLastLogin(user.prevLogin)}`;
+      lastLoginText = formatLastLogin(user.prevLogin);
     } else if (user.lastLogin) {
-      message = `Welcome: ${welcomeName} || Last login at ${formatLastLogin(user.lastLogin)}`;
+      lastLoginText = formatLastLogin(user.lastLogin);
     } else {
-      message = `Welcome: ${welcomeName} || First time login`;
+      lastLoginText = 'First time login';
     }
-
-    lastLoginDiv.textContent = message;
+    lastLoginDiv.textContent = `Welcome: ${welcomeName} || Last Login: ${lastLoginText}`;
   }
 
   /* ===== Load Submitted Permit Details table ===== */
@@ -53,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const tbody = document.querySelector('#permitTable tbody');
         tbody.innerHTML = '';
 
+        let stats = { Approved: 0, Pending: 0, Rejected: 0 };
         permits.forEach((permit, index) => {
           const row = document.createElement('tr');
 
@@ -89,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             numberTd.appendChild(link);
           } else {
-            numberTd.textContent = '—';
+            numberTd.textContent = 'Permit no not yet generated';
           }
 
           row.appendChild(serialTd);
@@ -99,7 +92,43 @@ document.addEventListener('DOMContentLoaded', async function () {
           row.appendChild(numberTd);
 
           tbody.appendChild(row);
+
+          // accumulate stats by status (case-insensitive)
+          const st = (permit.status || 'Pending');
+          if (stats[st] === undefined) stats[st] = 0;
+          stats[st]++;
         });
+
+        // Render Chart.js summary in Card 1
+        const ctx = document.getElementById('profileStatsChart');
+        if (ctx && window.Chart) {
+          const labels = Object.keys(stats);
+          const data = labels.map(k => stats[k]);
+          // destroy previous chart if any
+          if (ctx._chartInstance) {
+            ctx._chartInstance.destroy();
+          }
+          const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels,
+              datasets: [{
+                data,
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d'],
+                borderWidth: 0,
+              }]
+            },
+            options: {
+              plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12 } },
+                tooltip: { enabled: true }
+              },
+              cutout: '58%',
+              animation: { duration: 500 }
+            }
+          });
+          ctx._chartInstance = chart;
+        }
 
       } else {
         console.warn('Failed to load permits');
@@ -153,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitPtw = document.getElementById('sbmtptw');
   if (submitPtw) {
     submitPtw.addEventListener('click', function () {
-      window.location.href = 'mainpage.html';
+      window.location.href = '../mainpage/mainpage.html';
     });
   }
 
@@ -165,37 +194,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
-  // ===== Session overlay =====
-  (function createSessionOverlay() {
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.bottom = '10px';
-    overlay.style.right = '10px';
-    overlay.style.background = 'rgba(0,0,0,0.8)';
-    overlay.style.color = '#fff';
-    overlay.style.padding = '10px 14px';
-    overlay.style.borderRadius = '8px';
-    overlay.style.fontSize = '14px';
-    overlay.style.zIndex = '9999';
-    overlay.style.fontFamily = 'monospace';
-    overlay.textContent = '🔍 Checking session...';
-    document.body.appendChild(overlay);
-
-    async function updateOverlay() {
-      try {
-        const res = await fetch(`${API_BASE}/api/profile`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          overlay.textContent = `🟢 Session Active\nUser: ${data.user.username || data.user.email}`;
-        } else {
-          overlay.textContent = '🔴 Session Expired';
-        }
-      } catch (err) {
-        overlay.textContent = '⚠️ Network Error';
-      }
-    }
-
-    updateOverlay();
-  })();
+  // removed old session overlay (replaced by idle warning modal in session.js)
 
 });

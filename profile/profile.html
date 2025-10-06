@@ -37,9 +37,16 @@
         <div class="card" id="userProfileCard">
             <fieldset>
                 <legend>User Profile Details</legend>
-                <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
-                <p><strong>Email:</strong> <span id="profileEmail"></span></p>
-                <p><strong>Company:</strong> <span id="profileCompany"></span></p>
+                <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+                    <div style="min-width:260px; flex:1 1 320px;">
+                        <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
+                        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+                        <p><strong>Company:</strong> <span id="profileCompany"></span></p>
+                    </div>
+                    <div style="flex:1 1 320px; max-width:560px;">
+                        <canvas id="profileStatsChart" height="160" aria-label="Permit statistics" role="img"></canvas>
+                    </div>
+                </div>
             </fieldset>
         </div>
 
@@ -67,6 +74,10 @@
         </div>
     </div>
 
+    <!-- Chart.js for profile statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+        integrity="sha384-wpS0Z7Q8Q0+0s6Y4uWCDl8v0ySijBjqVQHCyZL1mDkD0syrf5eE3b7J6zR3qz6kS"
+        crossorigin="anonymous"></script>
     <script type="module" src="profile.js"></script>
 
 </body>

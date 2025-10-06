@@ -71,7 +71,7 @@ async function resetPassword() {
 
         if (res.ok) {
             setTimeout(() => {
-                window.location.href = '/login.html'; // redirect to login page
+                window.location.href = '/login/index.html'; // redirect to login page
             }, 2000);
         }
     } catch (err) {

@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const profileBtn = document.getElementById('profileBtn');
     if (profileBtn) {
         profileBtn.addEventListener('click', () => {
-            window.location.href = 'profile.html';
+            window.location.href = '../profile/profile.html';
         });
     }
 
