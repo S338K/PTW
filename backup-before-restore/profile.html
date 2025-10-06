@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Profile</title>
+  <link rel="stylesheet" href="profile.css">
+</head>
+
+<body style="margin:0; padding:0;">
+  
+  <nav class="profile-navbar">
+    <div class="nav-left">
+      <div id="profileLastLogin">Last login:</div>
+  </div>
+
+    <div class="nav-center">
+      <button class="profile-sbmtptw-btn" type="button" id="sbmtptw">Submit a new request</button>
+    </div>
+
+    <div class="nav-right">
+      <button class="profile-signout-btn" type="button" id="logoutBtn">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="form-container profile-form-container">
+
+    <!-- Card 1: User Profile -->
+<!-- Card 1: User Profile -->
+<div class="card" id="userProfileCard">
+  <fieldset>
+    <legend>User Profile Details</legend>
+    <p><strong>Full Name:</strong> <span id="profileFullName"></span></p>
+    <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+    <p><strong>Company:</strong> <span id="profileCompany"></span></p>
+  </fieldset>
+</div>
+
+
+    <!-- Card 2: Submitted Permit Details -->
+    <div class="card" id="submittedPermitsCard">
+      <fieldset>
+      <legend>Permit Details</legend>
+      <table id="permitTable">
+        <thead>
+          <tr>
+            <th>Serial No.</th>
+            <th>Submitted Date & Time</th>
+            <th>Permit Title </th>
+            <th>Status</th>
+            <th>Permit Number</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic rows will be injected via JS -->
+        </tbody>
+      </table>
+    </fieldset></fieldset>
+    </div>
+  </div>
+
+  <script type= "module" src="profile.js"></script>
+  <script type= "module" src="mainpage.js"></script>
+
+</body>
+</html>

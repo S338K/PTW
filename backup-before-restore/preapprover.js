@@ -1,16 +1,7 @@
 // preapprover.js
-import { checkSession, initIdleTimer, logoutUser } from "../session.js";
-import { formatDate24, formatLastLogin } from "../date-utils.js";
+import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 
 let currentPermits = []; // store permits globally for modal use
-
-// 24-hour date formatter used across this module
-function formatDate24(d) {
-    if (!d) return "";
-    const date = (d instanceof Date) ? d : new Date(d);
-    const fmtOptions = { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-    return date.toLocaleString(undefined, fmtOptions);
-}
 
 document.addEventListener("DOMContentLoaded", async () => {
     const user = await checkSession();
@@ -27,22 +18,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => logoutUser());
-    }
-
-    // ===== Welcome + Last Login =====
-    const preApproverLastLoginEl = document.getElementById('preApproverLastLogin');
-    if (preApproverLastLoginEl) {
-        const welcomeName = user.fullName || user.username || "User";
-        let message;
-        // Prefer prevLogin (previous login time) if available, otherwise show lastLogin
-        if (user.prevLogin) {
-            message = `Welcome: ${welcomeName} || Last login at ${formatLastLogin(user.prevLogin)}`;
-        } else if (user.lastLogin) {
-            message = `Welcome: ${welcomeName} || Last login at ${formatLastLogin(user.lastLogin)}`;
-        } else {
-            message = `Welcome: ${welcomeName} || First time login`;
-        }
-        preApproverLastLoginEl.textContent = message;
     }
 
     // Load initial data
@@ -110,7 +85,7 @@ async function loadPermits() {
             const tr = document.createElement("tr");
             tr.innerHTML = `
         <td>${index + 1}</td>
-        <td>${permit.startDateTime ? formatDate24(permit.startDateTime) : ""}</td>
+        <td>${permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : ""}</td>
         <td>${permit.permitTitle || ""}</td>
         <td>${permit.requester?.username || ""}</td>
         <td><span class="status-badge ${permit.status.toLowerCase()}">${permit.status}</span></td>
@@ -135,7 +110,7 @@ function openModal(permitId) {
     document.getElementById("modalPermitTitle").textContent = permit.permitTitle || "";
     document.getElementById("modalRequester").textContent = permit.requester?.username || "";
     document.getElementById("modalStatus").textContent = permit.status;
-    document.getElementById("modalSubmitted").textContent = permit.startDateTime ? formatDate24(permit.startDateTime) : "";
+    document.getElementById("modalSubmitted").textContent = permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : "";
     document.getElementById("modalComments").textContent = permit.preApproverComments || "";
 
     document.getElementById("modalApproveBtn").onclick = () => handleAction(permit._id, "approve");

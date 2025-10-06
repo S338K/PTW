@@ -1,39 +1,81 @@
-import '../theme.js';
 
-function toggleVisibility(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.type = el.type === 'password' ? 'text' : 'password';
-}
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get('token');
 
-function checkStrength(pw) {
-    if (!pw) return 'Too short';
-    let score = 0;
-    if (pw.length > 7) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    return ['Weak', 'Fair', 'Good', 'Strong'][Math.max(0, Math.min(3, score - 1))] || 'Weak';
-}
+const newPasswordInput = document.getElementById('newPassword');
+const confirmPasswordInput = document.getElementById('confirmPassword');
+const strengthText = document.getElementById('strengthText');
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        const msg = document.getElementById('message');
-        if (!newPassword || newPassword !== confirmPassword) {
-            msg.textContent = 'Passwords do not match';
-            return;
-        }
-        // Call backend reset endpoint (token handled server-side)
-        const res = await fetch('/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: newPassword }) });
-        if (res.ok) {
-            msg.textContent = 'Password reset. Redirecting to login...';
-            setTimeout(() => window.location.href = '/login/', 1500);
-        } else {
-            msg.textContent = 'Failed to reset password';
-        }
-    });
+// Regex for strong password: min 8 chars, uppercase, lowercase, number, special char
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
+// Password strength checker
+newPasswordInput.addEventListener('input', () => {
+    const val = newPasswordInput.value;
+    let strength = '';
+    let color = '';
+
+    if (!val) {
+        strength = '';
+    } else if (!strongPasswordRegex.test(val)) {
+        strength = 'Password must be at least 8 characters and must include One Uppercase, Lowercase, Number, and Special character.';
+        color = 'var(--error-color)';
+    } else {
+        strength = 'Strong password ✔';
+        color = 'var(--success-color)';
+    }
+
+    strengthText.textContent = strength;
+    strengthText.style.color = color;
 });
 
-window.toggleVisibility = toggleVisibility;
+// Toggle password visibility
+function toggleVisibility(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function resetPassword() {
+    const newPassword = newPasswordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const messageEl = document.getElementById('message');
+
+    if (!newPassword || !confirmPassword) {
+        messageEl.style.color = 'var(--error-color)';
+        messageEl.textContent = 'Password fields can not blank.';
+        return;
+    }
+
+    if (!strongPasswordRegex.test(newPassword)) {
+        messageEl.style.color = 'var(--error-color)';
+        messageEl.textContent = 'Password does not meet security requirements.';
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        messageEl.style.color = 'var(--error-color)';
+        messageEl.textContent = 'Passwords do not match.';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, newPassword })
+        });
+
+        const data = await res.json();
+        messageEl.style.color = res.ok ? 'var(--success-color)' : 'var(--error-color)';
+        messageEl.textContent = data.message || 'Something went wrong';
+
+        if (res.ok) {
+            setTimeout(() => {
+                window.location.href = '/login.html'; // redirect to login page
+            }, 2000);
+        }
+    } catch (err) {
+        messageEl.style.color = 'var(--error-color)';
+        messageEl.textContent = 'Error: ' + err.message;
+    }
+}

@@ -1,4 +1,4 @@
-import { checkSession, initIdleTimer, logoutUser } from "../session.js";
+import { checkSession, initIdleTimer, logoutUser } from "./session.js";
 
 console.log("✅ mainscript.js loaded");
 

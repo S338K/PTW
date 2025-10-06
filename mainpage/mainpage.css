@@ -1,86 +1,359 @@
 body {
-    background-color: #edffed;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    width: 100%;
+  background-color: #edffed;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 /* ===== Navbar Layout and Buttons ===== */
 .profile-navbar {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #273172;
-    padding: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    color: #fff;
-    font-weight: 500;
-    font-size: 18px;
-    top: 0;
-    border-radius: 2px;
-    width: auto;
-    margin: 0 auto;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #273172;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: #fff;
+  font-weight: 500;
+  font-size: 18px;
+  top: 0;
+  border-radius: 2px;
+  width: auto;
+  margin: 0 auto;
+  /* <--- This centers it */
 }
 
 .profile-navbar button {
-    background-color: #fff;
-    color: #273172;
-    border: 2px solid;
-    border-radius: 6px;
-    padding: 10px 18px;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
+  background-color: #fff;
+  color: #273172;
+  border: 2px solid;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .profile-navbar button:hover {
-    background-color: #273172;
-    color: #fff;
-    border-radius: 25px;
-    border-color: goldenrod;
+  background-color: #273172;
+  color: #fff;
+  border-radius: 25px;
+  border-color: goldenrod;
 }
 
-/* responsive & other rules... (kept same as root mainpage.css) */
-
-.form-container {
-    margin-top: 10px;
-    padding: 20px;
-    width: 95%;
-    margin-left: auto;
-    margin-right: auto;
-    display: flex;
+/* ===== Responsive Navbar ===== */
+@media (max-width: 600px) {
+  .profile-navbar {
     flex-direction: column;
-    gap: 20px;
-    background-color: #f0f6f6;
-    border-radius: 10px;
+    align-items: stretch;
+  }
+
+  @media (max-width: 768px) {
+    .profile-navbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+
+  .profile-navbar .nav-left,
+  .profile-navbar .nav-center,
+  .profile-navbar .nav-right {
+    justify-content: center;
+    display: flex;
+    flex: 1;
+  }
+}
+
+/* ===== Form Container ===== */
+.form-container {
+  margin-top: 10px;
+  padding: 20px;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background-color: #f0f6f6;
+  border-radius: 10px;
 }
 
 fieldset {
-    border-color: #080435;
-    border-radius: 5px;
+  border-color: #080435;
+  border-radius: 5px;
 }
 
+/* ===== Cards ===== */
 .card {
-    border-radius: 10px;
-    box-shadow: #ccc 0 10px 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    background-color: #fff;
-    opacity: 0;
-    transform: translateY(75px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
+  border-radius: 10px;
+  box-shadow: #ccc 0 10px 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  opacity: 0;
+  transform: translateY(75px);
+  /* Start position */
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  /* Smooth transition for opacity and position */
 }
 
+/* When the card comes into view */
 .card.visible {
+  opacity: 1;
+  transform: translateY(0);
+  /* Final position */
+}
+
+.card h3 {
+  color: #070c2c;
+  font-weight: 600;
+}
+
+
+/* Hover Effect */
+.card:hover {
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 12px rgba(39, 49, 114, 0.2);
+  background-color: #fffbfb;
+  transform: scale(1.01);
+  /* Slight zoom-in effect */
+}
+
+/* Scroll-in Animation */
+@keyframes scrollIn {
+  to {
     opacity: 1;
     transform: translateY(0);
+  }
 }
 
-/* Additional styling retained from root mainpage.css */
+/* ===== Form Groups and Inputs ===== */
+.form-group {
+  margin-bottom: 20px;
+}
 
+.md-input {
+  position: relative;
+  width: 95%;
+  margin-top: 25px;
+}
+
+.md-input input,
+.md-input select,
+.md-input textarea {
+  width: 100%;
+  padding: 1rem 0.75rem 0.5rem;
+  font-size: 1.0rem;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  background-color: white;
+  color: #273172;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.md-input input:focus,
+.md-input textarea:focus,
+.md-input select:focus {
+  border-color: #273172;
+  outline: none;
+  box-shadow: 0 0 5px #273172;
+}
+
+/* ===== Label (Floating for text inputs only) ===== */
+.md-input label {
+  position: absolute;
+  top: 0.50rem;
+  left: 0.50rem;
+  font-size: 1rem;
+  color: #666;
+  pointer-events: none;
+  transition: 0.3s ease all;
+  padding: 8px;
+}
+
+/* Floating label behavior only for text/email/textarea */
+.md-input input[type="text"]:focus+label,
+.md-input input[type="text"]:not(:placeholder-shown)+label,
+.md-input input[type="email"]:focus+label,
+.md-input input[type="email"]:not(:placeholder-shown)+label,
+.md-input textarea:focus+label,
+.md-input textarea:not(:placeholder-shown)+label {
+  top: -1.90rem;
+  left: 0rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0c133d;
+  z-index: 1;
+}
+
+/* For selects, date, and time inputs – show label above */
+.md-input select,
+.md-input input[type="date"],
+.md-input input[type="time"] {
+  padding: 10px 12px;
+  margin-top: 5px;
+  color: #666;
+}
+
+.md-input select+label,
+.md-input input[type="date"]+label,
+.md-input input[type="time"]+label {
+  position: static;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #273172;
+  padding-left: 2px;
+}
+
+/* Hide placeholder for floating types */
+.md-input input::placeholder,
+.md-input textarea::placeholder {
+  color: transparent;
+}
+
+/* ===== Submit Button ===== */
+button[type="submit"] {
+  background-color: #273172;
+  color: #fff;
+  border: 2px solid #080435;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+
+}
+
+button[type="submit"]:hover {
+  background-color: goldenrod;
+  color: #080435;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.card legend {
+  color: #080435;
+  font-weight: 400;
+}
+
+/*-----------File Upload*----------*/
+
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: center;
+}
+
+/* Hide native file input */
+#fileUpload {
+  display: none !important;
+}
+
+/* Custom clickable label */
+.upload-icon {
+  background-color: #273172;
+  border-radius: 5px;
+  width: 175px;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border 0.3s ease, transform 0.3s ease;
+}
+
+.upload-icon:hover {
+  background-color: goldenrod;
+  color: #273172;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  transform: translateY(-5px);
+  border-color: #273172;
+}
+
+/* File list styling */
+#uploadedFiles {
+  list-style: upper-roman;
+  font-size: 15px;
+  font-weight: bold;
+  padding-left: 5px;
+  margin: 0;
+}
+
+#uploadedFiles li {
+  font-size: 14px;
+  color: #080435;
+}
+
+#uploadedFiles a {
+  color: #273172;
+  text-decoration: none;
+  margin-left: 5px;
+}
+
+#uploadedFiles a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Error & Hidden Utilities ===== */
 .hidden {
-    display: none !important;
+  display: none !important;
+}
+
+.invalid {
+  border: 3px solid red !important;
+}
+
+.error-message {
+  color: darkred;
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
+
+.input-error {
+  border: 2px solid #080435;
+  background: #a81616;
+}
+
+/* Initially hide the card sections */
+.card-section {
+  opacity: 0;
+  /* Start invisible */
+  transform: translateY(100px);
+  /* Start below the normal position */
+  transition: all 0.5s ease-out;
+  /* Smooth transition when visible */
+}
+
+/* When the card section becomes visible */
+.card-section.visible {
+  opacity: 1;
+  /* Fade in */
+  transform: translateY(0);
+  /* Move to normal position */
+}
+
+.delete-file-btn {
+  margin-left: 10px;
+  background: none;
+  border: none;
+  color: darkred;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.delete-file-btn:hover {
+  color: crimson;
+  transform: scale(1.1);
 }

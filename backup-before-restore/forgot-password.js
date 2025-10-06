@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokenSection = document.getElementById('token-section');
     const msgBox = document.getElementById('msg-box');
 
-    // Utility: Show messages
     function showMessage(msg, type) {
         msgBox.textContent = msg;
         msgBox.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
@@ -12,13 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
         msgBox.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
     }
 
-    // Step 1: Request reset token
     sendTokenBtn.addEventListener('click', async () => {
         const email = document.getElementById('reset-email').value.trim();
         if (!email) return showMessage('Please enter your email', 'error');
 
         try {
-            const res = await fetch('https://ptw-yu8u.onrender.com/api/forgot-password', {
+            const res = await fetch('https://dpt-yudu.onrender.com/api/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -38,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Step 2: Reset password
     updatePasswordBtn.addEventListener('click', async () => {
         const token = document.getElementById('reset-token').value.trim();
         const newPassword = document.getElementById('new-password').value.trim();
