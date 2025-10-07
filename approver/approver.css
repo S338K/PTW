@@ -1,12 +1,928 @@
-/* Minimal approver styles */
-.container {
-    max-width: 900px;
-    margin: 24px auto;
-    padding: 16px;
+.floating-sidebar {
+    position: fixed;
+    top: 60px;
+    left: 16px;
+    z-index: 2000;
+    width: 320px;
+    min-height: 320px;
+    max-width: 90vw;
+    background: #fff;
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.10), 0 1.5px 8px 0 rgba(30, 41, 59, 0.08);
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-16px) scale(0.98);
+    transition: opacity 0.35s cubic-bezier(.4, 0, .2, 1), transform 0.35s cubic-bezier(.4, 0, .2, 1), box-shadow 0.3s;
 }
 
-#approverContent {
+.floating-sidebar.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 16px 48px 0 rgba(37, 99, 235, 0.18), 0 2px 16px 0 rgba(30, 41, 59, 0.10);
+}
+
+.dasher-user-avatar {
+    cursor: pointer;
+}
+
+.dasher-sidebar {
+    /* ...existing styles... */
+    transition: width 0.3s, min-width 0.3s;
+}
+
+.dasher-sidebar.collapsed {
+    width: 64px;
+    min-width: 64px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.dasher-sidebar.collapsed .dasher-title,
+.dasher-sidebar.collapsed .dasher-nav-link:not(.active),
+.dasher-sidebar.collapsed .dasher-sidebar-footer {
+    display: none;
+}
+
+.dasher-sidebar.collapsed .dasher-nav-link.active {
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.dasher-sidebar-toggle {
+    display: inline-block;
+}
+
+/* Dasher UI Layout */
+body.dasher-bg {
+    background: #f8fafc;
+    font-family: 'Inter', Arial, sans-serif;
+    color: #222;
+}
+
+.dasher-root {
+    display: flex;
+    min-height: 100vh;
+}
+
+.dasher-sidebar {
+    width: 220px;
+    min-height: 220px;
+    max-width: 80vw;
     background: #fff;
-    padding: 12px;
+    border-radius: 1.1rem;
+    box-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.10), 0 1.5px 8px 0 rgba(30, 41, 59, 0.08);
+    padding: 1.2rem 1rem 1rem 1rem;
+    min-height: 100vh;
+}
+
+.dasher-sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    margin-bottom: 1.2rem;
+    width: 100%;
+    padding: 0;
+}
+
+.dasher-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.10);
+}
+
+.dasher-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #222;
+    margin-top: 0.5rem;
+    margin-bottom: 0.2rem;
+}
+
+.dasher-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.dasher-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 1rem;
+    border-radius: 0.7rem;
+    color: #222;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 1.05rem;
+    transition: background 0.18s cubic-bezier(.4, 0, .2, 1), color 0.18s;
+    margin-bottom: 2px;
+    cursor: pointer;
+}
+
+.dasher-nav-link.active,
+.dasher-nav-link:hover {
+    background: #f3f4f6;
+    color: #2563eb;
+}
+
+.dasher-sidebar-footer {
+    margin-top: 1.2rem;
+    text-align: left;
+    padding-left: 0;
+    width: 100%;
+    border-top: 1px solid #f1f1f1;
+    padding-top: 1rem;
+}
+
+.dasher-btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dasher-btn-logout:hover {
+    background: #1d4ed8;
+}
+
+.dasher-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.dasher-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.5rem 1.5rem 0.5rem 1.5rem;
+    min-height: 44px;
+    height: 48px;
+    transition: height 0.3s, min-height 0.3s, padding 0.3s;
+}
+
+.dasher-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.dasher-sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 1rem;
+}
+
+.dasher-hamburger {
+    display: block;
+    width: 24px;
+    height: 3px;
+    background: #2563eb;
+    border-radius: 2px;
+    position: relative;
+}
+
+.dasher-hamburger:before,
+.dasher-hamburger:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 24px;
+    height: 3px;
+    background: #2563eb;
+    border-radius: 2px;
+}
+
+.dasher-hamburger:before {
+    top: -8px;
+}
+
+.dasher-hamburger:after {
+    top: 8px;
+}
+
+.dasher-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #222;
+}
+
+.dasher-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dasher-user {
+    font-weight: 500;
+    color: #374151;
+}
+
+.dasher-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #2563eb;
+}
+
+.dasher-stats {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 2rem 0 2rem;
+}
+
+.dasher-stat-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px 0 rgba(37, 99, 235, 0.08);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #e5e7eb;
+}
+
+.dasher-stat-card .dasher-stat-label {
+    font-size: 1.1rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.dasher-stat-card .dasher-stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.dasher-stat-card.approved {
+    background: linear-gradient(135deg, #dcfce7 60%, #bbf7d0 100%);
+    border-color: #22c55e;
+}
+
+.dasher-stat-card.rejected {
+    background: linear-gradient(135deg, #fee2e2 60%, #fecaca 100%);
+    border-color: #ef4444;
+}
+
+.dasher-stat-card.returned {
+    background: linear-gradient(135deg, #fef9c3 60%, #fde68a 100%);
+    border-color: #eab308;
+}
+
+.dasher-widgets-row {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 2rem 2rem 2rem;
+    flex-wrap: wrap;
+}
+
+.dasher-widget {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px 0 rgba(37, 99, 235, 0.08);
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    flex: 1 1 0;
+    min-width: 320px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dasher-widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.dasher-search {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    outline: none;
+    background: #f8fafc;
+    color: #222;
+    transition: border 0.2s;
+}
+
+.dasher-search:focus {
+    border-color: #2563eb;
+}
+
+.dasher-table-scroll {
+    overflow-x: auto;
+}
+
+.dasher-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.dasher-table th,
+.dasher-table td {
+    padding: 0.85rem 1.1rem;
+    text-align: left;
+}
+
+.dasher-table th {
+    background: #f3f4f6;
+    color: #374151;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    border-bottom: 2px solid #dbeafe;
+}
+
+.dasher-table tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dasher-table tbody tr:hover {
+    background: #e0e7ff;
+    transition: background 0.2s;
+}
+
+.dasher-activity-widget {
+    max-width: 350px;
+    min-width: 250px;
+}
+
+.dasher-activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.dasher-activity-list li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.97rem;
+    color: #374151;
+}
+
+.dasher-activity-list li:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 1100px) {
+    .dasher-widgets-row {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .dasher-activity-widget {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .dasher-stats {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 700px) {
+    .dasher-root {
+        flex-direction: column;
+    }
+
+    .dasher-sidebar {
+        width: 100%;
+        min-height: auto;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .dasher-main {
+        padding: 0;
+    }
+
+    .dasher-topbar {
+        padding: 1rem;
+    }
+
+    .dasher-stats,
+    .dasher-widgets-row {
+        margin: 1rem;
+    }
+}
+
+/* Animated Theme Slider Styles */
+.theme-toggle-container {
+    display: flex;
+    justify-content: center;
+}
+
+.theme-slider {
+    position: relative;
+    width: 80px;
+    height: 40px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.theme-option {
+    position: relative;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.theme-option i {
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.theme-option.left {
+    margin-right: auto;
+}
+
+.theme-option.right {
+    margin-left: auto;
+}
+
+.slider-background {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 16px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    z-index: 1;
+}
+
+/* Light theme active */
+.theme-slider.light .slider-background {
+    left: 4px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+}
+
+/* Dark theme active */
+.theme-slider.dark .slider-background {
+    left: 44px;
+    background: linear-gradient(135deg, #6366f1, #4338ca);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.theme-option.active i {
+    color: white;
+    transform: scale(1.1);
+}
+
+.theme-option:not(.active) i {
+    color: #64748b;
+}
+
+.theme-slider:hover .slider-background {
+    transform: scale(1.05);
+}
+
+.setting-link:hover {
+    color: #3b82f6 !important;
+}
+
+/* Card Header Alignment */
+.card-head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.card-title {
+    flex-grow: 1;
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+/* Card Title Enhancement */
+.card-title {
+    flex-grow: 1;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title h5 {
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+.card-title small {
+    color: #6b7280;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+/* Table Enhancements with Borders */
+#pendingPermitsTable {
+    margin-bottom: 0;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#pendingPermitsTable thead th {
+    font-weight: 600;
+    color: #374151;
+    background-color: #f8fafc !important;
+    border-bottom: 2px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    padding: 12px 8px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    position: relative;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Dynamic Header Styling */
+.table-header-dynamic {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.table-header-dynamic:hover {
+    background-color: #e5e7eb !important;
+    transform: translateY(-1px);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-height: 24px;
+    white-space: nowrap;
+}
+
+.header-content i {
+    color: #6b7280;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+}
+
+.table-header-dynamic:hover .header-content i {
+    color: #374151;
+    transform: scale(1.1);
+}
+
+/* Sort indicator styling */
+.table-header-dynamic .fa-sort-up,
+.table-header-dynamic .fa-sort-down {
+    color: #3b82f6 !important;
+}
+
+/* Hover effect for sortable headers */
+.table-header-dynamic::after {
+    content: '⇅';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.table-header-dynamic:hover::after {
+    opacity: 1;
+}
+
+.header-content span {
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Responsive header text */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: row;
+        gap: 4px;
+        justify-content: center;
+    }
+
+    .header-content span {
+        font-size: 0.75rem;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .header-content i {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .header-content span {
+        font-size: 0.7rem;
+    }
+
+    .header-content i {
+        font-size: 0.7rem;
+    }
+
+    .header-content {
+        gap: 3px;
+    }
+}
+
+#pendingPermitsTable thead th:last-child {
+    border-right: none;
+}
+
+#pendingPermitsTable tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+#pendingPermitsTable tbody tr:hover {
+    background-color: #f8fafc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#pendingPermitsTable tbody tr:last-child {
+    border-bottom: none;
+}
+
+#pendingPermitsTable tbody td {
+    padding: 12px 8px;
+    vertical-align: middle;
+    border-right: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+/* Special alignment for permit title column */
+#pendingPermitsTable tbody td:nth-child(2) {
+    text-align: left;
+}
+
+/* Special alignment for remarks column */
+#pendingPermitsTable tbody td:nth-child(5) {
+    text-align: left;
+}
+
+#pendingPermitsTable tbody td:last-child {
+    border-right: none;
+}
+
+#pendingPermitsTable .fw-medium {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+/* Enhanced Action Button Animations */
+#pendingPermitsTable .btn-group {
+    display: flex;
+    gap: 4px;
+}
+
+#pendingPermitsTable .btn-group .btn {
+    border: 1px solid transparent;
+    padding: 6px 8px;
     border-radius: 6px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* View Button Animation */
+#pendingPermitsTable .btn-outline-primary {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: linear-gradient(45deg, transparent 50%, #3b82f6 50%);
+    background-size: 250% 250%;
+    background-position: 100% 100%;
+}
+
+#pendingPermitsTable .btn-outline-primary:hover {
+    color: white;
+    border-color: #2563eb;
+    background-position: 0% 0%;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Approve Button Animation */
+#pendingPermitsTable .btn-outline-success {
+    border-color: #10b981;
+    color: #10b981;
+    background: linear-gradient(45deg, transparent 50%, #10b981 50%);
+    background-size: 250% 250%;
+    background-position: 100% 100%;
+}
+
+#pendingPermitsTable .btn-outline-success:hover {
+    color: white;
+    border-color: #059669;
+    background-position: 0% 0%;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Reject Button Animation */
+#pendingPermitsTable .btn-outline-danger {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: linear-gradient(45deg, transparent 50%, #ef4444 50%);
+    background-size: 250% 250%;
+    background-position: 100% 100%;
+}
+
+#pendingPermitsTable .btn-outline-danger:hover {
+    color: white;
+    border-color: #dc2626;
+    background-position: 0% 0%;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Request Info Button Animation */
+#pendingPermitsTable .btn-outline-warning {
+    border-color: #f59e0b;
+    color: #f59e0b;
+    background: linear-gradient(45deg, transparent 50%, #f59e0b 50%);
+    background-size: 250% 250%;
+    background-position: 100% 100%;
+}
+
+#pendingPermitsTable .btn-outline-warning:hover {
+    color: white;
+    border-color: #d97706;
+    background-position: 0% 0%;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Button Icon Animations */
+#pendingPermitsTable .btn i {
+    transition: all 0.3s ease;
+}
+
+#pendingPermitsTable .btn:hover i {
+    transform: scale(1.1) rotate(360deg);
+}
+
+/* Button Press Animation */
+#pendingPermitsTable .btn:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Pulse Animation for Action Buttons */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+#pendingPermitsTable .btn-outline-primary:focus {
+    animation: pulse 1.5s infinite;
+}
+
+/* Row Hover Effect Enhancement */
+#pendingPermitsTable tbody tr:hover td {
+    border-color: #e5e7eb;
+}
+
+/* Table Container Border */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Apply same styling to all permit tables */
+#approvedPermitsTable,
+#rejectedPermitsTable {
+    margin-bottom: 0;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#approvedPermitsTable thead th,
+#rejectedPermitsTable thead th {
+    font-weight: 600;
+    color: #374151;
+    background-color: #f8fafc !important;
+    border-bottom: 2px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    padding: 12px 8px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    position: relative;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#approvedPermitsTable tbody tr,
+#rejectedPermitsTable tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+#approvedPermitsTable tbody tr:hover,
+#rejectedPermitsTable tbody tr:hover {
+    background-color: #f8fafc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#approvedPermitsTable tbody td,
+#rejectedPermitsTable tbody td {
+    padding: 12px 8px;
+    vertical-align: middle;
+    border-right: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+/* Special alignment for permit title and remarks columns */
+#approvedPermitsTable tbody td:nth-child(2),
+#approvedPermitsTable tbody td:nth-child(6),
+#approvedPermitsTable tbody td:nth-child(8),
+#rejectedPermitsTable tbody td:nth-child(2),
+#rejectedPermitsTable tbody td:nth-child(6),
+#rejectedPermitsTable tbody td:nth-child(8) {
+    text-align: left;
 }

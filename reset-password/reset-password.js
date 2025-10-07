@@ -71,7 +71,17 @@ async function resetPassword() {
 
         if (res.ok) {
             setTimeout(() => {
-                window.location.href = '/login/index.html'; // redirect to login page
+                try {
+                    const { hostname, pathname } = window.location;
+                    let prefix = '';
+                    if (hostname.endsWith('github.io')) {
+                        const segments = pathname.split('/').filter(Boolean);
+                        if (segments.length > 0) prefix = `/${segments[0]}`;
+                    }
+                    window.location.assign(`${prefix}/login/index.html`);
+                } catch (_) {
+                    window.location.assign('/login/index.html');
+                }
             }, 2000);
         }
     } catch (err) {

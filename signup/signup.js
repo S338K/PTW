@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const usernameEl = document.getElementById('signupName');
     const companyEl = document.getElementById('companyName');
     const emailEl = document.getElementById('signupEmail');
+    const phoneEl = document.getElementById('signupPhone');
     const passwordEl = document.getElementById('signupPassword');
     const confirmPasswordEl = document.getElementById('signupConfirmPassword');
     const termsEl = document.getElementById('termsCheckbox');
@@ -29,6 +30,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function validateEmail(value) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+    function validatePhone(value) {
+        // Remove spaces, dashes, and parentheses for validation
+        const cleanedPhone = value.replace(/[\s\-\(\)]/g, '');
+        return /^[\+]?[1-9][\d]{7,15}$/.test(cleanedPhone);
     }
     function validatePassword(value, name, email) {
         const strongPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -68,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Show error under the field
     function showError(inputEl, message) {
-        const group = inputEl.closest('.form-group');
+        const group = inputEl.closest('.floating-label, .relative');
         if (!group) return;
         const span = group.querySelector('.error-message');
         if (!span) return;
@@ -97,6 +103,10 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'signupEmail':
                 isValid = validateEmail(inputEl.value);
                 showError(inputEl, isValid ? '' : 'Enter a valid email address 📧.');
+                break;
+            case 'signupPhone':
+                isValid = validatePhone(inputEl.value);
+                showError(inputEl, isValid ? '' : 'Enter a valid phone number (e.g., +974501234567).');
                 break;
             case 'signupPassword':
                 isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);
@@ -136,7 +146,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'termsCheckbox':
                 isValid = validateTerms(inputEl.checked);
-                showError(inputEl, isValid ? '' : 'Please accept the terms and conditions 📝.');
+                // For checkbox, look for error span in parent container
+                const checkboxGroup = inputEl.closest('.relative');
+                if (checkboxGroup) {
+                    const checkboxSpan = checkboxGroup.querySelector('.error-message');
+                    if (checkboxSpan) {
+                        checkboxSpan.textContent = isValid ? '' : 'Please accept the terms and conditions 📝.';
+                    }
+                }
                 break;
         }
         return isValid;
@@ -146,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function validateForm() {
         let valid = true;
         [
-            usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl, termsEl,
+            usernameEl, companyEl, emailEl, phoneEl, passwordEl, confirmPasswordEl, termsEl,
             buildingNoEl, floorNoEl, streetNoEl, zoneEl, cityEl, countryEl, poBoxEl
         ].forEach(input => {
             if (!validateField(input)) valid = false;
@@ -156,12 +173,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Real-time validation
     [
-        usernameEl, companyEl, emailEl, passwordEl, confirmPasswordEl,
+        usernameEl, companyEl, emailEl, phoneEl, passwordEl, confirmPasswordEl,
         buildingNoEl, floorNoEl, streetNoEl, zoneEl, cityEl, countryEl, poBoxEl
     ].forEach(input => {
-        input.addEventListener('input', () => validateField(input));
+        if (input) {
+            input.addEventListener('input', () => validateField(input));
+        }
     });
-    termsEl.addEventListener('change', () => validateField(termsEl));
+    if (termsEl) {
+        termsEl.addEventListener('change', () => validateField(termsEl));
+    }
 
     // Submit validation
     if (form) {
@@ -177,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const username = usernameEl.value.trim();
             const company = companyEl.value.trim();
             const email = emailEl.value.trim();
+            const phone = phoneEl.value.trim();
             const password = passwordEl.value.trim();
             const buildingNo = buildingNoEl.value.trim();
             const floorNo = floorNoEl.value.trim();
@@ -192,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
-                        username, company, email, password,
+                        username, company, email, phone, password,
                         buildingNo, floorNo, streetNo, zone, city, country, poBox
                     })
                 });
@@ -226,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Redirect after short delay
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '../login/index.html';
                 }, 2000);
 
             } catch (err) {

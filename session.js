@@ -6,12 +6,28 @@ import { API_BASE } from './config.js';
 /* ===== Check if session is valid ===== */
 // session/session.js
 
+function getLoginUrl() {
+    // Handle GitHub Pages project sites (e.g., https://<user>.github.io/<repo>/...)
+    // by prefixing the repo segment to the login path. Locally, this stays root-relative.
+    try {
+        const { hostname, pathname } = window.location;
+        let prefix = '';
+        if (hostname.endsWith('github.io')) {
+            const segments = pathname.split('/').filter(Boolean);
+            if (segments.length > 0) prefix = `/${segments[0]}`; // '/<repo>'
+        }
+        return `${prefix}/login/index.html`;
+    } catch (_) {
+        return '/login/index.html';
+    }
+}
+
 export async function checkSession() {
     try {
         const res = await fetch(`${API_BASE}/api/profile`, { credentials: "include" });
 
         if (res.status === 401 || res.status === 403) {
-            window.location.href = "/login/index.html";
+            window.location.assign(getLoginUrl());
             return null;
         }
 
@@ -189,6 +205,6 @@ export async function logoutUser() {
     } catch (err) {
         console.error("Logout request failed:", err);
     } finally {
-        window.location.href = "/login/index.html";
+        window.location.assign(getLoginUrl());
     }
 }

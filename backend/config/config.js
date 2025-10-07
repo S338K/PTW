@@ -21,7 +21,8 @@ const PUPPETEER_EXECUTABLE_PATH = process.env.PUPPETEER_EXECUTABLE_PATH;
 const PUPPETEER_CACHE_DIR = process.env.PUPPETEER_CACHE_DIR;
 
 // Weather
-const WEATHER_API_KEY = process.env.API_KEY || process.env.WEATHER_API_KEY || '';
+const API_KEY = process.env.API_KEY || process.env.WEATHER_API_KEY || '';
+const WEATHER_API_KEY = API_KEY; // backward-compatible alias
 
 // Frontend base for auth flows
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || 'https://s338k.github.io';
@@ -38,6 +39,7 @@ module.exports = {
     ALLOWED_ORIGIN,
     PUPPETEER_EXECUTABLE_PATH,
     PUPPETEER_CACHE_DIR,
+    API_KEY,
     WEATHER_API_KEY,
     FRONTEND_BASE_URL,
     LOG_LEVEL,

@@ -14,6 +14,7 @@ router.post('/register', async (req, res) => {
       username,
       company,
       email,
+      phone,
       password,
       role,
       buildingNo,
@@ -43,6 +44,7 @@ router.post('/register', async (req, res) => {
     const newUser = new User({
       username,
       email,
+      phone: phone || '',
       password, // plain text here, pre-save hook will hash it
       company: company || '',
       role: role || 'Requester',
@@ -297,6 +299,112 @@ router.post('/reset-password', async (req, res) => {
   } catch (err) {
     logger.error({ err }, '[Reset Password] Error');
     res.status(500).json({ message: 'Error resetting password', error: err.message });
+  }
+});
+
+// ----- UPDATE PASSWORD (authenticated users) -----
+router.put('/update-password', async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    // Enhanced password validation
+    const passwordRegex = /^(?=.*[a-z].*[a-z])(?=.*[A-Z].*[A-Z])(?=.*\d.*\d)(?=.*[^A-Za-z\d].*[^A-Za-z\d]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters with 2+ uppercase, 2+ lowercase, 2+ numbers, and 2+ special characters'
+      });
+    }
+
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    const passwordMatch = await user.comparePassword(currentPassword);
+    if (!passwordMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+    user.passwordUpdatedAt = new Date();
+    await user.save();
+
+    logger.info({ userId: user._id }, 'Password updated successfully');
+    res.json({ message: 'Password updated successfully', passwordUpdatedAt: user.passwordUpdatedAt });
+  } catch (err) {
+    logger.error({ err }, '[Update Password] Error');
+    res.status(500).json({ message: 'Error updating password', error: err.message });
+  }
+});
+
+// ----- UPDATE PROFILE (authenticated users) -----
+router.put('/update-profile', async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { username, email, company, phone } = req.body;
+
+    if (!username || !email) {
+      return res.status(400).json({ message: 'Username and email are required' });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if email is already taken by another user
+    if (email !== user.email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: user._id } });
+      if (existingUser) {
+        return res.status(409).json({ message: 'Email is already in use by another account' });
+      }
+    }
+
+    // Update user fields
+    user.username = username;
+    user.email = email;
+    user.company = company || '';
+    user.phone = phone || '';
+    user.profileUpdatedAt = new Date();
+
+    await user.save();
+
+    logger.info({ userId: user._id }, 'Profile updated successfully');
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        company: user.company,
+        phone: user.phone,
+        role: user.role,
+        profileUpdatedAt: user.profileUpdatedAt
+      }
+    });
+  } catch (err) {
+    logger.error({ err }, '[Update Profile] Error');
+    res.status(500).json({ message: 'Error updating profile', error: err.message });
   }
 });
 

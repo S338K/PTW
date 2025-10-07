@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 const logger = require('./logger');
 
 // Do not print sensitive environment variables to logs in any environment.
@@ -42,8 +42,8 @@ app.use(
   })
 );
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle preflight requests - removed due to Express 5.x compatibility issue
+// app.options('/*', cors());
 
 // ===== Security & Cache Headers ===== //
 app.use((req, res, next) => {

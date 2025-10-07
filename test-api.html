@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+</head>
+
+<body>
+    <h1>API Connection Test</h1>
+    <button id="testBtn">Test API Connection</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { API_BASE } from './config.js';
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                console.log('API_BASE:', API_BASE);
+
+                // Test basic API connection
+                const response = await fetch(`${API_BASE}`, {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `
+                        <p style="color: green;">✅ API Connection Successful!</p>
+                        <p>API Base: ${API_BASE}</p>
+                        <p>Response: ${text}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p style="color: red;">❌ API Connection Failed</p>
+                        <p>Status: ${response.status}</p>
+                        <p>API Base: ${API_BASE}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p style="color: red;">❌ Network Error</p>
+                    <p>Error: ${error.message}</p>
+                    <p>API Base: ${API_BASE}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

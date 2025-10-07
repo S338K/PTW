@@ -30,6 +30,19 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
+    phone: {
+      type: String,
+      trim: true,
+    },
+
+    passwordUpdatedAt: {
+      type: Date,
+    },
+
+    profileUpdatedAt: {
+      type: Date,
+    },
+
     // 🔹 New Office Address subdocument
     officeAddress: {
       buildingNo: { type: String, trim: true },

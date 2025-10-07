@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'error-color': '#dc2626',
+                        'success-color': '#16a34a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        input.invalid {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+        }
+
+        input.valid {
+            border-color: #16a34a !important;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1) !important;
+        }
+
+        .error-message:not(:empty) {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-4">Validation Test</h1>
+
+        <div class="form-group relative mb-6">
+            <input type="text" id="testName"
+                class="peer w-full px-3 pt-5 pb-2 border-2 border-gray-300 rounded-md focus:border-blue-500 focus:outline-none transition-colors"
+                placeholder=" " />
+            <label for="testName"
+                class="absolute left-3 top-1 text-xs text-gray-500 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-4 peer-focus:top-1 peer-focus:text-xs peer-focus:text-blue-500">
+                Full Name
+            </label>
+            <span
+                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
+                aria-live="polite"></span>
+        </div>
+
+        <button id="testBtn" type="button"
+            class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
+            Test Validation
+        </button>
+
+        <div id="debugOutput" class="mt-4 p-3 bg-gray-100 rounded text-sm font-mono"></div>
+    </div>
+
+    <script type="module">
+        console.log('Test script loaded');
+
+        const testInput = document.getElementById('testName');
+        const testBtn = document.getElementById('testBtn');
+        const debugOutput = document.getElementById('debugOutput');
+
+        function log(message) {
+            console.log(message);
+            debugOutput.innerHTML += message + '<br>';
+        }
+
+        function validateName(value) {
+            const isValid = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,50}$/.test(value.trim());
+            log(`Validating "${value}" - Result: ${isValid}`);
+            return isValid;
+        }
+
+        function showError(inputEl, message) {
+            const group = inputEl.closest('.form-group');
+            if (!group) {
+                log('Error: No form-group found');
+                return;
+            }
+            const span = group.querySelector('.error-message');
+            if (!span) {
+                log('Error: No error-message span found');
+                return;
+            }
+            span.textContent = message || '';
+            if (message) {
+                inputEl.classList.add('invalid');
+                inputEl.classList.remove('valid');
+                log(`Added invalid class, message: "${message}"`);
+            } else {
+                inputEl.classList.remove('invalid');
+                inputEl.classList.add('valid');
+                log('Added valid class');
+            }
+        }
+
+        function validateField(inputEl) {
+            const isValid = validateName(inputEl.value);
+            showError(inputEl, isValid ? '' : 'Letters only (2–50 chars).');
+            return isValid;
+        }
+
+        // Real-time validation
+        testInput.addEventListener('input', () => {
+            log('Input event triggered');
+            validateField(testInput);
+        });
+
+        // Button click validation
+        testBtn.addEventListener('click', () => {
+            log('Button clicked');
+            const isValid = validateField(testInput);
+            log(`Form validation result: ${isValid}`);
+        });
+
+        log('Event listeners attached');
+    </script>
+</body>
+
+</html>
