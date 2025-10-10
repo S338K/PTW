@@ -730,7 +730,7 @@ async function initializeDashboard() {
             offlineMsg.style.cssText = `
                 position: fixed; top: 10px; right: 10px; z-index: 9999;
                 background: orange; color: white; padding: 10px; border-radius: 5px;
-                font-family: Arial; font-size: 14px;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px;
             `;
             offlineMsg.textContent = 'Backend server offline - limited functionality';
             document.body.appendChild(offlineMsg);

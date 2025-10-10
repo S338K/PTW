@@ -8,25 +8,82 @@ let allActivities = [];
 let currentUser = null;
 
 function updateStats(permits) {
-    let approved = 0, rejected = 0, pending = 0;
+    let approved = 0, rejected = 0, pending = 0, returnedForInfo = 0;
     permits.forEach(p => {
         if ((p.status || '').toLowerCase() === 'approved') approved++;
         else if ((p.status || '').toLowerCase() === 'rejected') rejected++;
         else if (['pending', 'in progress'].includes((p.status || '').toLowerCase())) pending++;
+        else if ((p.status || '').toLowerCase() === 'returned for info') returnedForInfo++;
     });
 
     const total = permits.length;
+
+    // Calculate percentages (avoid division by zero)
+    const approvedPercentage = total > 0 ? ((approved / total) * 100).toFixed(1) : 0;
+    const rejectedPercentage = total > 0 ? ((rejected / total) * 100).toFixed(1) : 0;
+    const pendingPercentage = total > 0 ? ((pending / total) * 100).toFixed(1) : 0;
+    const returnedPercentage = total > 0 ? ((returnedForInfo / total) * 100).toFixed(1) : 0;
 
     // Update dashboard cards with real data
     const totalElement = document.getElementById('totalPermitsCount');
     const pendingElement = document.getElementById('pendingPermitsCount');
     const approvedElement = document.getElementById('approvedPermitsCount');
     const rejectedElement = document.getElementById('rejectedPermitsCount');
+    const returnedForInfoElement = document.getElementById('returnedForInfoCount');
 
+    // Update percentage elements
+    const approvedPercentageElement = document.getElementById('approvedPercentage');
+    const rejectedPercentageElement = document.getElementById('rejectedPercentage');
+    const pendingPercentageElement = document.getElementById('pendingPercentage');
+    const returnedPercentageElement = document.getElementById('returnedPercentage');
+
+    // Update counts
     if (totalElement) totalElement.textContent = total;
     if (pendingElement) pendingElement.textContent = pending;
     if (approvedElement) approvedElement.textContent = approved;
     if (rejectedElement) rejectedElement.textContent = rejected;
+    if (returnedForInfoElement) returnedForInfoElement.textContent = returnedForInfo;
+
+    // Update percentages
+    if (approvedPercentageElement) approvedPercentageElement.textContent = approvedPercentage + '%';
+    if (rejectedPercentageElement) rejectedPercentageElement.textContent = rejectedPercentage + '%';
+    if (pendingPercentageElement) pendingPercentageElement.textContent = pendingPercentage + '%';
+    if (returnedPercentageElement) returnedPercentageElement.textContent = returnedPercentage + '%';
+
+    // Update task progress based on permit processing
+    updateTaskProgress(approved, pending, rejected);
+}
+
+function updateTaskProgress(completed, inProgress, upcoming) {
+    // Calculate total tasks and progress percentage
+    const totalTasks = completed + inProgress + upcoming;
+    const progressPercentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+    // Update task progress elements
+    const taskProgressElement = document.getElementById('taskProgressPercentage');
+    const completedElement = document.getElementById('completedTasksCount');
+    const inProgressElement = document.getElementById('inProgressTasksCount');
+    const upcomingElement = document.getElementById('upcomingTasksCount');
+
+    if (taskProgressElement) taskProgressElement.textContent = progressPercentage + '%';
+    if (completedElement) completedElement.textContent = completed;
+    if (inProgressElement) inProgressElement.textContent = inProgress;
+    if (upcomingElement) upcomingElement.textContent = upcoming;
+
+    // Update the progress bars
+    const progressBarContainer = document.querySelector('.progress-bar-container .progress');
+    if (progressBarContainer) {
+        const progressBars = progressBarContainer.querySelectorAll('.progress-bar');
+        if (progressBars.length >= 3 && totalTasks > 0) {
+            const completedWidth = (completed / totalTasks) * 100;
+            const inProgressWidth = (inProgress / totalTasks) * 100;
+            const upcomingWidth = (upcoming / totalTasks) * 100;
+
+            progressBars[0].style.width = completedWidth + '%';
+            progressBars[1].style.width = inProgressWidth + '%';
+            progressBars[2].style.width = upcomingWidth + '%';
+        }
+    }
 }
 
 function renderPermits(permits) {
@@ -115,14 +172,14 @@ function updateTableBody(tableId, permits, type) {
         return;
     }
 
-    permits.forEach(permit => {
-        const row = createPermitRow(permit, type);
+    permits.forEach((permit, index) => {
+        const row = createPermitRow(permit, type, index + 1);
         tbody.appendChild(row);
     });
 }
 
 // Create table row for permit data
-function createPermitRow(permit, type) {
+function createPermitRow(permit, type, index = 0) {
     const row = document.createElement('tr');
 
     // Format dates
@@ -161,30 +218,24 @@ function createPermitRow(permit, type) {
         `;
     } else if (type === 'approved') {
         row.innerHTML = `
-            <td class="small">${permit._id || '-'}</td>
-            <td class="small fw-medium">${permit.permitTitle || '-'}</td>
-            <td class="small">${submittedDate}</td>
-            <td class="small">${permit.preApprovedBy?.username || permit.preApproverName || '-'}</td>
-            <td class="small">${getStatusBadge('', permit.preApproverDecision || 'Approved')}</td>
-            <td class="small">${preApproverDate}</td>
-            <td class="small">${permit.preApproverComments || '-'}</td>
-            <td class="small">${getStatusBadge('', permit.finalApproverDecision || 'Approved')}</td>
-            <td class="small">${approverDate}</td>
-            <td class="small">${permit.finalApproverRemarks || '-'}</td>
-            <td class="small"><span class="badge bg-success">Active</span></td>
+            <td class="text-center">${index}</td>
+            <td class="text-center">
+                <a href="#" class="permit-number-link" onclick="viewPermitDetails('${permit._id}')">${permit._id || permit.serialNo || '-'}</a>
+            </td>
+            <td class="text-left">${permit.permitTitle || '-'}</td>
+            <td class="text-center small text-muted">${submittedDate}</td>
         `;
     } else if (type === 'rejected') {
+        const rejectedDate = permit.rejectedAt || permit.approvedAt;
+        const rejectedDateFormatted = rejectedDate ? new Date(rejectedDate).toLocaleDateString() + ', ' + new Date(rejectedDate).toLocaleTimeString() : '-';
+
         row.innerHTML = `
-            <td class="small">${permit._id || '-'}</td>
-            <td class="small fw-medium">${permit.permitTitle || '-'}</td>
-            <td class="small">${submittedDate}</td>
-            <td class="small">${permit.preApprovedBy?.username || permit.preApproverName || '-'}</td>
-            <td class="small">${getStatusBadge('', permit.preApproverDecision || 'Rejected')}</td>
-            <td class="small">${preApproverDate}</td>
-            <td class="small">${permit.preApproverComments || '-'}</td>
-            <td class="small">${getStatusBadge('', permit.finalApproverDecision || 'Rejected')}</td>
-            <td class="small">${approverDate}</td>
-            <td class="small">${permit.finalApproverRemarks || '-'}</td>
+            <td class="text-center">${index}</td>
+            <td class="text-center">
+                <a href="#" class="permit-number-link" onclick="viewPermitDetails('${permit._id}')">${permit._id || permit.serialNo || '-'}</a>
+            </td>
+            <td class="text-left">${permit.permitTitle || '-'}</td>
+            <td class="text-center small text-muted">${rejectedDateFormatted}</td>
         `;
     }
 
@@ -305,7 +356,22 @@ function updateDashboardCards(stats) {
         if (cards.rejected) cards.rejected.textContent = stats.rejected || '0';
         if (cards.total) cards.total.textContent = stats.total || '0';
     }
-} document.addEventListener('DOMContentLoaded', async () => {
+} // Initialize theme system early
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('approver-theme') || 'light';
+    const body = document.body;
+
+    if (savedTheme === 'dark') {
+        body.setAttribute('data-theme', 'dark');
+    } else {
+        body.removeAttribute('data-theme');
+    }
+}
+
+// Apply theme immediately to prevent flash
+initializeTheme();
+
+document.addEventListener('DOMContentLoaded', async () => {
     // Floating sidebar hover logic
     const avatar = document.querySelector('.dasher-user-avatar');
     const floatingSidebar = document.getElementById('floatingSidebar');
@@ -355,20 +421,23 @@ function updateDashboardCards(stats) {
         updateStats(filterPermits(e.target.value));
     });
 
-    // Action buttons (event delegation)
-    document.getElementById('permitTableBody').addEventListener('click', e => {
-        if (e.target.classList.contains('action-btn')) {
-            const id = e.target.dataset.id;
-            const action = e.target.dataset.action;
-            if (action === 'approve') {
-                alert(`Approve permit ${id}`);
-            } else if (action === 'reject') {
-                alert(`Reject permit ${id}`);
-            } else if (action === 'info') {
-                alert(`Return permit ${id} for more info`);
+    // Action buttons (event delegation) - guard if element is missing
+    const permitTableBody = document.getElementById('permitTableBody');
+    if (permitTableBody) {
+        permitTableBody.addEventListener('click', e => {
+            if (e.target.classList.contains('action-btn')) {
+                const id = e.target.dataset.id;
+                const action = e.target.dataset.action;
+                if (action === 'approve') {
+                    alert(`Approve permit ${id}`);
+                } else if (action === 'reject') {
+                    alert(`Reject permit ${id}`);
+                } else if (action === 'info') {
+                    alert(`Return permit ${id} for more info`);
+                }
             }
-        }
-    });
+        });
+    }
 
     // Sidebar toggle (mobile)
     const sidebar = document.querySelector('.dasher-sidebar');
@@ -432,42 +501,81 @@ document.addEventListener('DOMContentLoaded', function () {
         var tooltip = new bootstrap.Tooltip(trigger);
     }
 
-    // Theme slider functionality
+    // Enhanced Theme System with localStorage persistence
     const themeSlider = document.getElementById('themeSlider');
     const lightTheme = document.getElementById('lightTheme');
     const darkTheme = document.getElementById('darkTheme');
 
     if (themeSlider && lightTheme && darkTheme) {
-        // Set initial state to light theme
-        themeSlider.classList.add('light');
+        // Get saved theme or default to light
+        const savedTheme = localStorage.getItem('approver-theme') || 'light';
 
-        function setTheme(theme) {
+        function applyTheme(theme) {
+            const body = document.body;
+
             if (theme === 'light') {
+                body.removeAttribute('data-theme');
                 themeSlider.classList.remove('dark');
                 themeSlider.classList.add('light');
                 lightTheme.classList.add('active');
                 darkTheme.classList.remove('active');
             } else {
+                body.setAttribute('data-theme', 'dark');
                 themeSlider.classList.remove('light');
                 themeSlider.classList.add('dark');
                 lightTheme.classList.remove('active');
                 darkTheme.classList.add('active');
             }
+
+            // Save theme preference
+            localStorage.setItem('approver-theme', theme);
+
+            // Dispatch custom event for other components
+            window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
         }
 
-        lightTheme.addEventListener('click', () => setTheme('light'));
-        darkTheme.addEventListener('click', () => setTheme('dark'));
-        themeSlider.addEventListener('click', (e) => {
-            const rect = themeSlider.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const centerX = rect.width / 2;
+        // Apply saved theme on page load
+        applyTheme(savedTheme);
 
-            if (clickX < centerX) {
-                setTheme('light');
-            } else {
-                setTheme('dark');
+        // Theme switching event listeners
+        lightTheme.addEventListener('click', (e) => {
+            e.preventDefault();
+            applyTheme('light');
+        });
+
+        darkTheme.addEventListener('click', (e) => {
+            e.preventDefault();
+            applyTheme('dark');
+        });
+
+        themeSlider.addEventListener('click', (e) => {
+            // Prevent double triggering from child elements
+            if (e.target === themeSlider) {
+                const rect = themeSlider.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const centerX = rect.width / 2;
+
+                if (clickX < centerX) {
+                    applyTheme('light');
+                } else {
+                    applyTheme('dark');
+                }
             }
         });
+
+        // Add keyboard support
+        themeSlider.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const currentTheme = localStorage.getItem('approver-theme') || 'light';
+                applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+            }
+        });
+
+        // Make slider focusable for accessibility
+        themeSlider.setAttribute('tabindex', '0');
+        themeSlider.setAttribute('role', 'switch');
+        themeSlider.setAttribute('aria-label', 'Toggle dark/light theme');
     }
 });
 
@@ -545,7 +653,7 @@ window.printTable = function () {
 
     printWindow.document.write('<html><head><title>Pending Permits Report</title>');
     printWindow.document.write('<style>');
-    printWindow.document.write('body { font-family: Arial, sans-serif; margin: 20px; }');
+    printWindow.document.write('body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; }');
     printWindow.document.write('h1 { color: #333; text-align: center; margin-bottom: 30px; }');
     printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 20px 0; }');
     printWindow.document.write('th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }');
@@ -651,7 +759,7 @@ function printTableById(tableId, reportTitle) {
 
     printWindow.document.write('<html><head><title>' + reportTitle + '</title>');
     printWindow.document.write('<style>');
-    printWindow.document.write('body { font-family: Arial, sans-serif; margin: 20px; }');
+    printWindow.document.write('body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 20px; }');
     printWindow.document.write('h1 { color: #333; text-align: center; margin-bottom: 30px; }');
     printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 20px 0; }');
     printWindow.document.write('th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }');

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Debug Test</title>
+    <style>
+        .header-container {
+            background: #2c3e50;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .notification-icon {
+            position: relative;
+            cursor: pointer;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            min-width: 280px;
+            padding: 1rem;
+            color: #333;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-container">
+        <h1 style="color: white;">Debug Test</h1>
+        <div class="header-actions">
+            <!-- Notification Bell -->
+            <div class="notification-icon" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+                <span id="notificationCount" class="notification-count">3</span>
+            </div>
+
+            <!-- Profile Avatar -->
+            <div class="profile-avatar" onclick="toggleProfileDropdown()">
+                <span>JD</span>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <div id="profileDropdown" class="dropdown hidden">
+                <h3>Profile Info</h3>
+                <p>This is the profile dropdown content</p>
+                <button onclick="alert('Profile clicked')">Settings</button>
+            </div>
+
+            <!-- Notification Dropdown -->
+            <div id="notificationDropdown" class="dropdown hidden">
+                <h3>Notifications</h3>
+                <p>This is the notification dropdown content</p>
+                <button onclick="alert('Notification clicked')">Mark All Read</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('Debug test page loaded');
+
+        function toggleProfileDropdown() {
+            console.log('toggleProfileDropdown called');
+            const dropdown = document.getElementById('profileDropdown');
+            console.log('Profile dropdown element:', dropdown);
+
+            if (!dropdown) {
+                console.error('Profile dropdown not found');
+                return;
+            }
+
+            const isHidden = dropdown.classList.contains('hidden');
+            console.log('Profile dropdown currently hidden:', isHidden);
+
+            // Hide notification dropdown
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            if (notificationDropdown) {
+                notificationDropdown.classList.add('hidden');
+            }
+
+            // Toggle profile dropdown
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                dropdown.style.display = 'block';
+                console.log('Showing profile dropdown');
+            } else {
+                dropdown.classList.add('hidden');
+                dropdown.style.display = 'none';
+                console.log('Hiding profile dropdown');
+            }
+        }
+
+        function toggleNotifications() {
+            console.log('toggleNotifications called');
+            const dropdown = document.getElementById('notificationDropdown');
+            console.log('Notification dropdown element:', dropdown);
+
+            if (!dropdown) {
+                console.error('Notification dropdown not found');
+                return;
+            }
+
+            const isHidden = dropdown.classList.contains('hidden');
+            console.log('Notification dropdown currently hidden:', isHidden);
+
+            // Hide profile dropdown
+            const profileDropdown = document.getElementById('profileDropdown');
+            if (profileDropdown) {
+                profileDropdown.classList.add('hidden');
+            }
+
+            // Toggle notification dropdown
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                dropdown.style.display = 'block';
+                console.log('Showing notification dropdown');
+            } else {
+                dropdown.classList.add('hidden');
+                dropdown.style.display = 'none';
+                console.log('Hiding notification dropdown');
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function (event) {
+            const profileDropdown = document.getElementById('profileDropdown');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const profileAvatar = document.querySelector('.profile-avatar');
+            const notificationIcon = document.querySelector('.notification-icon');
+
+            if (!profileAvatar.contains(event.target) && !profileDropdown.contains(event.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+
+            if (!notificationIcon.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                notificationDropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>

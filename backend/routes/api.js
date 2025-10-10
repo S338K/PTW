@@ -45,9 +45,15 @@ router.get('/weather', async (req, res) => {
       { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' }[aqi] || 'Unknown';
 
     res.json({
-      formatted: `${temp}°C | ${condition}`,
       temperature: temp,
       condition,
+      feelsLike: feelsLike,
+      humidity: humidity,
+      windSpeed: windSpeed,
+      visibility: visibility,
+      pressure: pressure,
+      aqi: aqi,
+      aqiStatus: aqiStatus,
       detailsLine: `Temperature: ${temp}°C (feels like ${feelsLike}°C) | Weather status: ${condition} | Humidity: ${humidity}% | Visibility: ${visibility} km | Wind Speed: ${windSpeed} m/s | AQI: ${aqi} | Quality: ${aqiStatus}`,
       icons: { condition: conditionIcon },
     });

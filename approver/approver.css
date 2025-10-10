@@ -59,11 +59,54 @@
     display: inline-block;
 }
 
+/* CSS Variables for Theme System */
+:root {
+    /* Light Theme Variables */
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #222222;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --border-light: #f1f5f9;
+    --shadow-color: rgba(37, 99, 235, 0.10);
+    --shadow-hover: rgba(31, 38, 135, 0.5);
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --sidebar-bg: #ffffff;
+    --header-bg: rgba(255, 255, 255, 0.1);
+    --input-bg: #f8fafc;
+    --table-bg: #f8fafc;
+    --table-hover: #f8fafc;
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #e2e8f0;
+    --text-muted: #cbd5e1;
+    /* Improved contrast */
+    --border-color: #334155;
+    --border-light: #475569;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.7);
+    --card-bg: rgba(30, 41, 59, 0.95);
+    --sidebar-bg: #1e293b;
+    --header-bg: rgba(15, 23, 42, 0.8);
+    --input-bg: #334155;
+    --table-bg: #1e293b;
+    --table-hover: #334155;
+}
+
 /* Dasher UI Layout */
 body.dasher-bg {
-    background: #f8fafc;
-    font-family: 'Inter', Arial, sans-serif;
-    color: #222;
+    background: var(--bg-primary);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .dasher-root {
@@ -75,11 +118,12 @@ body.dasher-bg {
     width: 220px;
     min-height: 220px;
     max-width: 80vw;
-    background: #fff;
+    background: var(--sidebar-bg);
     border-radius: 1.1rem;
-    box-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.10), 0 1.5px 8px 0 rgba(30, 41, 59, 0.08);
+    box-shadow: 0 8px 32px 0 var(--shadow-color), 0 1.5px 8px 0 rgba(30, 41, 59, 0.08);
     padding: 1.2rem 1rem 1rem 1rem;
     min-height: 100vh;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .dasher-sidebar-header {
@@ -103,9 +147,10 @@ body.dasher-bg {
 .dasher-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #222;
+    color: var(--text-primary);
     margin-top: 0.5rem;
     margin-bottom: 0.2rem;
+    transition: color 0.3s ease;
 }
 
 .dasher-nav {
@@ -122,7 +167,7 @@ body.dasher-bg {
     gap: 0.7rem;
     padding: 0.7rem 1rem;
     border-radius: 0.7rem;
-    color: #222;
+    color: var(--text-primary);
     font-weight: 500;
     text-decoration: none;
     font-size: 1.05rem;
@@ -133,7 +178,7 @@ body.dasher-bg {
 
 .dasher-nav-link.active,
 .dasher-nav-link:hover {
-    background: #f3f4f6;
+    background: var(--bg-tertiary);
     color: #2563eb;
 }
 
@@ -172,12 +217,12 @@ body.dasher-bg {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
     padding: 0.5rem 1.5rem 0.5rem 1.5rem;
     min-height: 44px;
     height: 48px;
-    transition: height 0.3s, min-height 0.3s, padding 0.3s;
+    transition: height 0.3s, min-height 0.3s, padding 0.3s, background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .dasher-topbar-left {
@@ -225,7 +270,8 @@ body.dasher-bg {
 .dasher-page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #222;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .dasher-topbar-right {
@@ -254,14 +300,15 @@ body.dasher-bg {
 
 .dasher-stat-card {
     flex: 1;
-    background: #fff;
+    background: var(--bg-secondary);
     border-radius: 1rem;
-    box-shadow: 0 2px 12px 0 rgba(37, 99, 235, 0.08);
+    box-shadow: 0 2px 12px 0 var(--shadow-color);
     padding: 2rem 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .dasher-stat-card .dasher-stat-label {
@@ -299,16 +346,17 @@ body.dasher-bg {
 }
 
 .dasher-widget {
-    background: #fff;
+    background: var(--bg-secondary);
     border-radius: 1rem;
-    box-shadow: 0 2px 12px 0 rgba(37, 99, 235, 0.08);
-    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 12px 0 var(--shadow-color);
+    border: 1px solid var(--border-color);
     padding: 1.5rem;
     flex: 1 1 0;
     min-width: 320px;
     max-width: 100%;
     display: flex;
     flex-direction: column;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .dasher-widget-header {
@@ -580,10 +628,10 @@ body.dasher-bg {
 
 #pendingPermitsTable thead th {
     font-weight: 600;
-    color: #374151;
-    background-color: #f8fafc !important;
-    border-bottom: 2px solid #e5e7eb;
-    border-right: 1px solid #e5e7eb;
+    color: var(--text-secondary);
+    background-color: var(--table-bg) !important;
+    border-bottom: 2px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
     padding: 12px 8px;
     font-size: 0.85rem;
     text-transform: uppercase;
@@ -591,6 +639,7 @@ body.dasher-bg {
     position: relative;
     text-align: center;
     vertical-align: middle;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Dynamic Header Styling */
@@ -706,7 +755,7 @@ body.dasher-bg {
 }
 
 #pendingPermitsTable tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: var(--table-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -920,9 +969,716 @@ body.dasher-bg {
 /* Special alignment for permit title and remarks columns */
 #approvedPermitsTable tbody td:nth-child(2),
 #approvedPermitsTable tbody td:nth-child(6),
-#approvedPermitsTable tbody td:nth-child(8),
+#antml:parameter>#approvedPermitsTable tbody td:nth-child(8),
 #rejectedPermitsTable tbody td:nth-child(2),
 #rejectedPermitsTable tbody td:nth-child(6),
 #rejectedPermitsTable tbody td:nth-child(8) {
     text-align: left;
+}
+
+/* Essential Sidebar and Main Content Styles */
+/* Dark Mode Sidebar Specific Overrides */
+[data-theme="dark"] #sidebar,
+[data-theme="dark"] .sidebar {
+    background-color: var(--sidebar-bg) !important;
+}
+
+[data-theme="dark"] .sidebar-logo {
+    border-bottom-color: var(--border-color) !important;
+}
+
+/* Sidebar overlay for slide-in sidebar */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Sidebar hidden/slide-in styles */
+#sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(.4, 0, .2, 1);
+    width: 220px;
+    z-index: 1200;
+}
+
+#sidebar.active {
+    transform: translateX(0);
+}
+
+@media (max-width: 991.98px) {
+    #sidebar {
+        width: 80vw;
+        min-width: 200px;
+        max-width: 320px;
+    }
+}
+
+/* Main content area styles */
+.kai-main {
+    margin-left: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.25s cubic-bezier(.4, 0, .2, 1);
+}
+
+body.sidebar-open .kai-main {
+    margin-left: 220px;
+}
+
+@media (max-width: 991.98px) {
+    body.sidebar-open .kai-main {
+        margin-left: 0;
+    }
+}
+
+/* Enhanced Background Colors and Styling */
+.dasher-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Add animated gradient overlay for more dynamic effect */
+.dasher-bg::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg,
+            rgba(102, 126, 234, 0.1) 0%,
+            rgba(118, 75, 162, 0.1) 25%,
+            rgba(240, 147, 251, 0.1) 50%,
+            rgba(59, 130, 246, 0.1) 75%,
+            rgba(139, 92, 246, 0.1) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    z-index: -1;
+    pointer-events: none;
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.kai-content {
+    background: transparent;
+    padding: 2rem;
+}
+
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px 0 var(--shadow-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-stats {
+    background: var(--card-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.card-stats:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 var(--shadow-hover);
+}
+
+.main-header {
+    background: var(--header-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.navbar-header {
+    background: transparent;
+}
+
+/* Task Progress Enhanced Layout */
+.task-progress-container {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    padding: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.progress-info-section {
+    flex: 0 0 auto;
+    min-width: 220px;
+}
+
+.progress-bar-container {
+    margin-top: 0.75rem;
+}
+
+.task-status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    flex: 1;
+    min-width: 400px;
+}
+
+.task-status-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.task-status-item:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.task-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.task-icon i {
+    font-size: 20px;
+}
+
+.task-details {
+    flex: 1;
+}
+
+.task-details h4 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.task-details p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Dark Mode Support for Forms and Inputs */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--bg-tertiary);
+    border-color: #3b82f6;
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-footer {
+    border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item:focus {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .text-dark {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .border-bottom {
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .table-light {
+    background-color: var(--table-bg) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .task-progress-container {
+        flex-direction: column;
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .progress-info-section {
+        width: 100%;
+    }
+
+    .task-status-grid {
+        min-width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .task-status-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .task-status-item {
+        padding: 1rem;
+    }
+}
+
+/* Permit Number Links */
+.permit-number-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.permit-number-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Horizontal distribution for mini tables - keep original layout */
+.mini-permits-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Fix approved permit table height to match rejected permits */
+#approvedPermitsTable {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#rejectedPermitsTable {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* Comprehensive Dark Mode Support - Override Bootstrap */
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-stats,
+[data-theme="dark"] .card-round {
+    background: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-header {
+    background: var(--bg-tertiary) !important;
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-body {
+    background: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table {
+    --bs-table-bg: var(--bg-secondary) !important;
+    --bs-table-color: var(--text-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table-light {
+    --bs-table-bg: var(--bg-tertiary) !important;
+    --bs-table-color: var(--text-secondary) !important;
+    background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .table tbody tr {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-light) !important;
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .table tbody td {
+    color: var(--text-primary) !important;
+    border-color: var(--border-light) !important;
+}
+
+[data-theme="dark"] .sidebar-profile,
+[data-theme="dark"] .sidebar-settings,
+[data-theme="dark"] .sidebar-logout {
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .setting-link {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .setting-link:hover {
+    color: #3b82f6 !important;
+}
+
+[data-theme="dark"] .profile-name,
+[data-theme="dark"] .settings-title {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .profile-email,
+[data-theme="dark"] .profile-contact,
+[data-theme="dark"] .last-login {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .task-status-item {
+    background: rgba(30, 41, 59, 0.5) !important;
+}
+
+[data-theme="dark"] .task-status-item:hover {
+    background: rgba(30, 41, 59, 0.8) !important;
+}
+
+[data-theme="dark"] .progress-percentage {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .task-progress-title {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .task-progress-subtitle,
+[data-theme="dark"] .progress-label {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .card-category {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .card-title {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .navbar-nav .nav-item .fw-bold {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .bg-white {
+    background-color: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .border-bottom {
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .text-dark {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem var(--shadow-color) !important;
+}
+
+[data-theme="dark"] .border-end {
+    border-right-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .small {
+    color: var(--text-muted) !important;
+}
+
+/* Enhanced Bootstrap Table Dark Mode Overrides */
+[data-theme="dark"] .table> :not(caption)>*>* {
+    background-color: var(--bg-secondary) !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table-hover>tbody>tr:hover>* {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table-responsive {
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .table thead {
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .table th {
+    background-color: var(--bg-tertiary) !important;
+    color: #e2e8f0 !important;
+    /* Better contrast for headers */
+    border-color: var(--border-color) !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="dark"] .table td {
+    background-color: var(--bg-secondary) !important;
+    color: #f8fafc !important;
+    /* Improved text contrast */
+    border-color: var(--border-light) !important;
+}
+
+/* Specific improvements for mini permit tables */
+[data-theme="dark"] #approvedPermitsTable th,
+[data-theme="dark"] #rejectedPermitsTable th {
+    background-color: var(--bg-tertiary) !important;
+    color: #e2e8f0 !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+[data-theme="dark"] #approvedPermitsTable td,
+[data-theme="dark"] #rejectedPermitsTable td {
+    color: #f8fafc !important;
+    font-size: 0.85rem !important;
+}
+
+[data-theme="dark"] #approvedPermitsTable tbody tr:hover,
+[data-theme="dark"] #rejectedPermitsTable tbody tr:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+/* Main pending permits table enhancements */
+[data-theme="dark"] #pendingPermitsTable th {
+    background-color: var(--bg-tertiary) !important;
+    color: #e2e8f0 !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="dark"] #pendingPermitsTable td {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] #pendingPermitsTable tbody tr:hover td {
+    color: #ffffff !important;
+}
+
+/* Task Progress Dark Mode Enhancements */
+[data-theme="dark"] .task-progress-container {
+    background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .progress-info-section h5 {
+    color: var(--text-primary) !important;
+}
+
+/* Progress Bar Dark Mode */
+.progress-theme {
+    background: #f1f5f9;
+}
+
+[data-theme="dark"] .progress,
+[data-theme="dark"] .progress-theme {
+    background-color: var(--bg-tertiary) !important;
+}
+
+/* Icon backgrounds and text colors */
+[data-theme="dark"] .icon-big {
+    opacity: 0.9;
+}
+
+/* Force override Bootstrap utility classes */
+[data-theme="dark"] .fw-bold {
+    color: var(--text-primary) !important;
+}
+
+/* Card specific overrides for statistics */
+[data-theme="dark"] .card-stats .card-body {
+    background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .card-stats .card-category {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .card-stats .card-title {
+    color: var(--text-primary) !important;
+}
+
+/* Input and form elements */
+[data-theme="dark"] .form-control {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .form-control:focus {
+    background-color: var(--bg-tertiary) !important;
+    border-color: #3b82f6 !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+}
+
+[data-theme="dark"] .input-group-text {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Button overrides for dark mode */
+[data-theme="dark"] .btn-outline-secondary {
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Ensure all elements respect dark mode */
+[data-theme="dark"] * {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .container-fluid {
+    background: transparent !important;
+}
+
+/* Enhanced text visibility */
+[data-theme="dark"] .card-header h5,
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .fw-bold {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+    opacity: 0.8;
+}
+
+/* Improved mini table headers */
+[data-theme="dark"] .mini-permit-card .card-header {
+    background: var(--bg-tertiary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .mini-permit-card .card-header h5 {
+    color: #f8fafc !important;
+    font-weight: 600 !important;
+}
+
+/* Task progress section improvements */
+[data-theme="dark"] .task-progress-container h5 {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .progress-percentage {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Better button contrast */
+[data-theme="dark"] .btn-info {
+    background-color: #0ea5e9 !important;
+    border-color: #0ea5e9 !important;
+}
+
+[data-theme="dark"] .btn-success {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+@media (max-width: 768px) {
+    .mini-permits-wrapper {
+        flex-direction: column;
+    }
+
+    .mini-permit-col {
+        max-width: 100%;
+    }
 }

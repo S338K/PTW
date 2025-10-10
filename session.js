@@ -48,7 +48,8 @@ export async function checkSession() {
 
 
 /* ===== Idle Timeout Auto‑Logout ===== */
-const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes
+const IDLE_LIMIT = 15 * 60 * 1000; // 15 minutes total
+const WARNING_TIME = 5 * 60 * 1000; // 5 minutes warning
 let idleTimer;
 let warningTimer;
 let countdownInterval;
@@ -59,9 +60,8 @@ export function initIdleTimer() {
         clearTimeout(warningTimer);
         clearInterval(countdownInterval);
         hideIdleWarning();
-        // schedule warning 3 minutes before logout
-        const reminderBeforeMs = 3 * 60 * 1000; // 3 minutes
-        const warningDelay = Math.max(IDLE_LIMIT - reminderBeforeMs, Math.floor(IDLE_LIMIT * 0.5));
+        // schedule warning 5 minutes before logout
+        const warningDelay = IDLE_LIMIT - WARNING_TIME; // 10 minutes of activity before warning
         warningTimer = setTimeout(showIdleWarning, warningDelay);
         idleTimer = setTimeout(logoutUser, IDLE_LIMIT);
     }
@@ -82,36 +82,130 @@ function createIdleWarning() {
     modal.className = '';
     Object.assign(modal.style, {
         position: 'fixed', inset: '0', display: 'none', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)', zIndex: '99999', backdropFilter: 'blur(3px)'
+        background: 'rgba(0,0,0,0.7)', zIndex: '99999', backdropFilter: 'blur(8px)', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     });
 
     const box = document.createElement('div');
     box.className = 'iw-box';
     Object.assign(box.style, {
-        background: '#fff', color: '#111', padding: '20px 24px', borderRadius: '12px', width: 'min(520px, 92vw)',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.25)', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
+        background: 'linear-gradient(145deg, #ffffff, #f8fafc)',
+        color: '#1f2937',
+        padding: '32px',
+        borderRadius: '20px',
+        width: 'min(480px, 90vw)',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
+        border: '1px solid rgba(226, 232, 240, 0.8)',
+        textAlign: 'center',
+        animation: 'modalSlideIn 0.4s ease-out'
+    });
+
+    // Add CSS animation
+    if (!document.querySelector('#modalAnimation')) {
+        const style = document.createElement('style');
+        style.id = 'modalAnimation';
+        style.textContent = `
+            @keyframes modalSlideIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.9) translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+            @keyframes pulseRed {
+                0%, 100% { background-color: #ef4444; }
+                50% { background-color: #dc2626; }
+            }
+            .pulse-warning {
+                animation: pulseRed 1s ease-in-out infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Warning Icon
+    const icon = document.createElement('div');
+    icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    Object.assign(icon.style, {
+        fontSize: '3rem',
+        color: '#f59e0b',
+        marginBottom: '16px'
     });
 
     const title = document.createElement('h3');
-    title.textContent = 'Session Expiration Warning';
-    title.style.marginTop = '0';
+    title.textContent = 'Session Expiring Soon';
+    Object.assign(title.style, {
+        margin: '0 0 12px 0',
+        fontSize: '1.5rem',
+        fontWeight: '700',
+        color: '#1f2937'
+    });
 
     const msg = document.createElement('p');
     msg.id = 'idleWarningMsg';
-    msg.textContent = '';
+    msg.textContent = 'You will be automatically logged out due to inactivity.';
+    Object.assign(msg.style, {
+        margin: '0 0 20px 0',
+        fontSize: '1rem',
+        color: '#6b7280',
+        lineHeight: '1.5'
+    });
 
-    const countdown = document.createElement('p');
+    const countdown = document.createElement('div');
     countdown.id = 'idleWarningCountdown';
-    countdown.style.fontWeight = '600';
+    Object.assign(countdown.style, {
+        fontSize: '2rem',
+        fontWeight: '700',
+        color: '#ef4444',
+        margin: '20px 0',
+        padding: '16px 24px',
+        background: '#fef2f2',
+        border: '2px solid #fecaca',
+        borderRadius: '12px',
+        fontFamily: 'monospace'
+    });
 
     const btnRow = document.createElement('div');
     btnRow.className = 'iw-btn-row';
-    Object.assign(btnRow.style, { display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' });
+    Object.assign(btnRow.style, {
+        display: 'flex',
+        gap: '16px',
+        justifyContent: 'center',
+        marginTop: '24px'
+    });
 
     const extendBtn = document.createElement('button');
-    extendBtn.textContent = 'Extend Session';
+    extendBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>Continue Session';
     extendBtn.className = 'iw-btn extend';
-    Object.assign(extendBtn.style, { padding: '8px 14px', borderRadius: '8px', border: '1px solid #28a745', background: '#28a745', color: '#fff', cursor: 'pointer' });
+    Object.assign(extendBtn.style, {
+        padding: '12px 24px',
+        borderRadius: '12px',
+        border: '2px solid #10b981',
+        background: '#10b981',
+        color: '#fff',
+        cursor: 'pointer',
+        fontSize: '1rem',
+        fontWeight: '600',
+        transition: 'all 0.2s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+    });
+
+    extendBtn.onmouseenter = () => {
+        extendBtn.style.background = '#059669';
+        extendBtn.style.transform = 'translateY(-1px)';
+        extendBtn.style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.3)';
+    };
+
+    extendBtn.onmouseleave = () => {
+        extendBtn.style.background = '#10b981';
+        extendBtn.style.transform = 'translateY(0)';
+        extendBtn.style.boxShadow = 'none';
+    };
+
     extendBtn.onclick = async () => {
         try {
             // call backend to touch session
@@ -126,9 +220,35 @@ function createIdleWarning() {
     };
 
     const logoutBtn = document.createElement('button');
-    logoutBtn.textContent = 'Logout Now';
+    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i>Logout Now';
     logoutBtn.className = 'iw-btn logout';
-    Object.assign(logoutBtn.style, { padding: '8px 14px', borderRadius: '8px', border: '1px solid #dc3545', background: '#dc3545', color: '#fff', cursor: 'pointer' });
+    Object.assign(logoutBtn.style, {
+        padding: '12px 24px',
+        borderRadius: '12px',
+        border: '2px solid #ef4444',
+        background: '#ef4444',
+        color: '#fff',
+        cursor: 'pointer',
+        fontSize: '1rem',
+        fontWeight: '600',
+        transition: 'all 0.2s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+    });
+
+    logoutBtn.onmouseenter = () => {
+        logoutBtn.style.background = '#dc2626';
+        logoutBtn.style.transform = 'translateY(-1px)';
+        logoutBtn.style.boxShadow = '0 8px 25px rgba(239, 68, 68, 0.3)';
+    };
+
+    logoutBtn.onmouseleave = () => {
+        logoutBtn.style.background = '#ef4444';
+        logoutBtn.style.transform = 'translateY(0)';
+        logoutBtn.style.boxShadow = 'none';
+    };
+
     logoutBtn.onclick = () => {
         hideIdleWarning();
         logoutUser();
@@ -137,6 +257,7 @@ function createIdleWarning() {
     btnRow.appendChild(extendBtn);
     btnRow.appendChild(logoutBtn);
 
+    box.appendChild(icon);
     box.appendChild(title);
     box.appendChild(msg);
     box.appendChild(countdown);
@@ -152,29 +273,39 @@ function showIdleWarning() {
     const msgEl = document.getElementById('idleWarningMsg');
     if (!modal || !countdownEl || !msgEl) return;
 
-    // Time until logout from now: compute remaining from idleTimer
-    // We'll re-use IDLE_LIMIT to show remaining up to 3 minutes
-    // Always show a 3-minute countdown window before auto logout
-    let remainingMs = Math.min(3 * 60 * 1000, IDLE_LIMIT);
+    // Show 5-minute countdown (WARNING_TIME)
+    let remainingMs = WARNING_TIME; // 5 minutes
 
     modal.style.display = 'flex';
     // Block page scroll/interactions while visible
     const prevOverflow = document.body.style.overflow;
     document.body.dataset.prevOverflow = prevOverflow;
     document.body.style.overflow = 'hidden';
-    msgEl.textContent = 'Your session will expire soon. Would you like to extend it?';
+    msgEl.textContent = 'You will be automatically logged out due to inactivity.';
 
     function update() {
         if (remainingMs <= 0) {
-            countdownEl.textContent = 'Expired';
+            countdownEl.textContent = 'Session Expired';
+            countdownEl.style.background = '#fee2e2';
+            countdownEl.style.borderColor = '#fca5a5';
+            countdownEl.style.color = '#dc2626';
             clearInterval(countdownInterval);
             // enforce logout to be safe
             logoutUser();
             return;
         }
-        const s = Math.floor((remainingMs / 1000) % 60).toString().padStart(2, '0');
-        const m = Math.floor((remainingMs / (1000 * 60)) % 60).toString().padStart(2, '0');
-        countdownEl.textContent = `${m}:${s} remaining`;
+
+        const totalSeconds = Math.floor(remainingMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // Add pulsing effect when under 1 minute
+        if (remainingMs <= 60000) {
+            countdownEl.classList.add('pulse-warning');
+        }
+
         remainingMs -= 1000;
     }
 

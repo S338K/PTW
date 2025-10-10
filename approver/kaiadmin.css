@@ -80,7 +80,7 @@
 
 body.dasher-bg {
     background: #f8fafc;
-    font-family: 'Inter', Arial, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     color: #222;
 }
 

@@ -233,7 +233,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
           <meta charset="utf-8" />
           <style>
             @page { size: A4; margin: 1cm; }
-            body { font-family: Tahoma, sans-serif; font-size: 12px; line-height: 1.4; border: 2px solid #000; padding: 20px; box-sizing: border-box; }
+            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 12px; line-height: 1.4; border: 2px solid #000; padding: 20px; box-sizing: border-box; }
             header { text-align: center; margin-bottom: 20px; background-color: #273172; color: #fff; padding: 10px; }
             header h1 { font-size: 16px; margin: 0; }
             header h2 { font-size: 14px; margin: 5px 0 0 0; }

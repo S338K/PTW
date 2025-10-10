@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dasher UI - Approver Dashboard</title>
     <link rel="stylesheet" href="../theme.css">
-    <link rel="stylesheet" href="kaiadmin.css">
     <link rel="stylesheet" href="approver.css">
     <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
@@ -33,16 +32,16 @@
             <div class="profile-info">
                 <div class="profile-avatar text-center mb-2">
                     <div class="avatar-circle bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-circle"
-                        style="width: 50px; height: 50px; font-size: 18px; font-weight: 600;">
-                        AH
+                        style="width: 50px; height: 50px; font-size: 18px; font-weight: 600;" id="profileInitials">
+                        AP
                     </div>
                 </div>
                 <div class="profile-details text-center">
-                    <h6 class="profile-name mb-1 fw-bold text-dark">Ahmed Hizrian</h6>
-                    <p class="profile-email mb-1 text-muted small">ahmed.hizrian@hia.gov.ae</p>
-                    <p class="profile-contact mb-1 text-muted small">+971 50 123 4567</p>
-                    <p class="last-login mb-0 text-muted" style="font-size: 11px;">
-                        Last Login: Monday, at 14:35:22
+                    <h6 class="profile-name mb-1 fw-bold text-dark" id="profileName">Approver</h6>
+                    <p class="profile-email mb-1 text-muted small" id="profileEmail">approver@hia.gov.ae</p>
+                    <p class="profile-contact mb-1 text-muted small" id="profilePhone">+971 50 123 4567</p>
+                    <p class="last-login mb-0 text-muted" style="font-size: 11px;" id="lastLogin">
+                        Last Login: Loading...
                     </p>
                 </div>
             </div>
@@ -107,20 +106,22 @@
             <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                 <div class="container-fluid">
                     <div class="d-flex align-items-center gap-2" style="max-width: 400px;">
-                        <button id="sidebarTrigger" class="btn btn-primary" style="z-index:1200;"
+                        <button id="sidebarTrigger" class="btn btn-warning" style="z-index:1200;"
                             data-bs-toggle="tooltip" data-bs-placement="right" title="Open Menu">
                             <i class="fas fa-bars"></i>
                         </button>
                         <form class="flex-grow-1">
                             <div class="input-group">
-                                <input type="text" placeholder="Search ..." class="form-control" />
+                                <input type="text" placeholder="Search permits..." class="form-control"
+                                    id="searchInput" />
                             </div>
                         </form>
                     </div>
                     <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
                         <!-- Removed message and notification icons -->
                         <li class="nav-item topbar-user dropdown hidden-caret">
-                            <span class="profile-username">Hi, <span class="fw-bold">Hizrian</span></span>
+                            <span class="profile-username">Hi, <span class="fw-bold"
+                                    id="headerUsername">Approver</span></span>
                             <ul class="dropdown-menu dropdown-user animated fadeIn">
                                 <div class="dropdown-user-scroll scrollbar-outer">
                                     <li>
@@ -129,20 +130,22 @@
                                                     src="https://ui-avatars.com/api/?name=Approver&background=2563eb&color=fff&size=40"
                                                     alt="image profile" class="avatar-img rounded" /></div>
                                             <div class="u-text">
-                                                <h4>Approver</h4>
-                                                <p class="text-muted">approver@example.com</p>
-                                                <a href="#" class="btn btn-xs btn-secondary btn-sm">View Profile</a>
+                                                <h4 id="dropdownUsername">Approver</h4>
+                                                <p class="text-muted" id="dropdownEmail">approver@example.com</p>
+                                                <a href="#" class="btn btn-xs btn-secondary btn-sm"
+                                                    onclick="showUpdateProfileModal()">View Profile</a>
                                             </div>
                                         </div>
                                     </li>
                                     <li>
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="#">My Profile</a>
-                                        <a class="dropdown-item" href="#">Inbox</a>
+                                        <a class="dropdown-item" href="#" onclick="showUpdateProfileModal()">My
+                                            Profile</a>
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="#">Account Setting</a>
+                                        <a class="dropdown-item" href="#" onclick="showUpdatePasswordModal()">Account
+                                            Settings</a>
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item" href="#">Logout</a>
+                                        <a class="dropdown-item" href="#" onclick="confirmLogout()">Logout</a>
                                     </li>
                                 </div>
                             </ul>
@@ -164,7 +167,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Total Permits</p>
-                                <h4 id="totalPermitsCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0</h4>
+                                <h4 id="totalPermitsCount" class="card-title mb-0 fw-bold">0</h4>
                             </div>
                         </div>
                     </div>
@@ -179,8 +182,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Approved Permits</p>
-                                <h4 id="approvedPermitsCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0
-                                </h4>
+                                <h4 id="approvedPermitsCount" class="card-title mb-0 fw-bold">0</h4>
                             </div>
                         </div>
                     </div>
@@ -195,7 +197,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Approved %</p>
-                                <h4 class="card-title mb-0 fw-bold" style="color:#2d3651;">77.5%</h4>
+                                <h4 id="approvedPercentage" class="card-title mb-0 fw-bold">0%</h4>
                             </div>
                         </div>
                     </div>
@@ -210,8 +212,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Rejected Permits</p>
-                                <h4 id="rejectedPermitsCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0
-                                </h4>
+                                <h4 id="rejectedPermitsCount" class="card-title mb-0 fw-bold">0</h4>
                             </div>
                         </div>
                     </div>
@@ -226,7 +227,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Rejected %</p>
-                                <h4 class="card-title mb-0 fw-bold" style="color:#2d3651;">9.3%</h4>
+                                <h4 id="rejectedPercentage" class="card-title mb-0 fw-bold">0%</h4>
                             </div>
                         </div>
                     </div>
@@ -241,8 +242,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Pending Permits</p>
-                                <h4 id="pendingPermitsCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0
-                                </h4>
+                                <h4 id="pendingPermitsCount" class="card-title mb-0 fw-bold">0</h4>
                             </div>
                         </div>
                     </div>
@@ -257,7 +257,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Pending %</p>
-                                <h4 class="card-title mb-0 fw-bold" style="color:#2d3651;">9.7%</h4>
+                                <h4 id="pendingPercentage" class="card-title mb-0 fw-bold">0%</h4>
                             </div>
                         </div>
                     </div>
@@ -272,7 +272,7 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Returned for Info</p>
-                                <h4 class="card-title mb-0 fw-bold" style="color:#2d3651;">45</h4>
+                                <h4 id="returnedForInfoCount" class="card-title mb-0 fw-bold">0</h4>
                             </div>
                         </div>
                     </div>
@@ -287,98 +287,101 @@
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Returned %</p>
-                                <h4 class="card-title mb-0 fw-bold" style="color:#2d3651;">3.5%</h4>
+                                <h4 id="returnedPercentage" class="card-title mb-0 fw-bold">0%</h4>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Task Progress Widget and Permit Lists -->
+            <!-- Task Progress Widget (Horizontal) -->
             <div class="row mt-4 mb-4">
-                <!-- Task Progress Widget -->
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card card-round shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <h5 class="card-title mb-4 fw-bold text-dark">Task Progress</h5>
-
-                            <!-- Overall Progress -->
-                            <div class="progress-summary mb-4">
-                                <h2 class="progress-percentage mb-2 fw-bold text-dark">64%</h2>
-                                <div class="progress-bar-container mb-3">
-                                    <div class="progress" style="height: 8px; background: #f1f5f9;">
-                                        <div class="progress-bar bg-info"
-                                            style="width: 24%; background: linear-gradient(90deg, #06b6d4, #0891b2) !important;">
+                <div class="col-12">
+                    <div class="card card-round shadow-sm">
+                        <div class="card-body">
+                            <div class="task-progress-container">
+                                <!-- Progress Info Section -->
+                                <div class="progress-info-section">
+                                    <h5 class="card-title mb-2 fw-bold text-dark">Task Progress</h5>
+                                    <h2 id="taskProgressPercentage" class="progress-percentage mb-2 fw-bold text-dark">
+                                        0%</h2>
+                                    <div class="progress-bar-container">
+                                        <div class="progress progress-theme" style="height: 8px; border-radius: 4px;">
+                                            <div class="progress-bar"
+                                                style="width: 24%; background: linear-gradient(90deg, #06b6d4, #0891b2); border-radius: 4px;">
+                                            </div>
+                                            <div class="progress-bar"
+                                                style="width: 35%; background: linear-gradient(90deg, #10b981, #059669);">
+                                            </div>
+                                            <div class="progress-bar"
+                                                style="width: 41%; background: linear-gradient(90deg, #f59e0b, #d97706); border-radius: 0 4px 4px 0;">
+                                            </div>
                                         </div>
-                                        <div class="progress-bar bg-success"
-                                            style="width: 35%; background: linear-gradient(90deg, #10b981, #059669) !important;">
+                                    </div>
+                                </div>
+
+                                <!-- Task Status Items -->
+                                <div class="task-status-grid">
+                                    <div class="task-status-item">
+                                        <div class="task-icon"
+                                            style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                                            <i class="fas fa-check-circle text-white"></i>
                                         </div>
-                                        <div class="progress-bar bg-warning"
-                                            style="width: 41%; background: linear-gradient(90deg, #f59e0b, #d97706) !important;">
+                                        <div class="task-details">
+                                            <h4 id="completedTasksCount" class="text-dark">0</h4>
+                                            <p>Completed</p>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="progress-labels d-flex justify-content-between small text-muted">
-                                    <span>24%</span>
-                                    <span>35%</span>
-                                    <span>41%</span>
-                                </div>
-                            </div>
 
-                            <!-- Task Status Items -->
-                            <div class="task-status-grid">
-                                <div class="task-status-item text-center mb-3">
-                                    <div class="task-icon mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle"
-                                        style="width: 50px; height: 50px; background: rgba(6, 182, 212, 0.1);">
-                                        <i class="fas fa-check-circle text-info"
-                                            style="font-size: 18px; color: #06b6d4 !important;"></i>
+                                    <div class="task-status-item">
+                                        <div class="task-icon"
+                                            style="background: linear-gradient(135deg, #10b981, #059669);">
+                                            <i class="fas fa-spinner text-white"></i>
+                                        </div>
+                                        <div class="task-details">
+                                            <h4 id="inProgressTasksCount" class="text-dark">0</h4>
+                                            <p>In-Progress</p>
+                                        </div>
                                     </div>
-                                    <h4 class="task-number mb-1 fw-bold text-dark">8</h4>
-                                    <p class="task-label small text-muted mb-0">Completed</p>
-                                </div>
 
-                                <div class="task-status-item text-center mb-3">
-                                    <div class="task-icon mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle"
-                                        style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1);">
-                                        <i class="fas fa-spinner text-success"
-                                            style="font-size: 18px; color: #10b981 !important;"></i>
+                                    <div class="task-status-item">
+                                        <div class="task-icon"
+                                            style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                            <i class="fas fa-clock text-white"></i>
+                                        </div>
+                                        <div class="task-details">
+                                            <h4 id="upcomingTasksCount" class="text-dark">0</h4>
+                                            <p>Up Coming</p>
+                                        </div>
                                     </div>
-                                    <h4 class="task-number mb-1 fw-bold text-dark">12</h4>
-                                    <p class="task-label small text-muted mb-0">In-Progress</p>
-                                </div>
-
-                                <div class="task-status-item text-center mb-3">
-                                    <div class="task-icon mx-auto mb-2 d-flex align-items-center justify-content-center rounded-circle"
-                                        style="width: 50px; height: 50px; background: rgba(245, 158, 11, 0.1);">
-                                        <i class="fas fa-clock text-warning"
-                                            style="font-size: 18px; color: #f59e0b !important;"></i>
-                                    </div>
-                                    <h4 class="task-number mb-1 fw-bold text-dark">14</h4>
-                                    <p class="task-label small text-muted mb-0">Up Coming</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <!-- Permit Lists -->
+            <div class="row mb-4 g-3">
                 <!-- Approved Permits -->
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card card-round shadow-sm h-100">
+                <div class="col-12 col-md-6">
+                    <div class="card card-round shadow-sm mini-permit-card">
                         <div class="card-header border-bottom">
                             <h5 class="card-title mb-0 fw-bold text-dark">Approved Permits</h5>
                         </div>
                         <div class="card-body">
-                            <!-- Table content will be added here -->
                             <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
+                                <table id="approvedPermitsTable" class="table table-sm table-hover">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th class="small text-muted">Permit ID</th>
-                                            <th class="small text-muted">Status</th>
+                                            <th class="small text-muted">Serial Number</th>
+                                            <th class="small text-muted">Permit Number</th>
+                                            <th class="small text-muted">Permit Title</th>
+                                            <th class="small text-muted">Submitted Date & Time</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- Table data will be populated here -->
+                                        <!-- Data will be populated dynamically -->
                                     </tbody>
                                 </table>
                             </div>
@@ -387,23 +390,24 @@
                 </div>
 
                 <!-- Rejected Permits -->
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card card-round shadow-sm h-100">
+                <div class="col-12 col-md-6">
+                    <div class="card card-round shadow-sm mini-permit-card">
                         <div class="card-header border-bottom">
                             <h5 class="card-title mb-0 fw-bold text-dark">Rejected Permits</h5>
                         </div>
                         <div class="card-body">
-                            <!-- Table content will be added here -->
                             <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
+                                <table id="rejectedPermitsTable" class="table table-sm table-hover">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th class="small text-muted">Permit ID</th>
-                                            <th class="small text-muted">Status</th>
+                                            <th class="small text-muted">Serial Number</th>
+                                            <th class="small text-muted">Permit Number</th>
+                                            <th class="small text-muted">Permit Title</th>
+                                            <th class="small text-muted">Rejected Date & Time</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- Table data will be populated here -->
+                                        <!-- Data will be populated dynamically -->
                                     </tbody>
                                 </table>
                             </div>
@@ -486,235 +490,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- Comprehensive Pending Permits Data -->
-                                        <tr>
-                                            <td class="small">PTW-001</td>
-                                            <td class="small fw-medium">Construction Work Permit - Al Ain Tower</td>
-                                            <td class="small">07/10/2025, 14:30</td>
-                                            <td class="small">Ahmed Hassan Al-Mahmoud</td>
-                                            <td class="small">Safety documentation verified, site inspection completed
-                                            </td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request More Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-002</td>
-                                            <td class="small fw-medium">Environmental Permit - Industrial Waste
-                                                Management</td>
-                                            <td class="small">07/10/2025, 12:15</td>
-                                            <td class="small">Dr. Sarah Al-Mansouri</td>
-                                            <td class="small">Environmental impact assessment reviewed, minor
-                                                adjustments needed</td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-003</td>
-                                            <td class="small fw-medium">Trade License Renewal - Emirates Trading LLC
-                                            </td>
-                                            <td class="small">07/10/2025, 09:45</td>
-                                            <td class="small">Mohammad Khalil Ibrahim</td>
-                                            <td class="small">All compliance requirements met, financial documents
-                                                verified</td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-004</td>
-                                            <td class="small fw-medium">Fire Safety Certificate - Mall Extension</td>
-                                            <td class="small">06/10/2025, 16:20</td>
-                                            <td class="small">Eng. Fatima Al-Zahra</td>
-                                            <td class="small">Fire safety systems installed, emergency exits approved
-                                            </td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-005</td>
-                                            <td class="small fw-medium">Excavation Permit - Dubai Metro Line Extension
-                                            </td>
-                                            <td class="small">06/10/2025, 13:50</td>
-                                            <td class="small">Khalid Al-Rashid</td>
-                                            <td class="small">Utility clearance obtained, traffic management plan
-                                                approved</td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-006</td>
-                                            <td class="small fw-medium">Food Service License - Jumeirah Beach Restaurant
-                                            </td>
-                                            <td class="small">06/10/2025, 11:30</td>
-                                            <td class="small">Amina Youssef</td>
-                                            <td class="small">Health inspection passed, kitchen facilities meet
-                                                standards</td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-007</td>
-                                            <td class="small fw-medium">Signage Installation Permit - Business Bay
-                                                District</td>
-                                            <td class="small">05/10/2025, 15:45</td>
-                                            <td class="small">Omar Al-Suwaidi</td>
-                                            <td class="small">Design approved, structural assessment completed</td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-008</td>
-                                            <td class="small fw-medium">Telecommunications Installation - 5G Tower</td>
-                                            <td class="small">05/10/2025, 10:20</td>
-                                            <td class="small">Eng. Rashid Al-Maktoum</td>
-                                            <td class="small">RF emission tests completed, community consultation done
-                                            </td>
-                                            <td class="small">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                                        title="View Details">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm"
-                                                        title="Approve">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                                        title="Reject">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm"
-                                                        title="Request Info">
-                                                        <i class="fas fa-question-circle"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <!-- Data will be populated dynamically from database -->
+
+
+
+
+
+
+
                                     </tbody>
                                 </table>
                             </div>
@@ -722,290 +505,7 @@
                     </div>
                 </div>
 
-                <!-- Approved Permits Table -->
-                <div class="col-12 mt-4">
-                    <div class="card card-round mb-3">
-                        <div class="card-header">
-                            <div class="card-head-row">
-                                <div class="card-title">
-                                    <h5 class="mb-0 fw-bold">Approved Permits</h5>
-                                    <small class="text-muted">View all approved permit applications</small>
-                                </div>
-                                <div class="card-tools">
-                                    <div class="dropdown">
-                                        <button class="btn btn-success btn-sm dropdown-toggle me-2" type="button"
-                                            id="approvedExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="fas fa-download me-1"></i>Export
-                                        </button>
-                                        <ul class="dropdown-menu" aria-labelledby="approvedExportDropdown">
-                                            <li><a class="dropdown-item" href="#" onclick="exportApprovedToCSV()"><i
-                                                        class="fas fa-file-csv me-2"></i>Export to CSV</a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="exportApprovedToExcel()"><i
-                                                        class="fas fa-file-excel me-2"></i>Export to Excel</a></li>
-                                        </ul>
-                                    </div>
-                                    <button class="btn btn-info btn-sm" onclick="printApprovedTable()">
-                                        <i class="fas fa-print me-1"></i>Print
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="approvedPermitsTable" class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="text-center table-header-dynamic" data-field="permitNumber">
-                                                <div class="header-content">
-                                                    <i class="fas fa-certificate me-2"></i>
-                                                    <span>Permit Number</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="permitTitle">
-                                                <div class="header-content">
-                                                    <i class="fas fa-file-contract me-2"></i>
-                                                    <span>Permit Title</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="submittedDateTime">
-                                                <div class="header-content">
-                                                    <i class="fas fa-calendar-alt me-2"></i>
-                                                    <span>Submitted Date & Time</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="preApproverName">
-                                                <div class="header-content">
-                                                    <i class="fas fa-user-check me-2"></i>
-                                                    <span>Pre Approver Name</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic"
-                                                data-field="preApproverDecision">
-                                                <div class="header-content">
-                                                    <i class="fas fa-gavel me-2"></i>
-                                                    <span>Pre Approver Decision</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic"
-                                                data-field="preApproverDateTime">
-                                                <div class="header-content">
-                                                    <i class="fas fa-clock me-2"></i>
-                                                    <span>Pre Approver Date & Time</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic"
-                                                data-field="preApproverRemarks">
-                                                <div class="header-content">
-                                                    <i class="fas fa-comment-alt me-2"></i>
-                                                    <span>Pre Approver Remarks</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="approverDecision">
-                                                <div class="header-content">
-                                                    <i class="fas fa-stamp me-2"></i>
-                                                    <span>Approver Decision</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="approverDateTime">
-                                                <div class="header-content">
-                                                    <i class="fas fa-history me-2"></i>
-                                                    <span>Approver Date & Time</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="approverRemarks">
-                                                <div class="header-content">
-                                                    <i class="fas fa-comments me-2"></i>
-                                                    <span>Approver Remarks</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="permitStatus">
-                                                <div class="header-content">
-                                                    <i class="fas fa-flag me-2"></i>
-                                                    <span>Permit Status</span>
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Approved Permits Data -->
-                                        <tr>
-                                            <td class="small">PTW-A001</td>
-                                            <td class="small fw-medium">Construction Work Permit - Marina Plaza</td>
-                                            <td class="small">05/10/2025, 11:20</td>
-                                            <td class="small">Ahmed Hassan Al-Mahmoud</td>
-                                            <td class="small"><span class="badge bg-success">Approved</span></td>
-                                            <td class="small">05/10/2025, 15:45</td>
-                                            <td class="small">All safety protocols verified, site inspection passed</td>
-                                            <td class="small"><span class="badge bg-success">Final Approved</span></td>
-                                            <td class="small">06/10/2025, 10:30</td>
-                                            <td class="small">Construction permit granted with all conditions met</td>
-                                            <td class="small"><span class="badge bg-success">Active</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-A002</td>
-                                            <td class="small fw-medium">Trade License - Gulf Trading Co.</td>
-                                            <td class="small">04/10/2025, 09:15</td>
-                                            <td class="small">Dr. Sarah Al-Mansouri</td>
-                                            <td class="small"><span class="badge bg-success">Approved</span></td>
-                                            <td class="small">04/10/2025, 16:20</td>
-                                            <td class="small">Financial documentation complete, compliance verified</td>
-                                            <td class="small"><span class="badge bg-success">Final Approved</span></td>
-                                            <td class="small">05/10/2025, 11:45</td>
-                                            <td class="small">License approved for 3-year period</td>
-                                            <td class="small"><span class="badge bg-success">Active</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-A003</td>
-                                            <td class="small fw-medium">Environmental Clearance - Solar Farm Project
-                                            </td>
-                                            <td class="small">03/10/2025, 14:30</td>
-                                            <td class="small">Eng. Mohammad Khalil</td>
-                                            <td class="small"><span class="badge bg-success">Approved</span></td>
-                                            <td class="small">03/10/2025, 17:10</td>
-                                            <td class="small">Environmental impact assessment satisfactory</td>
-                                            <td class="small"><span class="badge bg-success">Final Approved</span></td>
-                                            <td class="small">04/10/2025, 09:25</td>
-                                            <td class="small">Project approved with environmental monitoring conditions
-                                            </td>
-                                            <td class="small"><span class="badge bg-success">Active</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Rejected Permits Table -->
-                <div class="col-12 mt-4">
-                    <div class="card card-round mb-3">
-                        <div class="card-header">
-                            <div class="card-head-row">
-                                <div class="card-title">
-                                    <h5 class="mb-0 fw-bold">Rejected Permits</h5>
-                                    <small class="text-muted">View all rejected permit applications</small>
-                                </div>
-                                <div class="card-tools">
-                                    <div class="dropdown">
-                                        <button class="btn btn-danger btn-sm dropdown-toggle me-2" type="button"
-                                            id="rejectedExportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="fas fa-download me-1"></i>Export
-                                        </button>
-                                        <ul class="dropdown-menu" aria-labelledby="rejectedExportDropdown">
-                                            <li><a class="dropdown-item" href="#" onclick="exportRejectedToCSV()"><i
-                                                        class="fas fa-file-csv me-2"></i>Export to CSV</a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="exportRejectedToExcel()"><i
-                                                        class="fas fa-file-excel me-2"></i>Export to Excel</a></li>
-                                        </ul>
-                                    </div>
-                                    <button class="btn btn-info btn-sm" onclick="printRejectedTable()">
-                                        <i class="fas fa-print me-1"></i>Print
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="rejectedPermitsTable" class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="text-center table-header-dynamic" data-field="permitNumber">
-                                                <div class="header-content">
-                                                    <i class="fas fa-certificate me-2"></i>
-                                                    <span>Permit Number</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="permitTitle">
-                                                <div class="header-content">
-                                                    <i class="fas fa-file-contract me-2"></i>
-                                                    <span>Permit Title</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="submittedDateTime">
-                                                <div class="header-content">
-                                                    <i class="fas fa-calendar-alt me-2"></i>
-                                                    <span>Submitted Date & Time</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="preApproverName">
-                                                <div class="header-content">
-                                                    <i class="fas fa-user-check me-2"></i>
-                                                    <span>Pre Approver Name</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic"
-                                                data-field="preApproverDecision">
-                                                <div class="header-content">
-                                                    <i class="fas fa-gavel me-2"></i>
-                                                    <span>Pre Approver Decision</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic"
-                                                data-field="preApproverDateTime">
-                                                <div class="header-content">
-                                                    <i class="fas fa-clock me-2"></i>
-                                                    <span>Pre Approver Date & Time</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic"
-                                                data-field="preApproverRemarks">
-                                                <div class="header-content">
-                                                    <i class="fas fa-comment-alt me-2"></i>
-                                                    <span>Pre Approver Remarks</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="approverDecision">
-                                                <div class="header-content">
-                                                    <i class="fas fa-stamp me-2"></i>
-                                                    <span>Approver Decision</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="approverDateTime">
-                                                <div class="header-content">
-                                                    <i class="fas fa-clock me-2"></i>
-                                                    <span>Approver Date & Time</span>
-                                                </div>
-                                            </th>
-                                            <th class="text-center table-header-dynamic" data-field="approverRemarks">
-                                                <div class="header-content">
-                                                    <i class="fas fa-comments me-2"></i>
-                                                    <span>Approver Remarks</span>
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Rejected Permits Data -->
-                                        <tr>
-                                            <td class="small">PTW-R001</td>
-                                            <td class="small fw-medium">Industrial Waste Disposal - Chemical Plant</td>
-                                            <td class="small">02/10/2025, 16:45</td>
-                                            <td class="small">Dr. Fatima Al-Zahra</td>
-                                            <td class="small"><span class="badge bg-danger">Rejected</span></td>
-                                            <td class="small">04/10/2025, 08:20</td>
-                                            <td class="small">Environmental impact assessment insufficient</td>
-                                            <td class="small"><span class="badge bg-danger">Final Rejected</span></td>
-                                            <td class="small">05/10/2025, 14:15</td>
-                                            <td class="small">Does not meet environmental safety standards</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">PTW-R002</td>
-                                            <td class="small fw-medium">Building Permit - Unauthorized Extension</td>
-                                            <td class="small">01/10/2025, 12:30</td>
-                                            <td class="small">Khalid Al-Rashid</td>
-                                            <td class="small"><span class="badge bg-danger">Rejected</span></td>
-                                            <td class="small">03/10/2025, 11:45</td>
-                                            <td class="small">Structural plans do not meet building codes</td>
-                                            <td class="small"><span class="badge bg-danger">Final Rejected</span></td>
-                                            <td class="small">04/10/2025, 16:30</td>
-                                            <td class="small">Violation of zoning regulations and safety standards</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Approved and Rejected Permits tables removed as per request -->
         </main>
     </div>
 
@@ -1022,7 +522,153 @@
                 </div>
                 <div class="modal-body">
                     <div id="permitDetailsContent">
-                        <!-- Content will be loaded dynamically -->
+                        <!-- Basic Permit Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Permit Information
+                                </h6>
+                                <div class="card border-light">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Permit Number:</strong> <span id="modalPermitNumber">-</span>
+                                                </p>
+                                                <p><strong>Permit Title:</strong> <span id="modalPermitTitle">-</span>
+                                                </p>
+                                                <p><strong>Requester:</strong> <span id="modalRequester">-</span></p>
+                                                <p><strong>Department:</strong> <span id="modalDepartment">-</span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Submitted Date:</strong> <span
+                                                        id="modalSubmittedDate">-</span></p>
+                                                <p><strong>Work Location:</strong> <span id="modalWorkLocation">-</span>
+                                                </p>
+                                                <p><strong>Priority:</strong> <span id="modalPriority">-</span></p>
+                                                <p><strong>Status:</strong> <span id="modalCurrentStatus"
+                                                        class="badge bg-success">Approved</span></p>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <p><strong>Work Description:</strong></p>
+                                                <p class="text-muted" id="modalWorkDescription">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pre-Approver Decision -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-warning mb-3">
+                                    <i class="fas fa-user-check me-2"></i>Pre-Approver Decision
+                                </h6>
+                                <div class="card border-warning">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Pre-Approver:</strong> <span id="modalPreApprover">-</span>
+                                                </p>
+                                                <p><strong>Decision Date:</strong> <span
+                                                        id="modalPreApprovalDate">-</span></p>
+                                                <p><strong>Status:</strong> <span id="modalPreApprovalStatus"
+                                                        class="badge bg-secondary">-</span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Processing Time:</strong> <span
+                                                        id="modalPreProcessingTime">-</span></p>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <p><strong>Pre-Approver Comments:</strong></p>
+                                                <div class="border rounded p-3 bg-light">
+                                                    <p class="mb-0 text-muted" id="modalPreApproverComments">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Final Approver Decision -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-success mb-3">
+                                    <i class="fas fa-stamp me-2"></i>Final Approver Decision
+                                </h6>
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Approver:</strong> <span id="modalFinalApprover">-</span></p>
+                                                <p><strong>Decision Date:</strong> <span
+                                                        id="modalFinalApprovalDate">-</span></p>
+                                                <p><strong>Status:</strong> <span id="modalFinalStatus"
+                                                        class="badge bg-secondary">-</span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Total Processing Time:</strong> <span
+                                                        id="modalTotalProcessingTime">-</span></p>
+                                                <p><strong>Valid Until:</strong> <span id="modalValidUntil">-</span></p>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <p><strong>Final Approver Comments:</strong></p>
+                                                <div class="border rounded p-3 bg-light">
+                                                    <p class="mb-0 text-muted" id="modalFinalApproverComments">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Assessment & Safety Measures -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-info mb-3">
+                                    <i class="fas fa-shield-alt me-2"></i>Risk Assessment & Safety Measures
+                                </h6>
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Risk Level:</strong> <span
+                                                        class="badge bg-warning">Medium</span></p>
+                                                <p><strong>Required PPE:</strong></p>
+                                                <ul class="mb-0">
+                                                    <li>Safety helmet</li>
+                                                    <li>Electrical gloves</li>
+                                                    <li>Safety goggles</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Safety Checklist:</strong></p>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                    <label class="form-check-label">Power isolation confirmed</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                    <label class="form-check-label">Safety barriers installed</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" checked disabled>
+                                                    <label class="form-check-label">Emergency contacts notified</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
