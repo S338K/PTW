@@ -314,15 +314,27 @@ async function fetchUserProfile() {
 
         // Display client IP under last-login if provided by server
         if (currentUser.clientIp) {
+            const normalizeIp = (ip) => {
+                if (!ip) return ip;
+                // IPv6 loopback
+                if (ip === '::1') return '127.0.0.1';
+                // IPv6-mapped IPv4 like ::ffff:127.0.0.1
+                if (ip.startsWith('::ffff:')) return ip.split(':').pop();
+                return ip;
+            };
+
             const existing = document.getElementById('clientIp');
-            if (existing) existing.textContent = `IP: ${currentUser.clientIp}`;
+            const displayIp = normalizeIp(currentUser.clientIp);
+            if (existing) existing.textContent = `IP Address: ${displayIp}`;
             else {
                 const lastLogin = document.querySelector('.last-login');
                 if (lastLogin) {
-                    const ipEl = document.createElement('div');
-                    ipEl.className = 'text-muted small mt-1';
+                    const ipEl = document.createElement('p');
+                    ipEl.className = 'mb-1 text-muted small';
                     ipEl.id = 'clientIp';
-                    ipEl.textContent = `IP: ${currentUser.clientIp}`;
+                    ipEl.textContent = `IP Address: ${displayIp}`;
+                    // Keep raw IP available on hover
+                    ipEl.title = `Raw IP: ${currentUser.clientIp}`;
                     lastLogin.insertAdjacentElement('afterend', ipEl);
                 }
             }
@@ -339,11 +351,11 @@ async function fetchUserProfile() {
 function updateProfileDisplay(user) {
     if (!user) return;
 
-    // Update profile name
+    // Update profile name (prefer fullName, fallback to username)
+    const displayName = user.fullName || user.username || user.fullname || 'User';
     const profileName = document.querySelector('.profile-name');
     if (profileName) {
-        // Use full name consistently across header and profile overview
-        profileName.textContent = user.username || user.fullname || 'User';
+        profileName.textContent = displayName;
     }
 
     // Update profile email
@@ -351,6 +363,9 @@ function updateProfileDisplay(user) {
     if (profileEmail) {
         profileEmail.textContent = user.email || '';
     }
+    // Also update the dropdown email shown in the floating sidebar/header
+    const dropdownEmail = document.getElementById('dropdownEmail');
+    if (dropdownEmail) dropdownEmail.textContent = user.email || '';
 
     // Update profile contact (if available)
     const profileContact = document.querySelector('.profile-contact');
@@ -360,17 +375,17 @@ function updateProfileDisplay(user) {
         profileContact.style.display = 'none';
     }
 
-    // Update avatar initials
+    // Update avatar initials from the display name
     const avatarCircle = document.querySelector('.avatar-circle');
-    if (avatarCircle && user.username) {
-        const initials = user.username.split(' ')
+    if (avatarCircle && displayName) {
+        const initials = displayName.split(' ')
             .map(name => name.charAt(0).toUpperCase())
             .slice(0, 2)
             .join('');
         avatarCircle.textContent = initials;
     }
 
-    // Update last login
+    // Update last login and normalize font to match other profile details
     const lastLogin = document.querySelector('.last-login');
     if (lastLogin && user.lastLogin) {
         // Format: MMMM, DD, YYYY at HH:MM (24hrs)
@@ -380,16 +395,18 @@ function updateProfileDisplay(user) {
         const formatted = `${monthNames[loginDate.getMonth()]}, ${pad(loginDate.getDate())}, ${loginDate.getFullYear()} at ${pad(loginDate.getHours())}:${pad(loginDate.getMinutes())}`;
         lastLogin.textContent = `Last Login: ${formatted}`;
         lastLogin.dataset.raw = loginDate.toISOString();
+        // use same small muted styling as email/phone for uniform font
+        lastLogin.className = 'mb-1 text-muted small last-login';
     }
 
-    // Update header username
-    const headerUsername = document.querySelector('.profile-username .fw-bold');
-    if (headerUsername && user.username) {
-        // Show first name in header but derived from same full name
-        const full = user.username || user.fullname || 'User';
-        const firstName = full.split(' ')[0];
+    // Update header and dropdown usernames (use first name for header)
+    const headerUsername = document.getElementById('headerUsername');
+    if (headerUsername) {
+        const firstName = displayName.split(' ')[0];
         headerUsername.textContent = firstName;
     }
+    const dropdownUsername = document.getElementById('dropdownUsername');
+    if (dropdownUsername) dropdownUsername.textContent = displayName;
 }
 
 
