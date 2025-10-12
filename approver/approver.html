@@ -19,7 +19,6 @@
 </head>
 
 <body class="dasher-bg">
-    <!-- Sidebar Trigger Button moved to header next to search box -->
     <!-- Sidebar -->
     <nav id="sidebar" class="sidebar bg-white border-end position-fixed top-0 start-0 vh-100 d-flex flex-column">
         <div class="sidebar-logo p-3 border-bottom text-center">
@@ -350,8 +349,8 @@
                                             <i class="fas fa-clock text-white"></i>
                                         </div>
                                         <div class="task-details">
-                                            <h4 id="upcomingTasksCount" class="text-dark">0</h4>
-                                            <p>Up Coming</p>
+                                            <h4 id="pendingTasksCount" class="text-dark">0</h4>
+                                            <p>Pending</p>
                                         </div>
                                     </div>
                                 </div>
@@ -758,19 +757,30 @@
                     <form id="updateProfileForm">
                         <div class="mb-3">
                             <label for="profileUsername" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="profileUsername" required>
+                            <input type="text" class="form-control" id="profileUsername" required readonly>
                         </div>
                         <div class="mb-3">
                             <label for="profileEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="profileEmail" required>
+                            <input type="email" class="form-control" id="profileEmail" required readonly>
                         </div>
                         <div class="mb-3">
                             <label for="profileCompany" class="form-label">Company</label>
-                            <input type="text" class="form-control" id="profileCompany">
+                            <input type="text" class="form-control" id="profileCompany" readonly>
                         </div>
                         <div class="mb-3">
                             <label for="profilePhone" class="form-label">Phone Number</label>
                             <input type="tel" class="form-control" id="profilePhone">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="profileRemark" class="form-label">Remark (required for any update)</label>
+                            <textarea id="profileRemark" class="form-control"
+                                placeholder="Add a short remark describing the update" required></textarea>
+                        </div>
+
+                        <div class="mb-2 small text-muted">
+                            <div>Profile last updated: <span id="profileUpdatedAt">-</span></div>
+                            <div>Password last updated: <span id="passwordUpdatedAt">-</span></div>
                         </div>
                     </form>
                 </div>

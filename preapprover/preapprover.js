@@ -36,7 +36,15 @@ function updateStats(permits) {
     if (rejectedElement) rejectedElement.textContent = rejectedByMe;
     if (approvalRateElement) approvalRateElement.textContent = `${approvalRate}%`;
     if (inProgressElement) inProgressElement.textContent = inProgress;
-    preApproverLastLoginEl.textContent = message;
+    // Defensive: some pages don't have preApproverLastLoginEl/message defined
+    try {
+        if (typeof preApproverLastLoginEl !== 'undefined' && preApproverLastLoginEl && typeof message !== 'undefined') {
+            preApproverLastLoginEl.textContent = message;
+        }
+    } catch (e) {
+        // ignore - not critical for permit rendering
+        // console.debug('preApproverLastLoginEl not present or message undefined');
+    }
 }
 
 // 🔹 Load stats and render chart + counters

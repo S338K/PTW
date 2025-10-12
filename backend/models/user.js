@@ -43,6 +43,20 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
 
+    // Simple audit logs for profile and password changes
+    profileUpdateLogs: [
+      {
+        remark: { type: String, trim: true },
+        updatedAt: { type: Date, default: Date.now }
+      }
+    ],
+    passwordUpdateLogs: [
+      {
+        remark: { type: String, trim: true },
+        updatedAt: { type: Date, default: Date.now }
+      }
+    ],
+
     // 🔹 New Office Address subdocument
     officeAddress: {
       buildingNo: { type: String, trim: true },

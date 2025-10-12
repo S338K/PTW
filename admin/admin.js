@@ -213,7 +213,7 @@ async function loadPermits() {
     );
 
     try {
-        const res = await fetch(`${API_BASE}/admin/permits`, { credentials: "include" });
+        const res = await fetch(`${API_BASE}/admin/permit`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load permits");
         const permits = await res.json();
 

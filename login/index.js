@@ -3,6 +3,20 @@ import '../theme.js';
 import { API_BASE } from '../config.js';
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Remove any duplicate password toggle buttons/eye icons if present
+    setTimeout(() => {
+        const passwordField = document.getElementById('password');
+        if (passwordField) {
+            const parent = passwordField.parentElement;
+            if (parent) {
+                const toggles = parent.querySelectorAll('#togglePassword');
+                if (toggles.length > 1) {
+                    // Keep only the first toggle button
+                    toggles.forEach((btn, idx) => { if (idx > 0) btn.remove(); });
+                }
+            }
+        }
+    }, 0);
     const dateTimeEl = document.getElementById('dateTimeDisplay');
     const weatherEl = document.getElementById('tempDisplay');
 
@@ -12,7 +26,6 @@ document.addEventListener('DOMContentLoaded', function () {
             this.container = document.getElementById('backgroundCarousel');
             this.images = [
                 'Hamad-Exterior-01-1900.jpg',
-                'HIA-27.jpg',
                 'orchard.jpg'
                 // Add or remove images here - system will automatically adapt
             ];
@@ -350,19 +363,67 @@ document.addEventListener('DOMContentLoaded', function () {
         let span = group.querySelector('.error-message');
         if (!span) {
             span = document.createElement('span');
-            span.className = 'error-message';
+            span.className = 'error-message modern-error-message';
             span.setAttribute('aria-live', 'polite');
-            // Insert error message before the input element instead of after
-            group.insertBefore(span, inputEl);
+            group.appendChild(span);
         }
         span.textContent = message || '';
         if (message) {
             inputEl.classList.add('invalid');
             inputEl.classList.remove('valid');
+            span.style.opacity = 1;
+            span.style.transform = 'translateY(0) scale(1.05)';
+            span.style.display = 'block';
+            setTimeout(() => {
+                span.style.transform = 'translateY(0) scale(1)';
+            }, 100);
         } else {
             inputEl.classList.remove('invalid');
             inputEl.classList.add('valid');
+            span.style.opacity = 0;
+            span.style.display = 'none';
         }
+    }
+
+    // Modern error message CSS (inject if not present)
+    if (!document.getElementById('modern-error-style')) {
+        const style = document.createElement('style');
+        style.id = 'modern-error-style';
+        style.textContent = `
+        .modern-error-message {
+            background: linear-gradient(90deg, #f87171 0%, #fbbf24 100%);
+            color: #fff;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            margin-top: 0.25rem;
+            font-size: 0.95em;
+            font-weight: 600;
+            box-shadow: 0 2px 8px 0 rgba(249, 115, 22, 0.08);
+            opacity: 0;
+            display: none;
+            transition: opacity 0.3s, transform 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+        .invalid {
+            border-color: #f87171 !important;
+            box-shadow: 0 0 0 2px #f8717133;
+        }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function resetLoginButton() {
+        if (!loginBtn) return;
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('success', 'success-animation');
+        loginBtn.style.background = '';
+        loginBtn.innerHTML = `
+            <span class="relative z-10 flex items-center justify-center">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Sign in to your account
+            </span>
+        `;
     }
 
     function validateEmail(value) {
@@ -425,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const data = await res.json();
 
                 if (!res.ok) {
+                    resetLoginButton();
                     if (data.message && data.message.toLowerCase().includes('email')) {
                         showError(emailEl, data.message);
                     } else if (data.message && data.message.toLowerCase().includes('password')) {
@@ -437,24 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 sessionStorage.setItem('previousLogin', data.user.lastLogin || '');
 
-                // Enhanced success animation with Tailwind classes
-                loginBtn.disabled = true;
-                loginBtn.classList.add('success');
-                loginBtn.innerHTML = `
-                    <span class="relative z-10 flex items-center justify-center">
-                        <i class="fas fa-check-circle mr-2 animate-bounce"></i>
-                        Login Successful!
-                    </span>
-                `;
-
-                // Apply success styling
-                loginBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                loginBtn.classList.add('success-animation');
-
-                // Add confetti effect (visual feedback)
-                const rect = loginBtn.getBoundingClientRect();
-                createConfettiEffect(rect.left + rect.width / 2, rect.top + rect.height / 2);
-
+                // No animation or success styling, just redirect after login
                 setTimeout(() => {
                     switch (data.user.role) {
                         case 'PreApprover':
@@ -469,9 +514,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         default:
                             window.location.href = '../profile/profile.html';
                     }
-                }, 1000);
+                }, 500);
 
             } catch {
+                resetLoginButton();
                 showError(passwordEl, 'Network error. Please try again.');
             }
         });
@@ -545,23 +591,21 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add loading animation to login button
     function setLoginLoading(loading) {
         if (loading) {
-            loginBtn.classList.add('loading');
-            loginBtn.innerHTML = `
-                <span class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Signing in...
-                </span>
-            `;
             loginBtn.disabled = true;
-        } else {
-            loginBtn.classList.remove('loading');
             loginBtn.innerHTML = `
-                <span class="relative z-10 flex items-center justify-center">
-                    <i class="fas fa-sign-in-alt mr-2"></i>
-                    Sign in to your account
-                </span>
-            `;
+            <span class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Signing in...
+            </span>
+        `;
+        } else {
             loginBtn.disabled = false;
+            loginBtn.innerHTML = `
+            <span class="relative z-10 flex items-center justify-center">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Sign in to your account
+            </span>
+        `;
         }
     }
 

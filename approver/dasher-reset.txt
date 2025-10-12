@@ -1,1 +1,0 @@
-All previous dashboard files will be removed and replaced with a Dasher UI inspired dashboard.

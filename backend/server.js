@@ -74,13 +74,15 @@ if (isProd) app.set('trust proxy', 1);
 
 // Use environment-specific session secrets
 const DEFAULT_DEV_SECRET = 'PTW-2024-simple-dev-session-key-for-local-testing';
+// Accept multiple env names for convenience. In production provide SESSION_SECRET_PROD;
+// if it's missing but SESSION_SECRET exists (common), use that as a fallback.
 const sessionSecret = isProd
-  ? process.env.SESSION_SECRET_PROD
-  : process.env.SESSION_SECRET_DEV || DEFAULT_DEV_SECRET;
+  ? process.env.SESSION_SECRET_PROD || process.env.SESSION_SECRET || process.env.SESSION_SECRET_DEV || DEFAULT_DEV_SECRET
+  : process.env.SESSION_SECRET_DEV || process.env.SESSION_SECRET || DEFAULT_DEV_SECRET;
 
 // Ensure a session secret is provided in production for cryptographic safety
-if (isProd && !process.env.SESSION_SECRET_PROD) {
-  throw new Error('SESSION_SECRET_PROD must be set in production environment');
+if (isProd && !sessionSecret) {
+  throw new Error('SESSION_SECRET_PROD (or SESSION_SECRET) must be set in production environment');
 }
 
 app.use(

@@ -2,8 +2,157 @@ import { checkSession, initIdleTimer, logoutUser } from "../session.js";
 import { formatDate24, formatLastLogin } from "../date-utils.js";
 import { API_BASE } from '../config.js';
 
+// ========== ENHANCED DROPDOWN MANAGEMENT SYSTEM ==========
+function toggleProfileDropdown(event) {
+  console.log('🔴 toggleProfileDropdown CALLED');
+
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const dropdown = document.getElementById('profileDropdown');
+  const button = document.getElementById('profileDropdownBtn');
+
+  if (!dropdown || !button) {
+    console.error('Dropdown elements not found');
+    return;
+  }
+
+  const isHidden = dropdown.classList.contains('hidden');
+
+  // Close notification dropdown first
+  const notificationDropdown = document.getElementById('notificationDropdown');
+  if (notificationDropdown) {
+    notificationDropdown.classList.add('hidden');
+  }
+
+  // Toggle profile dropdown
+  if (isHidden) {
+    dropdown.classList.remove('hidden');
+  } else {
+    dropdown.classList.add('hidden');
+  }
+
+  console.log('✅ Profile dropdown toggled, new state:', isHidden ? 'visible' : 'hidden');
+}
+
+function toggleNotifications(event) {
+  console.log('🔔 toggleNotifications CALLED');
+
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const dropdown = document.getElementById('notificationDropdown');
+  const button = document.getElementById('notificationBtn');
+
+  if (!dropdown || !button) {
+    console.error('Notification elements not found');
+    return;
+  }
+
+  const isHidden = dropdown.classList.contains('hidden');
+
+  // Close profile dropdown first
+  const profileDropdown = document.getElementById('profileDropdown');
+  if (profileDropdown) {
+    profileDropdown.classList.add('hidden');
+  }
+
+  // Toggle notification dropdown
+  if (isHidden) {
+    dropdown.classList.remove('hidden');
+    loadNotifications();
+  } else {
+    dropdown.classList.add('hidden');
+  }
+
+  console.log('✅ Notifications dropdown toggled, new state:', isHidden ? 'visible' : 'hidden');
+}
+
+function setupDropdownCloseHandlers() {
+  document.addEventListener('click', function (e) {
+    const profileButton = document.getElementById('profileDropdownBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const notificationButton = document.getElementById('notificationBtn');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+
+    // Check if click is outside profile dropdown
+    if (profileDropdown && !profileDropdown.contains(e.target) && profileButton && !profileButton.contains(e.target)) {
+      if (!profileDropdown.classList.contains('hidden')) {
+        console.log('Closing profile dropdown via outside click');
+        profileDropdown.classList.add('hidden');
+      }
+    }
+
+    // Check if click is outside notification dropdown
+    if (notificationDropdown && !notificationDropdown.contains(e.target) && notificationButton && !notificationButton.contains(e.target)) {
+      if (!notificationDropdown.classList.contains('hidden')) {
+        console.log('Closing notification dropdown via outside click');
+        notificationDropdown.classList.add('hidden');
+      }
+    }
+  });
+
+  // Close dropdowns when pressing Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      const profileDropdown = document.getElementById('profileDropdown');
+      const notificationDropdown = document.getElementById('notificationDropdown');
+
+      if (profileDropdown) profileDropdown.classList.add('hidden');
+      if (notificationDropdown) notificationDropdown.classList.add('hidden');
+    }
+  });
+}
+
+// ========== DEBUGGING HELPER ==========
+function testDropdowns() {
+  console.log('=== DROPDOWN DEBUG INFO ===');
+  console.log('Profile button:', document.getElementById('profileDropdownBtn'));
+  console.log('Profile dropdown:', document.getElementById('profileDropdown'));
+  console.log('Notification button:', document.getElementById('notificationBtn'));
+  console.log('Notification dropdown:', document.getElementById('notificationDropdown'));
+  console.log('toggleProfileDropdown function:', typeof toggleProfileDropdown);
+  console.log('toggleNotifications function:', typeof toggleNotifications);
+
+  // Test CSS classes
+  const profileDropdown = document.getElementById('profileDropdown');
+  if (profileDropdown) {
+    console.log('Profile dropdown classes:', profileDropdown.className);
+    console.log('Profile dropdown hidden:', profileDropdown.classList.contains('hidden'));
+  }
+}
+window.testDropdowns = testDropdowns;
+
 document.addEventListener('DOMContentLoaded', async function () {
   console.log("✅ profile.js loaded");
+
+  // ========== DROPDOWN EVENT LISTENER SETUP ==========
+  console.log('Setting up dropdown event listeners...');
+
+  // Setup dropdown close handlers
+  setupDropdownCloseHandlers();
+
+  // Setup profile dropdown
+  const profileBtn = document.getElementById('profileDropdownBtn');
+  if (profileBtn) {
+    console.log('✅ Setting up profile dropdown handler');
+    profileBtn.addEventListener('click', toggleProfileDropdown);
+  } else {
+    console.error('❌ Profile button not found');
+  }
+
+  // Setup notification dropdown
+  const notificationBtn = document.getElementById('notificationBtn');
+  if (notificationBtn) {
+    console.log('✅ Setting up notification dropdown handler');
+    notificationBtn.addEventListener('click', toggleNotifications);
+  } else {
+    console.error('❌ Notification button not found');
+  }
 
   const user = await checkSession();
   if (!user) return;
@@ -196,16 +345,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  /* ===== Redirect to mainpage.html ===== */
+  /* ===== Redirect to permitform.html ===== */
   const submitPtw = document.getElementById('sbmtptw');
   if (submitPtw) {
     submitPtw.addEventListener('click', function () {
       // Log activity
       if (typeof logUserActivity === 'function') {
-        logUserActivity('navigation', 'Navigated to mainpage', 'User clicked Submit PTW button');
+        logUserActivity('navigation', 'Navigated to permitform', 'User clicked Submit PTW button');
       }
 
-      window.location.href = '../mainpage/mainpage.html';
+      window.location.href = '../permitform/permitform.html';
     });
   }
 
@@ -247,29 +396,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       destroyChart(chartId);
     });
   });
-
-  // Add backup event listeners for dropdowns
-  setTimeout(() => {
-    const profileBtn = document.getElementById('profileDropdownBtn');
-    if (profileBtn) {
-      console.log('Adding backup event listener for profile dropdown');
-      profileBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleProfileDropdown(e);
-      });
-    }
-
-    const notificationBtn = document.getElementById('notificationBtn');
-    if (notificationBtn) {
-      console.log('Adding backup event listener for notification dropdown');
-      notificationBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleNotifications(e);
-      });
-    }
-  }, 100);
 });
 
 // Enhanced Profile Display Function
@@ -897,8 +1023,6 @@ function createApprovalTimeChart(approvedPermits) {
   initApprovalChart();
 }
 
-
-
 // Function to show all activities (for the "View All" button)
 function showAllActivities() {
   // Log activity
@@ -993,8 +1117,8 @@ function submitNewRequest() {
     logUserActivity('request_initiated', 'New request submission started', 'User clicked submit new request from tooltip');
   }
 
-  // Redirect to main page or show request form
-  window.location.href = '../mainpage/mainpage.html';
+  // Redirect to permit form or show request form
+  window.location.href = '../permitform/permitform.html';
 }
 
 // Toggle Theme in Tooltip
@@ -1231,94 +1355,6 @@ let notifications = [
   }
 ];
 
-function toggleNotifications(event) {
-  console.log('🔔 toggleNotifications CALLED'); // Enhanced debug log
-
-  // Prevent event bubbling to avoid conflicts with outside click listener
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log('Event prevented and stopped');
-  }
-
-  const dropdown = document.getElementById('notificationDropdown');
-  const button = document.getElementById('notificationBtn');
-
-  console.log('Elements found:', {
-    dropdown: !!dropdown,
-    button: !!button,
-    dropdownId: dropdown ? dropdown.id : 'null',
-    buttonId: button ? button.id : 'null'
-  });
-
-  if (!dropdown) {
-    console.error('❌ Notification dropdown element not found!');
-    return;
-  }
-
-  if (!button) {
-    console.error('❌ Notification button element not found!');
-    return;
-  }
-
-  const isHidden = dropdown.classList.contains('hidden');
-  console.log('Current notification dropdown state - hidden:', isHidden);
-
-  // Hide profile dropdown first
-  const profileDropdown = document.getElementById('profileDropdown');
-  if (profileDropdown && !profileDropdown.classList.contains('hidden')) {
-    console.log('Hiding profile dropdown first');
-    profileDropdown.classList.add('hidden');
-    profileDropdown.style.cssText = `
-      display: none !important;
-      opacity: 0 !important;
-      transform: translateY(4px) !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    `;
-  }
-
-  if (isHidden) {
-    // Show dropdown with fixed positioning
-    console.log('🟢 SHOWING notification dropdown');
-    dropdown.classList.remove('hidden');
-    // Override ALL conflicting styles
-    dropdown.style.cssText = `
-      display: block !important;
-      opacity: 1 !important;
-      transform: translateY(0) !important;
-      position: fixed !important;
-      top: 80px !important;
-      right: 20px !important;
-      z-index: 999999 !important;
-      visibility: visible !important;
-      pointer-events: auto !important;
-    `;
-    console.log('Notification dropdown styles applied with !important');
-
-    // Load notifications when dropdown is opened
-    loadNotifications();
-  } else {
-    // Hide dropdown
-    console.log('� HIDING notification dropdown');
-    dropdown.classList.add('hidden');
-    dropdown.style.cssText = `
-      display: none !important;
-      opacity: 0 !important;
-      transform: translateY(4px) !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    `;
-  }
-
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('notification_toggle', `${isHidden ? 'Opened' : 'Closed'} notifications`, 'User toggled notification dropdown');
-  }
-
-  console.log('✅ toggleNotifications completed');
-}
-
 function loadNotifications() {
   const notificationList = document.getElementById('notificationList');
   if (!notificationList) return;
@@ -1531,140 +1567,6 @@ function updateNotificationCount() {
   }
 }
 
-// Profile Dropdown Functions
-function toggleProfileDropdown(event) {
-  console.log('🔴 toggleProfileDropdown CALLED'); // Enhanced debug log
-
-  // Prevent event bubbling to avoid conflicts with outside click listener
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log('Event prevented and stopped');
-  }
-
-  const dropdown = document.getElementById('profileDropdown');
-  const button = document.getElementById('profileDropdownBtn');
-
-  console.log('Elements found:', {
-    dropdown: !!dropdown,
-    button: !!button,
-    dropdownId: dropdown ? dropdown.id : 'null',
-    buttonId: button ? button.id : 'null'
-  });
-
-  if (!dropdown) {
-    console.error('❌ Profile dropdown element not found!');
-    return;
-  }
-
-  if (!button) {
-    console.error('❌ Profile button element not found!');
-    return;
-  }
-
-  const isHidden = dropdown.classList.contains('hidden');
-  console.log('Current dropdown state - hidden:', isHidden);
-
-  // Hide notification dropdown first
-  const notificationDropdown = document.getElementById('notificationDropdown');
-  if (notificationDropdown && !notificationDropdown.classList.contains('hidden')) {
-    console.log('Hiding notification dropdown first');
-    notificationDropdown.classList.add('hidden');
-    notificationDropdown.style.cssText = `
-      display: none !important;
-      opacity: 0 !important;
-      transform: translateY(4px) !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    `;
-  }
-
-  if (isHidden) {
-    // Show dropdown with fixed positioning
-    console.log('🟢 SHOWING profile dropdown');
-    dropdown.classList.remove('hidden');
-    // Override ALL conflicting styles
-    dropdown.style.cssText = `
-      display: block !important;
-      opacity: 1 !important;
-      transform: translateY(0) !important;
-      position: fixed !important;
-      top: 80px !important;
-      left: 20px !important;
-      z-index: 999999 !important;
-      visibility: visible !important;
-      pointer-events: auto !important;
-    `;
-    console.log('Profile dropdown styles applied with !important');
-  } else {
-    // Hide dropdown
-    console.log('🔴 HIDING profile dropdown');
-    dropdown.classList.add('hidden');
-    dropdown.style.cssText = `
-      display: none !important;
-      opacity: 0 !important;
-      transform: translateY(4px) !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    `;
-  }
-
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('profile_dropdown_toggle', `${isHidden ? 'Opened' : 'Closed'} profile dropdown`, 'User toggled profile details dropdown');
-  }
-
-  console.log('✅ toggleProfileDropdown completed');
-}
-
-// Make function immediately available
-window.toggleProfileDropdown = toggleProfileDropdown;
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function (e) {
-  // Prevent closing if clicking on the button itself (let the toggle function handle it)
-  const notificationButton = document.getElementById('notificationBtn');
-  const profileButton = document.getElementById('profileDropdownBtn');
-
-  // Skip if clicking on buttons themselves
-  if ((notificationButton && notificationButton.contains(e.target)) ||
-    (profileButton && profileButton.contains(e.target))) {
-    return;
-  }
-
-  // Close notification dropdown
-  const notificationDropdown = document.getElementById('notificationDropdown');
-  if (notificationDropdown && !notificationDropdown.contains(e.target)) {
-    if (!notificationDropdown.classList.contains('hidden')) {
-      console.log('Closing notification dropdown via outside click');
-      notificationDropdown.classList.add('hidden');
-      notificationDropdown.style.cssText = `
-        display: none !important;
-        opacity: 0 !important;
-        transform: translateY(4px) !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-      `;
-    }
-  }
-
-  // Close profile dropdown
-  const profileDropdown = document.getElementById('profileDropdown');
-  if (profileDropdown && !profileDropdown.contains(e.target)) {
-    if (!profileDropdown.classList.contains('hidden')) {
-      console.log('Closing profile dropdown via outside click');
-      profileDropdown.classList.add('hidden');
-      profileDropdown.style.cssText = `
-        display: none !important;
-        opacity: 0 !important;
-        transform: translateY(4px) !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-      `;
-    }
-  }
-});
-
 // Reset dropdown states function for debugging
 function resetDropdownStates() {
   console.log('Resetting all dropdown states...');
@@ -1696,7 +1598,10 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
-// Make functions globally available
+// ========== GLOBAL FUNCTION EXPORTS ==========
+window.toggleProfileDropdown = toggleProfileDropdown;
+window.toggleNotifications = toggleNotifications;
+window.setupDropdownCloseHandlers = setupDropdownCloseHandlers;
 window.showProfileSettings = showProfileSettings;
 window.hideProfileSettings = hideProfileSettings;
 window.showUpdateProfileModal = showUpdateProfileModal;
@@ -1709,13 +1614,36 @@ window.logUserActivity = logUserActivity;
 window.toggleSection = toggleSection;
 window.submitNewRequest = submitNewRequest;
 window.toggleTooltipTheme = toggleTooltipTheme;
-window.toggleNotifications = toggleNotifications;
 window.markAllAsRead = markAllAsRead;
 window.showAllNotifications = showAllNotifications;
-window.toggleProfileDropdown = toggleProfileDropdown;
 window.resetDropdownStates = resetDropdownStates;
+window.testDropdowns = testDropdowns;
+// Ensure logoutUser is available globally for inline onclick handlers
+try {
+  if (typeof logoutUser === 'function') {
+    window.logoutUser = logoutUser;
+  }
+} catch (e) {
+  console.warn('logoutUser not available to expose on window yet', e);
+}
 
-// Debug: Log function availability
-console.log('Functions registered on window:');
-console.log('toggleProfileDropdown:', typeof window.toggleProfileDropdown);
-console.log('toggleNotifications:', typeof window.toggleNotifications);
+// Attach a safe click handler to the Sign Out button in case inline onclick is unreliable
+setTimeout(() => {
+  const logoutBtn = document.getElementById('hoverLogoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      try {
+        if (typeof window.logoutUser === 'function') {
+          window.logoutUser();
+        } else if (typeof logoutUser === 'function') {
+          logoutUser();
+        } else {
+          console.error('Logout function not found');
+        }
+      } catch (err) {
+        console.error('Error calling logoutUser:', err);
+      }
+    });
+  }
+}, 100);

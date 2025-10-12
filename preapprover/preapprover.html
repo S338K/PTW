@@ -49,19 +49,11 @@
         <div class="sidebar-settings p-3 border-bottom">
             <h6 class="settings-title mb-3 text-muted small text-uppercase fw-bold">Account Settings</h6>
             <div class="settings-items">
-                <!-- Theme Toggle -->
+                <!-- Theme Toggle (single icon) -->
                 <div class="setting-item d-flex align-items-center justify-content-center mb-3">
-                    <div class="theme-toggle-container">
-                        <div class="theme-slider" id="themeSlider">
-                            <div class="theme-option left active" id="lightTheme">
-                                <i class="fas fa-sun"></i>
-                            </div>
-                            <div class="theme-option right" id="darkTheme">
-                                <i class="fas fa-moon"></i>
-                            </div>
-                            <div class="slider-background"></div>
-                        </div>
-                    </div>
+                    <button id="themeToggle" class="btn btn-outline-secondary" aria-label="Toggle theme">
+                        <i id="themeIcon" class="fas fa-sun"></i>
+                    </button>
                 </div>
 
                 <!-- Update Profile -->

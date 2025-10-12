@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'signupPhone':
                 isValid = validatePhone(inputEl.value);
-                showError(inputEl, isValid ? '' : 'Enter a valid phone number (e.g., +974501234567).');
+                showError(inputEl, isValid ? '' : 'Enter a valid phone number (e.g., +974xxxxxxxx).');
                 break;
             case 'signupPassword':
                 isValid = validatePassword(inputEl.value, usernameEl.value, emailEl.value);

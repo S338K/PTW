@@ -208,9 +208,39 @@ router.get('/profile', async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized - user not found' });
     }
 
+    // Provide client IP (prefer common proxy headers, then socket remote address)
+    // Order: X-Forwarded-For (first entry), CF-Connecting-IP, X-Real-IP, socket.remoteAddress, req.ip
+    let clientIp = null;
+    try {
+      const xff = req.headers['x-forwarded-for'];
+      if (xff) {
+        // may contain a list of IPs
+        clientIp = String(xff).split(',')[0].trim();
+      }
+      if (!clientIp && req.headers['cf-connecting-ip']) clientIp = req.headers['cf-connecting-ip'];
+      if (!clientIp && req.headers['x-real-ip']) clientIp = req.headers['x-real-ip'];
+      if (!clientIp && req.socket && req.socket.remoteAddress) clientIp = req.socket.remoteAddress;
+      if (!clientIp && req.ip) clientIp = req.ip;
+    } catch (e) {
+      clientIp = req.ip || null;
+    }
+    // Build a safe user payload to avoid leaking sensitive fields
+    const safeUser = user.toObject ? user.toObject() : { ...user };
+    safeUser.profileUpdatedAt = safeUser.profileUpdatedAt ? safeUser.profileUpdatedAt.toISOString() : null;
+    safeUser.passwordUpdatedAt = safeUser.passwordUpdatedAt ? safeUser.passwordUpdatedAt.toISOString() : null;
+
+    // Log client IP and source for debugging (helps confirm the running server has this code)
+    try {
+      const ipSource = req.headers['x-forwarded-for'] ? 'x-forwarded-for' : (req.headers['cf-connecting-ip'] ? 'cf-connecting-ip' : (req.headers['x-real-ip'] ? 'x-real-ip' : (req.socket && req.socket.remoteAddress ? 'socket.remoteAddress' : (req.ip ? 'req.ip' : 'unknown'))));
+      logger.debug({ clientIp, ipSource }, 'Profile response - client IP detected');
+    } catch (e) {
+      // ignore logging errors
+    }
+
     res.json({
-      user,
+      user: safeUser,
       session: { id: req.session.userId, role: req.session.userRole },
+      clientIp
     });
   } catch (err) {
     logger.error({ err }, 'Profile fetch error');
@@ -337,6 +367,11 @@ router.put('/update-password', async (req, res) => {
     // Update password (pre-save hook will hash it)
     user.password = newPassword;
     user.passwordUpdatedAt = new Date();
+    const pwdRemark = req.body.remark;
+    if (pwdRemark) {
+      user.passwordUpdateLogs = user.passwordUpdateLogs || [];
+      user.passwordUpdateLogs.push({ remark: pwdRemark, updatedAt: new Date() });
+    }
     await user.save();
 
     logger.info({ userId: user._id }, 'Password updated successfully');
@@ -354,37 +389,38 @@ router.put('/update-profile', async (req, res) => {
       return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    const { username, email, company, phone } = req.body;
-
-    if (!username || !email) {
-      return res.status(400).json({ message: 'Username and email are required' });
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Invalid email format' });
-    }
+    const { username, email, company, phone, remark } = req.body;
 
     const user = await User.findById(req.session.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if email is already taken by another user
-    if (email !== user.email) {
-      const existingUser = await User.findOne({ email, _id: { $ne: user._id } });
-      if (existingUser) {
-        return res.status(409).json({ message: 'Email is already in use by another account' });
+    // Only allow phone updates from self-service for non-admins; admins may change username/email/company
+    if (req.session.userRole === 'Admin') {
+      // If admin provided username/email, validate
+      if (!username || !email) {
+        return res.status(400).json({ message: 'Username and email are required' });
       }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) return res.status(400).json({ message: 'Invalid email format' });
+      if (email !== user.email) {
+        const existingUser = await User.findOne({ email, _id: { $ne: user._id } });
+        if (existingUser) return res.status(409).json({ message: 'Email is already in use by another account' });
+      }
+      user.username = username;
+      user.email = email;
+      user.company = company || '';
     }
 
-    // Update user fields
-    user.username = username;
-    user.email = email;
-    user.company = company || '';
-    user.phone = phone || '';
+    // Always allow updating phone
+    user.phone = phone || user.phone || '';
     user.profileUpdatedAt = new Date();
+
+    if (remark) {
+      user.profileUpdateLogs = user.profileUpdateLogs || [];
+      user.profileUpdateLogs.push({ remark: remark, updatedAt: new Date() });
+    }
 
     await user.save();
 

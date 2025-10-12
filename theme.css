@@ -64,6 +64,34 @@ button {
     transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
+/* Theme toggle button & icon animations */
+#themeToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--button-border);
+    transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s ease;
+}
+
+#themeToggle[aria-pressed="true"] {
+    background: var(--button-bg);
+    color: var(--button-text);
+    transform: translateY(-2px);
+}
+
+#themeIcon {
+    transition: transform 0.45s cubic-bezier(.2, .9, .2, 1), color 0.35s ease;
+}
+
+.rotate-icon {
+    transform: rotate(360deg);
+}
+
 /* ===== Floating Theme Toggle Slider (top-left under header) ===== */
 .theme-toggle-slider {
     position: absolute;
@@ -192,4 +220,26 @@ button {
     background: transparent;
     color: var(--error-color);
     border: 2px solid var(--error-color);
+}
+
+/* Small pulse effect used on logout */
+.logout-pulse {
+    animation: logoutPulse 0.8s ease-in-out;
+}
+
+@keyframes logoutPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
 }

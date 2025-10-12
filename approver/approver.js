@@ -7,13 +7,44 @@ let allPermits = [];
 let allActivities = [];
 let currentUser = null;
 
+// Small toast notification helper (used when fetches fail)
+function showNotification(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'secondary'} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    toastContainer.appendChild(toast);
+    if (window.bootstrap && bootstrap.Toast) {
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+    setTimeout(() => toast.remove(), 6000);
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '1055';
+    document.body.appendChild(container);
+    return container;
+}
+
 function updateStats(permits) {
-    let approved = 0, rejected = 0, pending = 0, returnedForInfo = 0;
+    let approved = 0, rejected = 0, pending = 0, inProgress = 0, returnedForInfo = 0;
     permits.forEach(p => {
-        if ((p.status || '').toLowerCase() === 'approved') approved++;
-        else if ((p.status || '').toLowerCase() === 'rejected') rejected++;
-        else if (['pending', 'in progress'].includes((p.status || '').toLowerCase())) pending++;
-        else if ((p.status || '').toLowerCase() === 'returned for info') returnedForInfo++;
+        const status = (p.status || '').toLowerCase();
+        if (status === 'approved') approved++;
+        else if (status === 'rejected') rejected++;
+        else if (status === 'in progress') inProgress++;
+        else if (status === 'pending') pending++;
+        else if (status === 'returned for info') returnedForInfo++;
     });
 
     const total = permits.length;
@@ -50,8 +81,8 @@ function updateStats(permits) {
     if (pendingPercentageElement) pendingPercentageElement.textContent = pendingPercentage + '%';
     if (returnedPercentageElement) returnedPercentageElement.textContent = returnedPercentage + '%';
 
-    // Update task progress based on permit processing
-    updateTaskProgress(approved, pending, rejected);
+    // Update task progress based on permit processing (completed, inProgress, pending)
+    updateTaskProgress(approved, inProgress, pending);
 }
 
 function updateTaskProgress(completed, inProgress, upcoming) {
@@ -63,12 +94,12 @@ function updateTaskProgress(completed, inProgress, upcoming) {
     const taskProgressElement = document.getElementById('taskProgressPercentage');
     const completedElement = document.getElementById('completedTasksCount');
     const inProgressElement = document.getElementById('inProgressTasksCount');
-    const upcomingElement = document.getElementById('upcomingTasksCount');
+    const pendingElement = document.getElementById('pendingTasksCount');
 
     if (taskProgressElement) taskProgressElement.textContent = progressPercentage + '%';
     if (completedElement) completedElement.textContent = completed;
     if (inProgressElement) inProgressElement.textContent = inProgress;
-    if (upcomingElement) upcomingElement.textContent = upcoming;
+    if (pendingElement) pendingElement.textContent = upcoming;
 
     // Update the progress bars
     const progressBarContainer = document.querySelector('.progress-bar-container .progress');
@@ -120,17 +151,11 @@ async function fetchPermits() {
         const res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to fetch permits');
         const data = await res.json();
-        allPermits = data.permits || [];
+        allPermits = data.permits || data || [];
     } catch (err) {
         console.error('Error fetching permits:', err);
-        console.warn('Using mock data for demonstration - real database stats preserved');
-        // Fallback: mock data for UI demo
-        allPermits = [
-            { _id: 'P-001', permitTitle: 'Electrical Maintenance', requester: { username: 'alice' }, preApproverName: 'pre-approver1', status: 'Pending', startDateTime: new Date(), createdAt: new Date() },
-            { _id: 'P-002', permitTitle: 'HVAC Inspection', requester: { username: 'bob' }, preApproverName: 'pre-approver2', status: 'Approved', startDateTime: new Date(), createdAt: new Date() },
-            { _id: 'P-003', permitTitle: 'Fire Alarm Test', requester: { username: 'carol' }, preApproverName: 'pre-approver3', status: 'Rejected', startDateTime: new Date(), createdAt: new Date() },
-        ];
-        isUsingMockData = true;
+        allPermits = [];
+        showNotification('Unable to load permits from server. Showing empty list.', 'error');
     }
 
     renderPermits(allPermits);
@@ -243,13 +268,21 @@ function createPermitRow(permit, type, index = 0) {
 }
 
 function fetchActivityLog() {
-    // Demo: static activity log with pre-approver actions
-    allActivities = [
-        'Permit P-002 approved by Pre-approver2.',
-        'Permit P-003 rejected by Pre-approver3.',
-        'Permit P-001 submitted by alice.',
-    ];
-    renderActivityLog(allActivities);
+    // Try to fetch activity log from API, otherwise show empty state
+    (async () => {
+        try {
+            const res = await fetch(`${API_BASE}/api/activity`, { credentials: 'include' });
+            if (!res.ok) throw new Error('Failed to fetch activity log');
+            const data = await res.json();
+            allActivities = data.activities || data || [];
+        } catch (err) {
+            console.error('Error fetching activity log:', err);
+            allActivities = [];
+            // Non-critical: show a small notification
+            showNotification('Could not load recent activity.', 'error');
+        }
+        renderActivityLog(allActivities);
+    })();
 }
 
 // Fetch and display real profile data
@@ -264,10 +297,36 @@ async function fetchUserProfile() {
         }
 
         const data = await response.json();
-        currentUser = { ...data.user, role: data.session.role };
+        // DEBUG: log profile response so we can verify clientIp presence in the browser
+        console.debug('[fetchUserProfile] profile response:', data);
+        // data.user contains ISO strings for profileUpdatedAt/passwordUpdatedAt (or null)
+        const userObj = { ...data.user, role: data.session.role };
+        // parse ISO timestamps into Date objects for frontend formatting
+        if (userObj.profileUpdatedAt) userObj.profileUpdatedAt = new Date(userObj.profileUpdatedAt);
+        if (userObj.passwordUpdatedAt) userObj.passwordUpdatedAt = new Date(userObj.passwordUpdatedAt);
+        // attach server-provided client IP if present
+        if (data.clientIp) userObj.clientIp = data.clientIp;
+
+        currentUser = userObj;
 
         // Update profile section with real data
         updateProfileDisplay(currentUser);
+
+        // Display client IP under last-login if provided by server
+        if (currentUser.clientIp) {
+            const existing = document.getElementById('clientIp');
+            if (existing) existing.textContent = `IP: ${currentUser.clientIp}`;
+            else {
+                const lastLogin = document.querySelector('.last-login');
+                if (lastLogin) {
+                    const ipEl = document.createElement('div');
+                    ipEl.className = 'text-muted small mt-1';
+                    ipEl.id = 'clientIp';
+                    ipEl.textContent = `IP: ${currentUser.clientIp}`;
+                    lastLogin.insertAdjacentElement('afterend', ipEl);
+                }
+            }
+        }
 
         return currentUser;
     } catch (error) {
@@ -283,7 +342,8 @@ function updateProfileDisplay(user) {
     // Update profile name
     const profileName = document.querySelector('.profile-name');
     if (profileName) {
-        profileName.textContent = user.username || 'User';
+        // Use full name consistently across header and profile overview
+        profileName.textContent = user.username || user.fullname || 'User';
     }
 
     // Update profile email
@@ -313,17 +373,25 @@ function updateProfileDisplay(user) {
     // Update last login
     const lastLogin = document.querySelector('.last-login');
     if (lastLogin && user.lastLogin) {
+        // Format: MMMM, DD, YYYY at HH:MM (24hrs)
         const loginDate = new Date(user.lastLogin);
-        lastLogin.textContent = `Last Login: ${loginDate.toLocaleDateString()}, at ${loginDate.toLocaleTimeString()}`;
+        const pad = (n) => String(n).padStart(2, '0');
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const formatted = `${monthNames[loginDate.getMonth()]}, ${pad(loginDate.getDate())}, ${loginDate.getFullYear()} at ${pad(loginDate.getHours())}:${pad(loginDate.getMinutes())}`;
+        lastLogin.textContent = `Last Login: ${formatted}`;
+        lastLogin.dataset.raw = loginDate.toISOString();
     }
 
     // Update header username
     const headerUsername = document.querySelector('.profile-username .fw-bold');
     if (headerUsername && user.username) {
-        const firstName = user.username.split(' ')[0];
+        // Show first name in header but derived from same full name
+        const full = user.username || user.fullname || 'User';
+        const firstName = full.split(' ')[0];
         headerUsername.textContent = firstName;
     }
 }
+
 
 // Fetch real dashboard statistics
 async function fetchDashboardStats() {
@@ -891,6 +959,23 @@ function showUpdateProfileModal() {
         document.getElementById('profileEmail').value = currentUser.email || '';
         document.getElementById('profileCompany').value = currentUser.company || '';
         document.getElementById('profilePhone').value = currentUser.phone || '';
+        // Populate timestamps if available
+        const pUpdated = document.getElementById('profileUpdatedAt');
+        const passUpdated = document.getElementById('passwordUpdatedAt');
+        const pad = (n) => String(n).padStart(2, '0');
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        if (pUpdated) {
+            if (currentUser.profileUpdatedAt) {
+                const d = new Date(currentUser.profileUpdatedAt);
+                pUpdated.textContent = `${monthNames[d.getMonth()]}, ${pad(d.getDate())}, ${d.getFullYear()} at ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            } else pUpdated.textContent = '-';
+        }
+        if (passUpdated) {
+            if (currentUser.passwordUpdatedAt) {
+                const d2 = new Date(currentUser.passwordUpdatedAt);
+                passUpdated.textContent = `${monthNames[d2.getMonth()]}, ${pad(d2.getDate())}, ${d2.getFullYear()} at ${pad(d2.getHours())}:${pad(d2.getMinutes())}`;
+            } else passUpdated.textContent = '-';
+        }
     }
 
     document.getElementById('profileUpdateMessage').style.display = 'none';
@@ -985,6 +1070,13 @@ async function updatePassword() {
     }
 
     try {
+        const remarkEl = document.getElementById('profileRemark');
+        const remark = remarkEl ? remarkEl.value.trim() : '';
+        if (!remark) {
+            showMessage(messageDiv, 'Please add a remark before updating password', 'danger');
+            return;
+        }
+
         const response = await fetch(`${API_BASE}/api/auth/update-password`, {
             method: 'PUT',
             headers: {
@@ -993,7 +1085,8 @@ async function updatePassword() {
             credentials: 'include',
             body: JSON.stringify({
                 currentPassword,
-                newPassword
+                newPassword,
+                remark
             })
         });
 
@@ -1031,13 +1124,16 @@ async function updateProfile() {
     // Reset message
     messageDiv.style.display = 'none';
 
-    // Validate inputs
-    if (!username || !email) {
-        showMessage(messageDiv, 'Name and email are required', 'danger');
+    // Validate inputs - remark required for audit
+    const remarkEl = document.getElementById('profileRemark');
+    const remark = remarkEl ? remarkEl.value.trim() : '';
+    if (!remark) {
+        showMessage(messageDiv, 'Please provide a remark explaining this update', 'danger');
         return;
     }
 
     try {
+        // Send remark for audit trail; backend will enforce which fields are allowed to change
         const response = await fetch(`${API_BASE}/api/auth/update-profile`, {
             method: 'PUT',
             headers: {
@@ -1048,7 +1144,8 @@ async function updateProfile() {
                 username,
                 email,
                 company,
-                phone
+                phone,
+                remark
             })
         });
 
