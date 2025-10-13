@@ -28,7 +28,7 @@
     "nodemailer": "^7.0.9",
     "path-to-regexp": "6.2.1",
     "pino": "^8.21.0",
-    "puppeteer-core": "^21.8.0"
+    "puppeteer-core": "^24.24.0"
   },
   "devDependencies": {
     "eslint": "^8.50.0",
