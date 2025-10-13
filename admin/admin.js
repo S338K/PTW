@@ -5,8 +5,6 @@ import { API_BASE } from '../config.js';
 /* ===== Constants ===== */
 
 /* ===== Role normalization (fix Pre-Approver mismatch) =====
-   Adjust the right-hand values to match your backend enum if needed.
-   If your backend expects "PreApprover" (no hyphen), this mapping ensures compatibility.
 */
 const ROLE_MAP = {
     "admin": "Admin",
@@ -20,11 +18,8 @@ const ROLE_MAP = {
 
 /* ===== Toast ===== */
 function showToast(message, type = "success", duration = 3000) {
-    const toast = document.getElementById("toast");
-    if (!toast) {
-        console[type === "error" ? "error" : "log"](message);
-        return;
-    }
+    let toast = document.getElementById("toast");
+    if (!toast) toast = ensureToast();
     // reset
     toast.textContent = message;
     toast.classList.remove("error", "success", "warning", "show");
@@ -109,6 +104,19 @@ function getThemeColors() {
     };
 }
 
+/* ===== Compatibility helper =====
+   Returns the first existing element for a list of id alternatives.
+   Usage: const el = $id('pdName', 'hoverName', 'profileDisplayName');
+*/
+function $id(...ids) {
+    for (const id of ids) {
+        if (!id) continue;
+        const el = document.getElementById(id);
+        if (el) return el;
+    }
+    return null;
+}
+
 // ...existing code...
 
 /* ===== Wait for Chart.js (since HTML loads it after admin.js) ===== */
@@ -140,6 +148,8 @@ async function loadUsers() {
         if (!res.ok) throw new Error("Failed to load users");
         const users = await res.json();
 
+        // production: no debug logging
+
         users.forEach((u) => {
             const tr = document.createElement("tr");
             headers.forEach((h) => {
@@ -147,6 +157,12 @@ async function loadUsers() {
                 switch (h) {
                     case "name":
                         td.textContent = u.fullName || u.username || "—";
+                        break;
+                    case "email":
+                        td.textContent = u.email || u.contactEmail || u.username || "—";
+                        break;
+                    case "phone":
+                        td.textContent = u.phone || u.mobile || u.contact || "—";
                         break;
                     case "role":
                         td.textContent = u.role || "—";
@@ -200,6 +216,93 @@ async function loadUsers() {
     }
 }
 
+/* ===== Fetch roles dynamically and populate role select ===== */
+async function loadRolesIntoSelect() {
+    const roleSelect = document.getElementById('role');
+    if (!roleSelect) return;
+    try {
+        const res = await fetch(`${API_BASE}/admin/roles`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load roles');
+        const roles = await res.json();
+        roleSelect.innerHTML = '';
+        roles.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.value;
+            opt.textContent = r.label;
+            roleSelect.appendChild(opt);
+        });
+    } catch (err) {
+        // fallback to existing options
+        console.warn('Could not fetch roles, using defaults');
+    }
+}
+
+/* ===== Modal accessibility: focus trap and ESC close ===== */
+function trapFocus(modal) {
+    const focusable = Array.from(modal.querySelectorAll('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'))
+        .filter(el => !el.hasAttribute('disabled'));
+    if (focusable.length === 0) return () => { };
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    function keyHandler(e) {
+        if (e.key === 'Tab') {
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        } else if (e.key === 'Escape') {
+            closeUserModal();
+        }
+    }
+    document.addEventListener('keydown', keyHandler);
+    // focus first element
+    setTimeout(() => first.focus(), 10);
+    return () => document.removeEventListener('keydown', keyHandler);
+}
+
+let releaseFocusTrap = null;
+function openUserModal() {
+    const modal = document.getElementById('userModal');
+    if (!modal) return;
+    // Always force show modal
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+    // Remove any lingering 'hidden' class from parent chain
+    let parent = modal.parentElement;
+    while (parent) {
+        if (parent.classList && parent.classList.contains('hidden')) {
+            parent.classList.remove('hidden');
+        }
+        parent = parent.parentElement;
+    }
+    // Debug log
+    console.debug('[openUserModal] Modal should now be visible');
+    releaseFocusTrap = trapFocus(modal);
+}
+function closeUserModal() {
+    const modal = document.getElementById('userModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    if (typeof releaseFocusTrap === 'function') releaseFocusTrap();
+}
+
+/* ===== Toast wrapper for DOM creation if missing ===== */
+function ensureToast() {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    return toast;
+}
+
 /* ===== Permits table ===== */
 async function loadPermits() {
     const table = document.getElementById("permitsTable");
@@ -213,7 +316,8 @@ async function loadPermits() {
     );
 
     try {
-        const res = await fetch(`${API_BASE}/admin/permit`, { credentials: "include" });
+        // Admin needs the global permits list endpoint (plural) which supports filtering and pagination
+        const res = await fetch(`${API_BASE}/api/permits`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load permits");
         const permits = await res.json();
 
@@ -425,7 +529,7 @@ function toggleDetails(id, btn) {
 
     if (btn) {
         btn.classList.toggle("active", isOpening);
-        btn.textContent = isOpening ? "Collapse" : "Expand";
+        // Keep buttons icon-only; do not inject text content here.
         btn.setAttribute("aria-expanded", isOpening ? "true" : "false");
     }
 
@@ -531,134 +635,38 @@ async function resetPassword(userId) {
 
 /* ===== DOMContentLoaded init ===== */
 document.addEventListener("DOMContentLoaded", async () => {
-    // Session and role guard
-    const user = await checkSession();
-    if (!user) return;
-    initIdleTimer();
-    if ((user.role || "").toLowerCase() !== "admin") {
-        window.location.href = "index.html";
-        return;
-    }
+    try {
+        // basic init
+        const user = await checkSession();
+        await loadRolesIntoSelect();
 
-    // Logout
-    const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) logoutBtn.addEventListener("click", () => logoutUser());
-
-
-    // Modal elements
-    const modal = document.getElementById("userModal");
-    const btn = document.getElementById("addUserBtn");
-    const closeBtn = modal ? modal.querySelector(".close") : null;
-    const form = document.getElementById("userForm");
-
-    // Start closed breakdown panels
-    document.querySelectorAll(".breakdown").forEach((panel) => {
-        panel.style.maxHeight = "0";
-        panel.style.opacity = "0";
-        panel.classList.remove("open");
-    });
-
-    // Validation bindings
-    if (form) {
-        form.querySelectorAll("input, select").forEach((input) => {
-            input.addEventListener("input", () => validateField(form, input));
-            input.addEventListener("blur", () => validateField(form, input));
+        // attach header buttons
+        const addUserBtn = document.getElementById('addUserBtn');
+        if (addUserBtn) addUserBtn.addEventListener('click', () => {
+            openUserModal();
         });
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
 
-        // Submit handler with role normalization
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            let valid = true;
-            form.querySelectorAll("input, select").forEach((input) => {
-                if (!validateField(form, input)) valid = false;
-            });
-            if (!valid) {
-                showToast("Please fix the highlighted errors", "warning");
+        // wire modal close handlers
+        document.querySelectorAll('#userModal .close').forEach(b => b.addEventListener('click', closeUserModal));
+        // clicking backdrop closes modal
+        const modal = document.getElementById('userModal');
+        if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeUserModal(); });
+
+        if (user) {
+            initIdleTimer();
+            if ((user.role || '').toLowerCase() !== 'admin') {
+                window.location.href = 'index.html';
                 return;
             }
+        }
 
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-            if (data.role) {
-                const key = String(data.role).trim().toLowerCase();
-                data.role = ROLE_MAP[key] || data.role;
-            }
-
-            try {
-                const res = await fetch(`${API_BASE}/admin/register-user`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                    credentials: "include",
-                });
-                if (res.ok) {
-                    showToast("User registered successfully!", "success");
-                    if (modal) {
-                        modal.classList.remove("open");
-                        setTimeout(() => {
-                            modal.style.display = "none";
-                            // reset form fields/errors
-                            form.reset();
-                            form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
-                            form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
-                        }, 300);
-                    }
-                    await loadUsers();
-                } else {
-                    const errText = await res.text().catch(() => "");
-                    showToast(errText || "Error registering user", "error");
-                }
-            } catch {
-                showToast("Network error. Please try again.", "error");
-            }
-        });
+        // initialize data
+        await loadUsers();
+        await loadPermits();
+        await loadStats();
+    } catch (err) {
+        console.debug('Initialization error (non-fatal):', err?.message || err);
     }
-
-    // Open/close modal
-    if (btn && modal) {
-        btn.onclick = () => {
-            // reset form state
-            if (form) {
-                form.reset();
-                form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
-                form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
-            }
-            modal.style.display = "block";
-            setTimeout(() => modal.classList.add("open"), 10);
-        };
-    }
-    if (closeBtn && modal) {
-        closeBtn.onclick = () => {
-            modal.classList.remove("open");
-            setTimeout(() => {
-                modal.style.display = "none";
-                if (form) {
-                    form.reset();
-                    form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
-                    form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
-                }
-            }, 300);
-        };
-    }
-    if (modal) {
-        window.addEventListener("click", (e) => {
-            if (e.target === modal) {
-                modal.classList.remove("open");
-                setTimeout(() => {
-                    modal.style.display = "none";
-                    if (form) {
-                        form.reset();
-                        form.querySelectorAll(".error-msg").forEach((el) => el.classList.remove("active"));
-                        form.querySelectorAll("input, select").forEach((el) => el.classList.remove("error"));
-                    }
-                }, 300);
-            }
-        });
-    }
-
-    // Initialize dashboard
-    await loadUsers();
-    await loadPermits();
-    await loadStats();
 });

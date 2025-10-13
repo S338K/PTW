@@ -238,6 +238,38 @@ input:focus {
   transform: translateY(0);
 }
 
+/* ===== Inline styles that were in signup.html ===== */
+/* These were duplicated in the HTML <style> block; keep them here only */
+input.invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+input.valid {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1) !important;
+}
+
+.error-message:not(:empty) {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Responsive adjustments that were present in the inline <style> */
+@media (max-width: 768px) {
+  #officeAddressSection {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem 1.25rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #officeAddressSection {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem 1.25rem !important;
+  }
+}
+
 /* ===== Input States ===== */
 input.invalid {
   border-color: var(--error-color);

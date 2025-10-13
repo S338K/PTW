@@ -2,178 +2,351 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Admin Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HIA Baggage Handling System</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="../images/HIA_logo.png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Theme integration -->
     <link rel="stylesheet" href="../theme.css" />
     <link rel="stylesheet" href="admin.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
-<body>
-    <header>
-        <h1>Admin Dashboard</h1>
-        <button id="addUserBtn">Add New User</button>
-        <button id="logoutBtn">Logout</button>
-    </header>
+<body class="bg-[var(--bg-surface)] text-[var(--text-primary)] font-system min-h-screen transition-all duration-300">
+    <!-- Reworked header using provided template styles but keeping IDs JS expects -->
+    <header class="relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-hia-blue via-hia-light-blue to-hia-blue opacity-90"></div>
+        <div class="absolute inset-0 bg-black/20"></div>
 
-    <main>
-        <!-- User Details & Role Management -->
-        <section>
-            <h2>User Details & Role Management</h2>
-            <table id="usersTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Registered</th>
-                        <th>Last Login</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="6">Loading…</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <!-- Permit Status Overview -->
-        <section>
-            <h2>Permit Status Overview</h2>
-            <table id="permitsTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Permit No.</th>
-                        <th>Submitted</th>
-                        <th>Requester Name</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="7">Loading…</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <!-- Summary Statistics -->
-        <section>
-            <h2>Summary Statistics</h2>
-            <div class="stats-grid">
-                <div class="card">
-                    <h3>Total Users</h3>
-                    <div class="value" id="statUsers">—</div>
-                    <button class="expandBtn" onclick="toggleDetails('userBreakdown', this)">Expand</button>
-                    <div class="breakdown" id="userBreakdown">
-                        <p class="active">Active: <span id="statActiveUsers">—</span></p>
-                        <p class="inactive">Inactive: <span id="statInactiveUsers">—</span></p>
+        <div class="relative z-10 container mx-auto px-4 py-4">
+            <div class="flex items-center lg:justify-between gap-4">
+                <div class="flex items-center space-x-6">
+                    <div class="space-y-1">
+                        <h1 id="profileDisplayName" class="text-white text-xl font-bold">Welcome, Admin</h1>
                     </div>
                 </div>
-                <div class="card">
-                    <h3>Total Permits</h3>
-                    <div class="value" id="statPermits">—</div>
-                    <button class="expandBtn" onclick="toggleDetails('permitBreakdown', this)">Expand</button>
-                    <div class="breakdown" id="permitBreakdown">
-                        <p class="pending">Pending: <span id="statPending">—</span></p>
-                        <p class="inprogress">In Progress: <span id="statInProgress">—</span></p>
-                        <p class="approved">Approved: <span id="statApproved">—</span></p>
-                        <p class="rejected">Rejected: <span id="statRejected">—</span></p>
-                    </div>
+
+                <div class="flex items-center space-x-3">
+                    <button id="addUserBtn"
+                        class="px-4 py-2 bg-white/20 text-white rounded-lg border border-white/20 hover:bg-white/25">Add
+                        New User</button>
+                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Log
+                        Out</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- header/profile dropdown removed - profile actions moved to header buttons -->
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Keep users table with expected ID -->
+        <section>
+            <div class="section-header flex items-center justify-between">
+                <h2 class="text-lg font-bold">User Details & Role Management</h2>
+                <button class="expandBtn icon-only" aria-label="Toggle user list"
+                    onclick="toggleDetails('usersSection', this)">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div id="usersSection" class="panel">
+                <table id="usersTable" class="w-full">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Registered</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="8">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Restored small stats summary expected by admin.js -->
+        <div class="mb-6 stats-grid mt-6" aria-hidden="false">
+            <div class="card">
+                <h3>Total Users</h3>
+                <div id="statUsers" class="value">0</div>
+                <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
+                    <div>Active<br /><strong id="statActiveUsers">0</strong></div>
+                    <div>Inactive<br /><strong id="statInactiveUsers">0</strong></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Total Permits</h3>
+                <div id="statPermits" class="value">0</div>
+                <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
+                    <div>Pending<br /><strong id="statPending">0</strong></div>
+                    <div>In Progress<br /><strong id="statInProgress">0</strong></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Permit Outcome</h3>
+                <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
+                    <div>Approved<br /><strong id="statApproved">0</strong></div>
+                    <div>Rejected<br /><strong id="statRejected">0</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permits table expected ID -->
+        <section class="mt-6">
+            <div class="section-header flex items-center justify-between">
+                <h2 class="text-lg font-bold">Submitted Permit Details</h2>
+                <button class="expandBtn icon-only" aria-label="Toggle permits list"
+                    onclick="toggleDetails('permitsSection', this)">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div id="permitsSection" class="panel">
+                <div class="overflow-x-auto">
+                    <table id="permitsTable" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>Serial No.</th>
+                                <th>Submitted Date & Time</th>
+                                <th>Permit Title</th>
+                                <th>Status</th>
+                                <th>Permit Number</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
 
-        <!-- Visual Analytics -->
-        <section>
-            <h2>Visual Analytics</h2>
-            <div class="charts-row">
-                <div class="chart-card">
-                    <h3>User Status</h3>
-                    <canvas id="userStatusChart"></canvas>
+        <!-- Stats (mapped to existing IDs) -->
+        <section class="mt-8">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+                <div class="xl:col-span-2 space-y-6">
+                    <!-- Stats and charts area (chart canvases with expected IDs) -->
+                    <div class="bg-[var(--bg-surface)] rounded-2xl p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center" id="statCardPermits">
+                                <div id="totalPermits" class="text-2xl font-bold">0</div>
+                                <div class="text-sm">Total Permits</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="approvedPermits" class="text-2xl font-bold">0</div>
+                                <div class="text-sm">Approved</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="pendingPermits" class="text-2xl font-bold">0</div>
+                                <div class="text-sm">Pending</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <h4 class="text-sm font-semibold mb-3">Status Distribution</h4>
+                                <canvas id="permitStatusChart" height="200"></canvas>
+                            </div>
+                            <div class="bg-gray-50 rounded-xl p-4">
+                                <h4 class="text-sm font-semibold mb-3">Monthly Trends</h4>
+                                <canvas id="monthlyTrendChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[var(--bg-surface)] rounded-2xl p-6">
+                        <h3 class="font-bold">Recent Activity</h3>
+                        <div id="recentActivityList" class="mt-4">
+                            <div class="text-center py-8 text-[var(--text-primary)] opacity-60">Loading recent
+                                activity...</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="chart-card">
-                    <h3>User Roles</h3>
-                    <canvas id="userRoleChart"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Permit Status</h3>
-                    <canvas id="permitStatusChart"></canvas>
+
+                <div class="bg-[var(--bg-surface)] rounded-2xl p-4">
+                    <h3 class="font-bold">Permit Statistics</h3>
+                    <canvas id="profileStatsChart" height="160"></canvas>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Add New User -->
-    <div id="userModal" class="side-modal">
-        <div class="side-modal-content">
-
-            <!-- Header -->
-            <div class="modal-header">
-                <h2>Register New User</h2>
-                <span class="close">&times;</span>
+    <!-- Profile Settings Modal (kept) -->
+    <div id="profileSettingsModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div
+                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Profile Settings</h3>
+                    <button onclick="hideProfileSettings()" class="text-[var(--text-primary)] hover:text-hia-blue"><i
+                            class="fas fa-times"></i></button>
+                </div>
             </div>
-
-            <!-- Body -->
-            <div class="modal-body">
-                <form id="userForm" method="POST" novalidate>
-                    <label for="fullName">Full Name</label>
-                    <input id="fullName" type="text" name="fullName" required>
-                    <small class="error-msg"></small>
-
-                    <label for="email">Email Address</label>
-                    <input id="email" type="email" name="email" required>
-                    <small class="error-msg"></small>
-
-                    <label for="mobile">Mobile Number</label>
-                    <input id="mobile" type="tel" name="mobile" required pattern="[0-9]{8,15}">
-                    <small class="error-msg"></small>
-
-                    <label for="company">Company</label>
-                    <input id="company" type="text" name="company" required>
-                    <small class="error-msg"></small>
-
-                    <label for="department">Department</label>
-                    <input id="department" type="text" name="department" required>
-                    <small class="error-msg"></small>
-
-                    <label for="designation">Designation</label>
-                    <input id="designation" type="text" name="designation" required>
-                    <small class="error-msg"></small>
-
-                    <label for="password">Password</label>
-                    <input id="password" type="password" name="password" required minlength="8">
-                    <small class="error-msg"></small>
-
-                    <label for="confirmPassword">Confirm Password</label>
-                    <input id="confirmPassword" type="password" name="confirmPassword" required minlength="8">
-                    <small class="error-msg"></small>
-
-                    <label for="userType">User Type</label>
-                    <select id="userType" name="role" required>
-                        <option value="">-- Select --</option>
-                        <option value="PreApprover">Pre-Approver</option>
-                        <option value="Approver">Approver</option>
-                        <option value="Admin">Admin</option>
-                    </select>
-                    <small class="error-msg"></small>
-                </form>
+            <div class="p-6">
+                <button onclick="showUpdatePasswordModal(); hideProfileSettings();" class="w-full p-4 rounded-xl">Change
+                    Password</button>
             </div>
-
-            <!-- Footer -->
-            <div class="modal-footer">
-                <button type="submit" form="userForm" class="btn view">Register</button>
-            </div>
-            <!-- Toast Notification -->
-            <div id="toast"></div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Update Password Modal (kept with IDs expected by admin.js) -->
+    <div id="updatePasswordModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div
+                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Change Password</h3>
+                    <button onclick="hideUpdatePasswordModal()"
+                        class="text-[var(--text-primary)] hover:text-hia-blue"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <form id="pdChangePasswordForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Current Password</label>
+                    <input type="password" id="pdCurrentPassword" class="w-full px-4 py-3 rounded-lg" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">New Password</label>
+                    <input type="password" id="pdNewPassword" class="w-full px-4 py-3 rounded-lg" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Confirm New Password</label>
+                    <input type="password" id="pdConfirmPassword" class="w-full px-4 py-3 rounded-lg" required>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="hideUpdatePasswordModal()"
+                        class="flex-1 px-6 py-3 rounded-lg">Cancel</button>
+                    <button type="submit" class="flex-1 px-6 py-3 bg-hia-blue text-white rounded-lg">Update
+                        Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Actions Modal kept and wired -->
+    <div id="quickActionsModal" class="qa-modal" aria-hidden="true" style="display:none;">
+        <div class="qa-modal-content">
+            <div class="modal-header">
+                <h2>Quick Actions</h2>
+                <button id="qaClose" class="close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>Change Password</h3>
+                <form id="pdChangePasswordFormModal" class="pd-form" onsubmit="return false;">
+                    <label>Current password</label>
+                    <input id="pdCurrentPasswordModal" type="password" />
+                    <label>New password</label>
+                    <input id="pdNewPasswordModal" type="password" />
+                    <label>Confirm password</label>
+                    <input id="pdConfirmPasswordModal" type="password" />
+                    <div style="margin-top:8px;display:flex;gap:8px;">
+                        <button type="button" id="pdChangeModalSubmit" class="btn view">Change</button>
+                        <button type="button" id="pdCancelChangeModal" class="btn">Cancel</button>
+                    </div>
+                </form>
+
+                <hr />
+
+                <h3>Download Reports</h3>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn" data-period="daily" id="pdReportDaily">Daily</button>
+                    <button class="btn" data-period="weekly" id="pdReportWeekly">Weekly</button>
+                    <button class="btn" data-period="monthly" id="pdReportMonthly">Monthly</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New User Modal -->
+    <div id="userModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div
+                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Add New User</h3>
+                    <button class="close"
+                        onclick="document.getElementById('userModal').style.display='none'">&times;</button>
+                </div>
+            </div>
+            <form id="userForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Full Name</label>
+                        <input name="fullName" id="fullName" required class="w-full px-4 py-3 rounded-lg" />
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input name="email" id="email" type="email" required class="w-full px-4 py-3 rounded-lg" />
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Mobile</label>
+                        <input name="mobile" id="mobile" type="tel" class="w-full px-4 py-3 rounded-lg" />
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Company</label>
+                        <input name="company" id="company" type="text" class="w-full px-4 py-3 rounded-lg" />
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Role</label>
+                        <select name="role" id="role" required class="w-full px-4 py-3 rounded-lg">
+                            <option value="admin">Admin</option>
+                            <option value="approver">Approver</option>
+                            <option value="pre-approver">Pre-Approver</option>
+                            <option value="requester">Requester</option>
+                        </select>
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input name="password" id="password" type="password" required
+                            class="w-full px-4 py-3 rounded-lg" />
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Confirm Password</label>
+                        <input name="confirmPassword" id="confirmPassword" type="password" required
+                            class="w-full px-4 py-3 rounded-lg" />
+                        <div class="error-msg" aria-live="polite"></div>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('userModal').style.display='none'"
+                        class="btn cancel flex-1 px-6 py-3 rounded-lg">Cancel</button>
+                    <button type="submit" class="btn create flex-1 px-6 py-3 rounded-lg">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
+    <script type="module" src="../session.js"></script>
     <script type="module" src="admin.js"></script>
 </body>
 

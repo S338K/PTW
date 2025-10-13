@@ -42,17 +42,9 @@ app.use(
   })
 );
 
-// Handle preflight requests - Express 5.x compatible version using middleware
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+// NOTE: CORS preflight is handled by the `cors` middleware above. Avoid a manual
+// OPTIONS handler that sets Access-Control-Allow-Origin to '*' because that
+// conflicts with credentialed requests (Access-Control-Allow-Credentials).
 
 // ===== Security & Cache Headers ===== //
 app.use((req, res, next) => {

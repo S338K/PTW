@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (emailEl) emailEl.textContent = user.email || "—";
 
   const companyEl = document.getElementById("profileCompany");
-  if (companyEl) companyEl.textContent = user.company || "—";
+  // company display removed from profile overview
 
   /* ===== Populate Avatar and Display Names ===== */
   const profileInitials = (user.fullName || user.username || "U").charAt(0).toUpperCase();
@@ -199,34 +199,121 @@ document.addEventListener('DOMContentLoaded', async function () {
   const hoverEmail = document.getElementById("hoverEmail");
   if (hoverEmail) hoverEmail.textContent = user.email || "—";
 
-  const hoverCompany = document.getElementById("hoverCompany");
-  if (hoverCompany) hoverCompany.textContent = user.company || "—";
+  // company removed from profile overview
 
   const hoverPhone = document.getElementById("hoverPhone");
-  if (hoverPhone) hoverPhone.textContent = user.phone || "Not provided";
+  // Accept mobile, mobileNumber, phoneNumber, contact objects
+  const phoneVal = user.mobile || user.mobileNumber || user.phone || user.phoneNumber || (user.contact && (user.contact.mobile || user.contact.phone)) || "Not provided";
+  if (hoverPhone) hoverPhone.textContent = phoneVal;
 
   const hoverJoinDate = document.getElementById("hoverJoinDate");
-  if (hoverJoinDate) hoverJoinDate.textContent = `Member since ${user.joinDate || "2024"}`;
+  if (hoverJoinDate) {
+    // Prefer createdAt from user record and format as 'Month Year'
+    const created = user.createdAt || user.created_at || user.joinDate || user.registeredAt;
+    if (created) {
+      const d = new Date(created);
+      try {
+        const monthYear = d.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+        hoverJoinDate.textContent = `Member since ${monthYear}`;
+      } catch (e) {
+        hoverJoinDate.textContent = `Member since ${d.getFullYear()}`;
+      }
+    } else {
+      hoverJoinDate.textContent = 'Member since Unknown';
+    }
+  }
+
+  // Populate IP address (server should send client IP on session)
+  const hoverIp = document.getElementById('hoverIp');
+  if (hoverIp) {
+    // Prefer server-provided client IP fields if available
+    let ip = user.clientIp || user.ip || user.ipAddress || user.ip_address || user.remoteAddress || null;
+    if (ip) {
+      hoverIp.textContent = `IP Address: ${ip}`;
+    } else {
+      // Try a backend endpoint that returns the client IP (non-blocking)
+      fetch(`${API_BASE}/api/client-ip`, { credentials: 'include' })
+        .then(res => {
+          if (!res.ok) throw new Error('no-ip-endpoint');
+          return res.json();
+        })
+        .then(data => {
+          if (data && (data.ip || data.clientIp)) {
+            hoverIp.textContent = `IP Address: ${data.ip || data.clientIp}`;
+          }
+        })
+        .catch(() => {
+          // Optional public fallback. If you prefer not to call external services, remove this block
+          fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(d => { if (d && d.ip) hoverIp.textContent = `IP Address: ${d.ip}`; })
+            .catch(() => { hoverIp.textContent = 'IP Address: Unknown'; });
+        });
+    }
+  }
+
+  // Set active/inactive status badge
+  const hoverStatusBadge = document.getElementById('hoverStatusBadge');
+  const hoverStatusText = document.getElementById('hoverStatusText');
+  const hoverStatusDot = document.getElementById('hoverStatusDot');
+  const statusVal = (user.userStatus || user.status || user.user_status || user.userState || 'Active');
+  if (hoverStatusText) hoverStatusText.textContent = statusVal === 'Inactive' ? 'Inactive' : 'Active User';
+  if (hoverStatusBadge) {
+    if (statusVal === 'Inactive') {
+      hoverStatusBadge.classList.remove('bg-green-100');
+      hoverStatusBadge.classList.add('bg-red-100');
+      if (hoverStatusText) hoverStatusText.classList.remove('text-green-700');
+      if (hoverStatusText) hoverStatusText.classList.add('text-red-600');
+    } else {
+      hoverStatusBadge.classList.remove('bg-red-100');
+      hoverStatusBadge.classList.add('bg-green-100');
+      if (hoverStatusText) hoverStatusText.classList.remove('text-red-600');
+      if (hoverStatusText) hoverStatusText.classList.add('text-green-700');
+    }
+  }
 
   /* ===== Welcome + Last Login ===== */
-  let lastLoginText;
+  // Compute last login text
+  let lastLoginText = 'Never';
   if (user.prevLogin) {
     lastLoginText = formatLastLogin(user.prevLogin);
   } else if (user.lastLogin) {
     lastLoginText = formatLastLogin(user.lastLogin);
-  } else {
-    lastLoginText = 'First time login';
+  } else if (user.last_login) {
+    lastLoginText = formatLastLogin(user.last_login);
   }
 
   const lastLoginDiv = document.getElementById('profileLastLogin');
   if (lastLoginDiv) {
-    const welcomeName = user.fullName || user.username || "User";
-    lastLoginDiv.textContent = `Welcome: ${welcomeName} || Last Login: ${lastLoginText}`;
+    lastLoginDiv.textContent = `Last Login: ${lastLoginText}`;
   }
 
-  // Also populate hover tooltip last login
+  // Also populate hover tooltip last login in format: Last Login at <time> on <day>
   const hoverLastLogin = document.getElementById("hoverLastLogin");
-  if (hoverLastLogin) hoverLastLogin.textContent = `Last login: ${lastLoginText}`;
+  if (hoverLastLogin) {
+    // Determine source date value
+    let sourceDate = null;
+    if (user.prevLogin) sourceDate = new Date(user.prevLogin);
+    else if (user.lastLogin) sourceDate = new Date(user.lastLogin);
+    else if (user.last_login) sourceDate = new Date(user.last_login);
+
+    if (sourceDate && !isNaN(sourceDate.getTime())) {
+      const now = new Date();
+      const timePart = sourceDate.toLocaleTimeString(undefined, { hour12: false });
+      const isSameDay = sourceDate.getFullYear() === now.getFullYear() && sourceDate.getMonth() === now.getMonth() && sourceDate.getDate() === now.getDate();
+      const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+      const isYesterday = sourceDate.getFullYear() === yesterday.getFullYear() && sourceDate.getMonth() === yesterday.getMonth() && sourceDate.getDate() === yesterday.getDate();
+
+      let dayPart;
+      if (isSameDay) dayPart = 'Today';
+      else if (isYesterday) dayPart = 'Yesterday';
+      else dayPart = sourceDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+
+      hoverLastLogin.textContent = `Last Login at ${timePart} on ${dayPart}`;
+    } else {
+      hoverLastLogin.textContent = 'Last Login: Never';
+    }
+  }
 
   /* ===== Load Submitted Permit Details table ===== */
   if (document.getElementById('permitTable')) {
@@ -410,7 +497,6 @@ function updateEnhancedProfileDisplay(user) {
   const hoverName = document.getElementById('hoverName');
   const hoverRole = document.getElementById('hoverRole');
   const hoverEmail = document.getElementById('hoverEmail');
-  const hoverCompany = document.getElementById('hoverCompany');
   const hoverLastLogin = document.getElementById('hoverLastLogin');
 
   // Update profile initials in both places
@@ -430,24 +516,67 @@ function updateEnhancedProfileDisplay(user) {
     hoverRole.textContent = user.role || 'System User';
   }
 
+  // Update status badge inside enhanced display as well
+  const hoverStatusBadge = document.getElementById('hoverStatusBadge');
+  const hoverStatusText = document.getElementById('hoverStatusText');
+  const hoverStatusDot = document.getElementById('hoverStatusDot');
+  const statusVal = (user.userStatus || user.status || user.user_status || 'Active');
+  if (hoverStatusText) hoverStatusText.textContent = statusVal === 'Inactive' ? 'Inactive' : 'Active User';
+  if (hoverStatusBadge) {
+    if (statusVal === 'Inactive') {
+      hoverStatusBadge.classList.remove('bg-green-100');
+      hoverStatusBadge.classList.add('bg-red-100');
+      if (hoverStatusText) hoverStatusText.classList.remove('text-green-700');
+      if (hoverStatusText) hoverStatusText.classList.add('text-red-600');
+    } else {
+      hoverStatusBadge.classList.remove('bg-red-100');
+      hoverStatusBadge.classList.add('bg-green-100');
+      if (hoverStatusText) hoverStatusText.classList.remove('text-red-600');
+      if (hoverStatusText) hoverStatusText.classList.add('text-green-700');
+    }
+  }
+
   if (hoverEmail) {
     hoverEmail.textContent = user.email || 'user@hia.gov.ae';
   }
 
-  if (hoverCompany) {
-    hoverCompany.textContent = user.company || 'HIA';
+  // company removed from enhanced display
+
+  // Populate phone/mobile in update flow
+  const hoverPhone = document.getElementById('hoverPhone');
+  const phoneVal = user.mobile || user.mobileNumber || user.phone || user.phoneNumber || (user.contact && (user.contact.mobile || user.contact.phone)) || 'Not provided';
+  if (hoverPhone) hoverPhone.textContent = phoneVal;
+
+  // Populate IP if available in user object
+  const hoverIp = document.getElementById('hoverIp');
+  if (hoverIp) {
+    const ipFromUser = user.clientIp || user.ip || user.ipAddress || user.ip_address || user.remoteAddress || null;
+    if (ipFromUser) hoverIp.textContent = `IP Address: ${ipFromUser}`;
   }
 
   if (hoverLastLogin) {
-    let lastLoginText;
-    if (user.prevLogin) {
-      lastLoginText = formatLastLogin(user.prevLogin);
-    } else if (user.lastLogin) {
-      lastLoginText = formatLastLogin(user.lastLogin);
+    // Build 'Last Login at <time> on <day>'
+    let sourceDate = null;
+    if (user.prevLogin) sourceDate = new Date(user.prevLogin);
+    else if (user.lastLogin) sourceDate = new Date(user.lastLogin);
+    else if (user.last_login) sourceDate = new Date(user.last_login);
+
+    if (sourceDate && !isNaN(sourceDate.getTime())) {
+      const now = new Date();
+      const timePart = sourceDate.toLocaleTimeString(undefined, { hour12: false });
+      const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+      const isSameDay = sourceDate.getFullYear() === now.getFullYear() && sourceDate.getMonth() === now.getMonth() && sourceDate.getDate() === now.getDate();
+      const isYesterday = sourceDate.getFullYear() === yesterday.getFullYear() && sourceDate.getMonth() === yesterday.getMonth() && sourceDate.getDate() === yesterday.getDate();
+
+      let dayPart;
+      if (isSameDay) dayPart = 'Today';
+      else if (isYesterday) dayPart = 'Yesterday';
+      else dayPart = sourceDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+
+      hoverLastLogin.textContent = `Last Login at ${timePart} on ${dayPart}`;
     } else {
-      lastLoginText = 'First time login';
+      hoverLastLogin.textContent = 'Last Login: Never';
     }
-    hoverLastLogin.textContent = lastLoginText;
   }
 
   // Update other profile elements
@@ -524,41 +653,6 @@ function hideProfileSettings() {
   }
 }
 
-function showUpdateProfileModal() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('modal_opened', 'Opened profile edit modal', 'User initiated profile update');
-  }
-
-  const modal = document.getElementById('updateProfileModal');
-  if (modal) {
-    // Pre-fill form with current data
-    const fullNameEl = document.getElementById('profileFullName');
-    const emailEl = document.getElementById('profileEmail');
-    const companyEl = document.getElementById('profileCompany');
-    const phoneEl = document.getElementById('profilePhone');
-
-    const updateFullName = document.getElementById('updateFullName');
-    const updateEmail = document.getElementById('updateEmail');
-    const updateCompany = document.getElementById('updateCompany');
-    const updatePhone = document.getElementById('updatePhone');
-
-    if (updateFullName && fullNameEl) updateFullName.value = fullNameEl.textContent;
-    if (updateEmail && emailEl) updateEmail.value = emailEl.textContent;
-    if (updateCompany && companyEl) updateCompany.value = companyEl.textContent;
-    if (updatePhone && phoneEl) updatePhone.value = phoneEl.textContent !== 'Not provided' ? phoneEl.textContent : '';
-
-    modal.classList.remove('hidden');
-  }
-}
-
-function hideUpdateProfileModal() {
-  const modal = document.getElementById('updateProfileModal');
-  if (modal) {
-    modal.classList.add('hidden');
-  }
-}
-
 function showUpdatePasswordModal() {
   // Log activity
   if (typeof logUserActivity === 'function') {
@@ -592,42 +686,7 @@ function downloadActivity() {
 
 // Setup Modal Forms
 function setupModalForms() {
-  // Profile Update Form
-  const profileForm = document.getElementById('updateProfileForm');
-  if (profileForm) {
-    profileForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const formData = {
-        fullName: document.getElementById('updateFullName').value,
-        email: document.getElementById('updateEmail').value,
-        phone: document.getElementById('updatePhone').value,
-        company: document.getElementById('updateCompany').value
-      };
-
-      try {
-        // Log activity
-        if (typeof logUserActivity === 'function') {
-          logUserActivity('profile_updated', 'Profile information updated', `Updated: ${Object.keys(formData).join(', ')}`);
-        }
-
-        // Here you would make API call to update profile
-        console.log('Updating profile:', formData);
-
-        // Update display
-        document.getElementById('profileFullName').textContent = formData.fullName;
-        document.getElementById('profileEmail').textContent = formData.email;
-        document.getElementById('profileCompany').textContent = formData.company;
-        document.getElementById('profilePhone').textContent = formData.phone || 'Not provided';
-
-        hideUpdateProfileModal();
-        alert('Profile updated successfully!');
-      } catch (error) {
-        console.error('Profile update error:', error);
-        alert('Error updating profile. Please try again.');
-      }
-    });
-  }
+  // Profile update form removed from HTML; no client-side handler required here
 
   // Password Update Form
   const passwordForm = document.getElementById('updatePasswordForm');
@@ -1604,8 +1663,6 @@ window.toggleNotifications = toggleNotifications;
 window.setupDropdownCloseHandlers = setupDropdownCloseHandlers;
 window.showProfileSettings = showProfileSettings;
 window.hideProfileSettings = hideProfileSettings;
-window.showUpdateProfileModal = showUpdateProfileModal;
-window.hideUpdateProfileModal = hideUpdateProfileModal;
 window.showUpdatePasswordModal = showUpdatePasswordModal;
 window.hideUpdatePasswordModal = hideUpdatePasswordModal;
 window.downloadActivity = downloadActivity;

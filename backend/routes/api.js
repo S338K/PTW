@@ -95,6 +95,24 @@ router.get('/dashboard/stats', async (req, res) => {
   }
 });
 
+// ===== CLIENT IP helper endpoint =====
+router.get('/client-ip', (req, res) => {
+  try {
+    let clientIp = null;
+    const xff = req.headers['x-forwarded-for'];
+    if (xff) clientIp = String(xff).split(',')[0].trim();
+    if (!clientIp && req.headers['cf-connecting-ip']) clientIp = req.headers['cf-connecting-ip'];
+    if (!clientIp && req.headers['x-real-ip']) clientIp = req.headers['x-real-ip'];
+    if (!clientIp && req.socket && req.socket.remoteAddress) clientIp = req.socket.remoteAddress;
+    if (!clientIp && req.ip) clientIp = req.ip;
+
+    res.json({ ip: clientIp || null });
+  } catch (err) {
+    console.error('client-ip endpoint error', err);
+    res.status(500).json({ ip: null });
+  }
+});
+
 // ===== PERMITS DATA =====
 router.get('/permits', async (req, res) => {
   try {
@@ -182,6 +200,35 @@ router.get('/debug/permits', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== DEV-ONLY: inspect session & headers =====
+// Returns useful info for debugging credentialed requests. Disabled in production.
+router.get('/debug/session', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  try {
+    const safeSession = req.session
+      ? {
+        id: req.session.id,
+        userId: req.session.userId || null,
+        userRole: req.session.userRole || null,
+        cookie: req.session.cookie || null,
+      }
+      : null;
+    const headers = {
+      origin: req.headers.origin || null,
+      cookie: req.headers.cookie || null,
+      'x-forwarded-for': req.headers['x-forwarded-for'] || null,
+      'cf-connecting-ip': req.headers['cf-connecting-ip'] || null,
+      'x-real-ip': req.headers['x-real-ip'] || null,
+    };
+    res.json({ session: safeSession, headers, ip: req.ip || req.socket?.remoteAddress || null });
+  } catch (err) {
+    console.error('Debug session endpoint error', err);
+    res.status(500).json({ error: err.message });
   }
 });
 

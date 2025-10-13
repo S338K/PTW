@@ -37,8 +37,10 @@ export async function checkSession() {
         }
 
         const data = await res.json();
-        // Flatten: return user fields + role from session
-        return { ...data.user, role: data.session.role };
+        // Flatten: return user fields + role from session and include clientIp if provided
+        const merged = { ...data.user, role: data.session.role };
+        if (data.clientIp) merged.clientIp = data.clientIp;
+        return merged;
     } catch (err) {
         console.error("Session check failed:", err);
         return null;

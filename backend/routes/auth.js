@@ -15,6 +15,7 @@ router.post('/register', async (req, res) => {
       company,
       email,
       phone,
+      mobile,
       password,
       role,
       buildingNo,
@@ -41,10 +42,13 @@ router.post('/register', async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(409).json({ message: 'Email is already in use' });
 
+    // Accept either `phone` or `mobile` from different frontends/forms
+    const phoneVal = (phone && phone.trim()) || (mobile && mobile.trim()) || '';
+
     const newUser = new User({
       username,
       email,
-      phone: phone || '',
+      phone: phoneVal,
       password, // plain text here, pre-save hook will hash it
       company: company || '',
       role: role || 'Requester',
@@ -68,6 +72,7 @@ router.post('/register', async (req, res) => {
         username: newUser.username,
         email: newUser.email,
         company: newUser.company,
+        phone: newUser.phone,
         role: newUser.role,
         lastLogin: newUser.lastLogin,
         officeAddress: newUser.officeAddress,
@@ -353,29 +358,41 @@ router.put('/update-password', async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // Locate the account in the correct collection depending on role
+    let account = null;
+    const role = req.session.userRole;
+    if (role === 'Admin') {
+      const Admin = require('../models/admin');
+      account = await Admin.findById(req.session.userId);
+    } else if (role === 'Approver' || role === 'PreApprover') {
+      const Approver = require('../models/approver');
+      account = await Approver.findById(req.session.userId);
+    } else {
+      account = await User.findById(req.session.userId);
+    }
+
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
     }
 
     // Verify current password
-    const passwordMatch = await user.comparePassword(currentPassword);
+    const passwordMatch = await account.comparePassword(currentPassword);
     if (!passwordMatch) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
     // Update password (pre-save hook will hash it)
-    user.password = newPassword;
-    user.passwordUpdatedAt = new Date();
+    account.password = newPassword;
+    account.passwordUpdatedAt = new Date();
     const pwdRemark = req.body.remark;
     if (pwdRemark) {
-      user.passwordUpdateLogs = user.passwordUpdateLogs || [];
-      user.passwordUpdateLogs.push({ remark: pwdRemark, updatedAt: new Date() });
+      account.passwordUpdateLogs = account.passwordUpdateLogs || [];
+      account.passwordUpdateLogs.push({ remark: pwdRemark, updatedAt: new Date() });
     }
-    await user.save();
+    await account.save();
 
-    logger.info({ userId: user._id }, 'Password updated successfully');
-    res.json({ message: 'Password updated successfully', passwordUpdatedAt: user.passwordUpdatedAt });
+    logger.info({ userId: account._id }, 'Password updated successfully');
+    res.json({ message: 'Password updated successfully', passwordUpdatedAt: account.passwordUpdatedAt });
   } catch (err) {
     logger.error({ err }, '[Update Password] Error');
     res.status(500).json({ message: 'Error updating password', error: err.message });

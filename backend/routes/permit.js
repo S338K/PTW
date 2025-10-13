@@ -16,12 +16,10 @@ const upload = multer({ storage });
 // ----- GET all permits for current requester -----
 router.get('/permit', requireAuth, async (req, res) => {
   try {
-    console.log('🔍 Permit request - Session userId:', req.session.userId);
     const permits = await Permit.find({ requester: req.session.userId }).sort({ createdAt: -1 });
-    console.log('📋 Found permits:', permits.length);
     res.json(permits);
   } catch (err) {
-    console.error('❌ Permit fetch error:', err);
+    console.error('Permit fetch error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -156,7 +154,6 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
       };
       try {
         const execPath = await chromium.executablePath();
-        console.log('[PDF] Launching with @sparticuz/chromium at', execPath);
         browser = await puppeteer.launch({
           args: chromium.args,
           defaultViewport: chromium.defaultViewport,
@@ -165,13 +162,10 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
         });
         launchedOwnBrowser = true;
       } catch (e) {
-        console.warn('[PDF] Sparticuz chromium launch failed, falling back. Reason:', e?.message || e);
         try {
           browser = await puppeteer.launch(launchOptions);
-          console.log('[PDF] Launched Puppeteer bundled Chromium fallback');
           launchedOwnBrowser = true;
         } catch (e2) {
-          console.warn('[PDF] Bundled Chromium launch failed, trying system Chrome/Edge. Reason:', e2?.message || e2);
           const candidates = [
             'C:/Program Files/Google/Chrome/Application/chrome.exe',
             'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
@@ -182,16 +176,14 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
           for (const execPath of candidates) {
             try {
               browser = await puppeteer.launch({ ...launchOptions, executablePath: execPath });
-              console.log('[PDF] Launched system browser at', execPath);
               launchedOwnBrowser = true;
               launched = true;
               break;
             } catch (e3) {
-              console.warn('[PDF] Failed to launch at', execPath, 'Reason:', e3?.message || e3);
+              // ignore
             }
           }
           if (!launched) {
-            console.error('[PDF] All launch strategies failed.');
             throw e2;
           }
         }

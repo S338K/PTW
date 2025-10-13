@@ -4,7 +4,7 @@
     "window.autoDetectColorScheme": false,
     "editor.formatOnSave": true,
     "files.autoSave": "afterDelay",
-    "chat.agent.maxRequests": 50,
+    "chat.agent.maxRequests": 250,
     "chat.agentSessionsViewLocation": "view",
     "chat.allowAnonymousAccess": true,
     "chat.fontSize": 14

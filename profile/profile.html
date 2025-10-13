@@ -15,7 +15,7 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script>
-        // Tailwind configuration for custom HIA colors
+
         tailwind.config = {
             theme: {
                 extend: {
@@ -52,7 +52,7 @@
                     <!-- Profile Avatar with Dropdown -->
                     <div class="relative">
                         <button id="profileDropdownBtn"
-                            class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center 
+                            class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center 
                                border-3 border-white/30 shadow-lg backdrop-blur-sm cursor-pointer
                                hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50">
                             <span id="profileInitials" class="text-white text-xl font-bold">U</span>
@@ -73,13 +73,14 @@
                                         class="w-16 h-16 bg-hia-blue/10 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <span id="hoverInitials" class="text-hia-blue font-bold text-2xl">U</span>
                                     </div>
-                                    <h3 id="hoverName" class="text-gray-800 font-bold text-lg mb-1">Loading...</h3>
-                                    <p id="hoverCompany" class="text-gray-600 text-sm mb-2">Loading...</p>
-                                    <p class="text-gray-500 text-xs mb-3">Baggage Handling System Portal</p>
+                                    <h3 id="hoverName" class="text-white-800 font-bold text-lg mb-1">Loading...</h3>
 
-                                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                        <span class="text-green-700 text-xs font-medium">Active User</span>
+                                    <div id="hoverStatusBadge"
+                                        class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+                                        <div id="hoverStatusDot"
+                                            class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                        <span id="hoverStatusText" class="text-green-700 text-xs font-medium">Active
+                                            User</span>
                                     </div>
                                 </div>
 
@@ -94,10 +95,7 @@
                                             <i class="fas fa-envelope text-hia-blue w-4"></i>
                                             <span id="hoverEmail" class="text-gray-700">Loading...</span>
                                         </div>
-                                        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                            <i class="fas fa-building text-hia-blue w-4"></i>
-                                            <span id="hoverCompanyName" class="text-gray-700">Loading...</span>
-                                        </div>
+                                        <!-- company row removed from personal information -->
                                         <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                                             <i class="fas fa-phone text-hia-blue w-4"></i>
                                             <span id="hoverPhone" class="text-gray-700">Loading...</span>
@@ -110,6 +108,10 @@
                                             <i class="fas fa-clock text-hia-blue w-4"></i>
                                             <span id="hoverLastLogin" class="text-gray-700">Loading...</span>
                                         </div>
+                                        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                            <i class="fas fa-globe text-hia-blue w-4"></i>
+                                            <span id="hoverIp" class="text-gray-700">IP Address: Loading...</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -120,13 +122,7 @@
                                         Quick Actions
                                     </h4>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <button onclick="showUpdateProfileModal()"
-                                            class="flex flex-col items-center gap-2 p-3 bg-hia-blue/10 hover:bg-hia-blue/20 
-                                                   rounded-xl transition-all duration-200 text-gray-700 hover:text-hia-blue group">
-                                            <i
-                                                class="fas fa-user-edit text-lg group-hover:scale-110 transition-transform"></i>
-                                            <span class="text-xs font-medium">Edit Profile</span>
-                                        </button>
+                                        <!-- Edit Profile quick-action removed; use Profile Settings modal -->
                                         <button onclick="showUpdatePasswordModal()"
                                             class="flex flex-col items-center gap-2 p-3 bg-hia-blue/10 hover:bg-hia-blue/20 
                                                    rounded-xl transition-all duration-200 text-gray-700 hover:text-hia-blue group">
@@ -514,16 +510,7 @@
 
             <div class="p-6">
                 <div class="space-y-4">
-                    <button onclick="showUpdateProfileModal(); hideProfileSettings();" class="w-full flex items-center gap-3 p-4 bg-[var(--input-border)]/20 hover:bg-hia-blue/10 
-                                   rounded-xl transition-all duration-200 group">
-                        <i
-                            class="fas fa-user-edit text-hia-blue text-lg group-hover:scale-110 transition-transform duration-200"></i>
-                        <div class="text-left">
-                            <div class="text-[var(--text-primary)] font-semibold">Update Profile</div>
-                            <div class="text-[var(--text-primary)] opacity-60 text-sm">Change your personal information
-                            </div>
-                        </div>
-                    </button>
+                    <!-- Update Profile button intentionally removed; Profile editing is managed elsewhere -->
 
                     <button onclick="showUpdatePasswordModal(); hideProfileSettings();" class="w-full flex items-center gap-3 p-4 bg-[var(--input-border)]/20 hover:bg-hia-blue/10 
                                    rounded-xl transition-all duration-200 group">
@@ -537,68 +524,6 @@
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Update Profile Modal -->
-    <div id="updateProfileModal"
-        class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div
-            class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div
-                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                        <i class="fas fa-user-edit text-hia-blue"></i>
-                        Update Profile
-                    </h3>
-                    <button onclick="hideUpdateProfileModal()"
-                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-
-            <form id="updateProfileForm" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Full Name</label>
-                    <input type="text" id="updateFullName" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Email Address</label>
-                    <input type="email" id="updateEmail" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Phone Number</label>
-                    <input type="tel" id="updatePhone" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Company</label>
-                    <input type="text" id="updateCompany" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
-                </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="hideUpdateProfileModal()" class="flex-1 px-6 py-3 bg-[var(--input-border)]/20 hover:bg-[var(--input-border)]/40 
-                                   text-[var(--text-primary)] rounded-lg font-medium transition-all duration-200">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 px-6 py-3 bg-hia-blue hover:bg-hia-light-blue text-white 
-                                   rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95">
-                        Update Profile
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
