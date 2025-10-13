@@ -1,0 +1,15 @@
+# Jekyll configuration: exclude large or third-party folders from site build
+# This prevents Liquid from parsing files inside node_modules (which can contain
+# unescaped curly braces) and other folders that should not be part of the site.
+exclude:
+  - "node_modules"
+  - "backend/node_modules"
+  - "frontend/node_modules"
+  - "vendor"
+  - "Gemfile"
+  - "Gemfile.lock"
+
+# Optional: If you want to serve only specific directories, you can set
+# `include` instead. For GitHub Pages builds, excluding node_modules is the
+# minimal and safest fix to avoid Liquid parse errors coming from third-party
+# readme files.
