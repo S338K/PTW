@@ -291,7 +291,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.emulateMediaType('print');
     await page.waitForSelector('body', { timeout: 3000 });
-    await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, { timeout: 3000 }).catch(() => { });
+    await page.waitForFunction('document.body && document.body.innerText.trim().length > 0', { timeout: 3000 }).catch(() => { /* ignore */ });
     let pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
     // Fallback: if buffer suspiciously small, try data URL approach with screen media
     if (!pdfBuffer || pdfBuffer.length < 2000) {
@@ -303,7 +303,7 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
         const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
         await page.goto(dataUrl, { waitUntil: 'load' });
         await page.waitForSelector('body', { timeout: 3000 });
-        await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, { timeout: 3000 }).catch(() => { });
+        await page.waitForFunction('document.body && document.body.innerText.trim().length > 0', { timeout: 3000 }).catch(() => { /* ignore */ });
         pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
       } catch (e) {
         // keep original buffer if fallback fails
@@ -318,7 +318,11 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     res.send(pdfBuffer);
   } catch (err) {
     console.error('Error generating PDF:', err);
-    try { if (page) await page.close(); } catch { }
+    try {
+      if (page) await page.close();
+    } catch (closeErr) {
+      console.error('Error closing page after PDF failure:', closeErr);
+    }
     if (launchedOwnBrowser && browser) await browser.close();
     const payload = { message: 'Error generating PDF' };
     if (process.env.NODE_ENV !== 'production') {

@@ -55,7 +55,18 @@ app.use((req, res, next) => {
 
   // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  // Allow scripts/styles from self and secure CDNs (https:). Keep other directives restrictive.
+  // In production you may want to tighten these directives further and add a report-uri.
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+    "style-src 'self' 'unsafe-inline' https:",
+    "img-src 'self' data: https:",
+    "font-src 'self' https: data:",
+    "connect-src 'self' https:",
+    "frame-ancestors 'none'",
+  ].join('; ');
+  res.setHeader('Content-Security-Policy', csp);
 
   next();
 });
@@ -168,7 +179,7 @@ mongoose
   .catch((err) => logger.error(err));
 
 // ===== GLOBAL ERROR HANDLER ===== //
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   const timestamp = new Date().toISOString();
   logger.error(
     { method: req.method, url: req.originalUrl, stack: err.stack },
