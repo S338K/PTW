@@ -723,6 +723,7 @@ select.error {
 .chart-card canvas {
     width: 100% !important;
     height: 220px !important;
+    image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
 }
 
