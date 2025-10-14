@@ -589,6 +589,106 @@
         </div>
     </div>
 
+    <!-- View Permit Details Modal (Admin) -->
+    <div id="viewPermitModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div
+                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Permit Details</h3>
+                    <button id="viewPermitClose" class="close">&times;</button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="permit_id" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Permit Title</label>
+                        <div id="permit_title" class="font-semibold"></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Permit Number</label>
+                        <div id="permit_number"></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Status</label>
+                        <div id="permit_status"></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Submitted Date &
+                            Time</label>
+                        <div id="permit_submitted"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="font-bold mb-2">Requester Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
+                            <div id="permit_requester_name"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date &
+                                Time</label>
+                            <div id="permit_requester_time"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="font-bold mb-2">Pre-Approver Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
+                            <div id="permit_preapprover_name"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date &
+                                Time</label>
+                            <div id="permit_preapprover_time"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Comments</label>
+                        <div id="permit_preapprover_comments" class="whitespace-pre-line"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="font-bold mb-2">Approver Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
+                            <div id="permit_approver_name"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date &
+                                Time</label>
+                            <div id="permit_approver_time"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Comments</label>
+                        <div id="permit_approver_comments" class="whitespace-pre-line"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="font-bold mb-2">Attached Files</h4>
+                    <div id="permit_files" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <div class="modal-action-row pt-4">
+                    <button id="permitApproveBtn" class="modal-action-btn bg-green-600 text-white">Approve</button>
+                    <button id="permitRejectBtn" class="modal-action-btn bg-red-600 text-white">Reject</button>
+                    <button id="permitUpdateBtn" class="modal-action-btn">Update Permit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
     <script type="module" src="../session.js"></script>

@@ -520,161 +520,185 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="permitDetailsContent">
-                        <!-- Basic Permit Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="fw-bold text-primary mb-3">
-                                    <i class="fas fa-info-circle me-2"></i>Permit Information
-                                </h6>
-                                <div class="card border-light">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Permit Number:</strong> <span id="modalPermitNumber">-</span>
-                                                </p>
-                                                <p><strong>Permit Title:</strong> <span id="modalPermitTitle">-</span>
-                                                </p>
-                                                <p><strong>Requester:</strong> <span id="modalRequester">-</span></p>
-                                                <p><strong>Department:</strong> <span id="modalDepartment">-</span></p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Submitted Date:</strong> <span
-                                                        id="modalSubmittedDate">-</span></p>
-                                                <p><strong>Work Location:</strong> <span id="modalWorkLocation">-</span>
-                                                </p>
-                                                <p><strong>Priority:</strong> <span id="modalPriority">-</span></p>
-                                                <p><strong>Status:</strong> <span id="modalCurrentStatus"
-                                                        class="badge bg-success">Approved</span></p>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-12">
-                                                <p><strong>Work Description:</strong></p>
-                                                <p class="text-muted" id="modalWorkDescription">-</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                    <form id="permitDetailsForm">
+                        <!-- Requester Details -->
+                        <fieldset class="mb-4 border rounded p-3">
+                            <legend class="w-auto px-2">Requester Details</legend>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="modal_fullName" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="modal_fullName" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_lastName" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="modal_lastName" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_corpEmailId" class="form-label">Email Id</label>
+                                    <input type="email" class="form-control" id="modal_corpEmailId" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_contactDetails" class="form-label">Mobile Number</label>
+                                    <input type="text" class="form-control" id="modal_contactDetails" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_altContactDetails" class="form-label">Alternate Mobile
+                                        Number</label>
+                                    <input type="text" class="form-control" id="modal_altContactDetails" readonly>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Pre-Approver Decision -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="fw-bold text-warning mb-3">
-                                    <i class="fas fa-user-check me-2"></i>Pre-Approver Decision
-                                </h6>
-                                <div class="card border-warning">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Pre-Approver:</strong> <span id="modalPreApprover">-</span>
-                                                </p>
-                                                <p><strong>Decision Date:</strong> <span
-                                                        id="modalPreApprovalDate">-</span></p>
-                                                <p><strong>Status:</strong> <span id="modalPreApprovalStatus"
-                                                        class="badge bg-secondary">-</span></p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Processing Time:</strong> <span
-                                                        id="modalPreProcessingTime">-</span></p>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-12">
-                                                <p><strong>Pre-Approver Comments:</strong></p>
-                                                <div class="border rounded p-3 bg-light">
-                                                    <p class="mb-0 text-muted" id="modalPreApproverComments">-</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        </fieldset>
+                        <!-- Work Details -->
+                        <fieldset class="mb-4 border rounded p-3">
+                            <legend class="w-auto px-2">Work Details</legend>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="modal_permitTitle" class="form-label">Permit Title</label>
+                                    <input type="text" class="form-control" id="modal_permitTitle" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_terminal" class="form-label">Terminal</label>
+                                    <input type="text" class="form-control" id="modal_terminal" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_facility" class="form-label">Facility</label>
+                                    <input type="text" class="form-control" id="modal_facility" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_specifyTerminal" class="form-label">Specify Terminal</label>
+                                    <input type="text" class="form-control" id="modal_specifyTerminal" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_specifyFacility" class="form-label">Specify Facility</label>
+                                    <input type="text" class="form-control" id="modal_specifyFacility" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_impact" class="form-label">Impact on Operation</label>
+                                    <input type="text" class="form-control" id="modal_impact" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_levelOfImpact" class="form-label">Level of Impact</label>
+                                    <input type="text" class="form-control" id="modal_levelOfImpact" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_equipmentTypeInput" class="form-label">Type of Affected
+                                        Equipment</label>
+                                    <input type="text" class="form-control" id="modal_equipmentTypeInput" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_impactDetailsInput" class="form-label">Affected Equipment
+                                        Details</label>
+                                    <textarea class="form-control" id="modal_impactDetailsInput" rows="2"
+                                        readonly></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_natureOfWork" class="form-label">Nature of Work</label>
+                                    <input type="text" class="form-control" id="modal_natureOfWork" readonly>
+                                </div>
+                                <div class="col-md-8">
+                                    <label for="modal_workDescription" class="form-label">Work Description</label>
+                                    <textarea class="form-control" id="modal_workDescription" rows="2"
+                                        readonly></textarea>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Final Approver Decision -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="fw-bold text-success mb-3">
-                                    <i class="fas fa-stamp me-2"></i>Final Approver Decision
-                                </h6>
-                                <div class="card border-success">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Approver:</strong> <span id="modalFinalApprover">-</span></p>
-                                                <p><strong>Decision Date:</strong> <span
-                                                        id="modalFinalApprovalDate">-</span></p>
-                                                <p><strong>Status:</strong> <span id="modalFinalStatus"
-                                                        class="badge bg-secondary">-</span></p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Total Processing Time:</strong> <span
-                                                        id="modalTotalProcessingTime">-</span></p>
-                                                <p><strong>Valid Until:</strong> <span id="modalValidUntil">-</span></p>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-12">
-                                                <p><strong>Final Approver Comments:</strong></p>
-                                                <div class="border rounded p-3 bg-light">
-                                                    <p class="mb-0 text-muted" id="modalFinalApproverComments">-</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        </fieldset>
+                        <!-- Required Documents -->
+                        <fieldset class="mb-4 border rounded p-3">
+                            <legend class="w-auto px-2">Required Documents</legend>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="modal_ePermit" class="form-label">e-Permit Available?</label>
+                                    <input type="text" class="form-control" id="modal_ePermit" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_ePermitReason" class="form-label">Reason for No e-Permit</label>
+                                    <input type="text" class="form-control" id="modal_ePermitReason" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_fmmWorkorder" class="form-label">FMM Workorder Available?</label>
+                                    <input type="text" class="form-control" id="modal_fmmWorkorder" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_noFmmWorkorder" class="form-label">Reason for No FMM
+                                        Workorder</label>
+                                    <input type="text" class="form-control" id="modal_noFmmWorkorder" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_hseRisk" class="form-label">HSE Risk Assessment Available?</label>
+                                    <input type="text" class="form-control" id="modal_hseRisk" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_noHseRiskAssessmentReason" class="form-label">Reason for No HSE
+                                        Risk Assessment</label>
+                                    <input type="text" class="form-control" id="modal_noHseRiskAssessmentReason"
+                                        readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_opRisk" class="form-label">Operations Risk Assessment
+                                        Available?</label>
+                                    <input type="text" class="form-control" id="modal_opRisk" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modal_noOpsRiskAssessmentReason" class="form-label">Reason for No
+                                        Operations Risk Assessment</label>
+                                    <input type="text" class="form-control" id="modal_noOpsRiskAssessmentReason"
+                                        readonly>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Attached Files</label>
+                                    <div id="modal_files" class="border rounded p-2 bg-light"></div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Risk Assessment & Safety Measures -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="fw-bold text-info mb-3">
-                                    <i class="fas fa-shield-alt me-2"></i>Risk Assessment & Safety Measures
-                                </h6>
-                                <div class="card border-info">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Risk Level:</strong> <span
-                                                        class="badge bg-warning">Medium</span></p>
-                                                <p><strong>Required PPE:</strong></p>
-                                                <ul class="mb-0">
-                                                    <li>Safety helmet</li>
-                                                    <li>Electrical gloves</li>
-                                                    <li>Safety goggles</li>
-                                                </ul>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Safety Checklist:</strong></p>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                    <label class="form-check-label">Power isolation confirmed</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                    <label class="form-check-label">Safety barriers installed</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" checked disabled>
-                                                    <label class="form-check-label">Emergency contacts notified</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        </fieldset>
+                        <!-- Date & Time -->
+                        <fieldset class="mb-4 border rounded p-3">
+                            <legend class="w-auto px-2">Date & Time</legend>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="modal_startDateTime" class="form-label">Start Date & Time</label>
+                                    <input type="text" class="form-control" id="modal_startDateTime" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="modal_endDateTime" class="form-label">End Date & Time</label>
+                                    <input type="text" class="form-control" id="modal_endDateTime" readonly>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </fieldset>
+                        <!-- Signature -->
+                        <fieldset class="mb-4 border rounded p-3">
+                            <legend class="w-auto px-2">Signature</legend>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="modal_signName" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="modal_signName" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="modal_signDate" class="form-label">Date</label>
+                                    <input type="text" class="form-control" id="modal_signDate" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="modal_signTime" class="form-label">Time</label>
+                                    <input type="text" class="form-control" id="modal_signTime" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="modal_designation" class="form-label">Designation</label>
+                                    <input type="text" class="form-control" id="modal_designation" readonly>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <!-- Comments (required for Approve/Reject) -->
+                        <fieldset class="mb-4 border rounded p-3">
+                            <legend class="w-auto px-2">Approval Comments <span class="text-danger">*</span></legend>
+                            <textarea class="form-control" id="modal_approvalComments" rows="3" required
+                                placeholder="Enter your comments before approving or rejecting..."></textarea>
+                        </fieldset>
+                        <input type="hidden" id="modal_permitId">
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <div id="permitActions">
-                        <!-- Action buttons will be added dynamically based on permit status -->
-                    </div>
+                    <button type="button" class="btn btn-danger" id="modalRejectBtn">Reject</button>
+                    <button type="button" class="btn btn-success" id="modalApproveBtn">Approve</button>
                 </div>
             </div>
         </div>

@@ -39,12 +39,14 @@ router.post('/approve/:id', requireAuth, requirePreApprover, async (req, res) =>
   try {
     const { comments } = req.body;
 
+    // Use req.user._id if available, fallback to req.session.userId
+    const preApproverId = req.user?._id || req.session.userId;
     const updated = await Permit.findByIdAndUpdate(
       req.params.id,
       {
         $set: {
-          status: 'In Progress', // ✅ updated per your workflow
-          preApprovedBy: req.session.userId,
+          status: 'In Progress',
+          preApprovedBy: preApproverId,
           preApprovedAt: new Date(),
           preApproverComments: comments || '',
         },
@@ -68,12 +70,14 @@ router.post('/reject/:id', requireAuth, requirePreApprover, async (req, res) => 
   try {
     const { comments } = req.body;
 
+    // Use req.user._id if available, fallback to req.session.userId
+    const preApproverId = req.user?._id || req.session.userId;
     const updated = await Permit.findByIdAndUpdate(
       req.params.id,
       {
         $set: {
           status: 'Rejected',
-          preApprovedBy: req.session.userId,
+          preApprovedBy: preApproverId,
           preApprovedAt: new Date(),
           preApproverComments: comments || '',
         },

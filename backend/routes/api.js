@@ -5,6 +5,7 @@ const axios = require('axios');
 // ✅ Mount new route modules
 router.use('/', require('./auth')); // /register, /login, /logout, /profile, /forgot-password, /reset-password
 router.use('/', require('./permit')); // /permit, /permit/:id, /permit (POST), /permit/:id/status, /permit/:id/pdf
+router.use('/', require('./api-permit-details')); // /api/permits/:id (admin/approver full details)
 
 // ===== KEEP SESSION ALIVE =====
 router.get('/ping', (req, res) => {

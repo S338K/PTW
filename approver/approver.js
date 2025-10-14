@@ -221,22 +221,23 @@ function createPermitRow(permit, type, index = 0) {
     };
 
     if (type === 'pending') {
+        // Prefer fullName, then username, then fallback
+        let preApproverName = '-';
+        if (permit.preApprovedBy) {
+            preApproverName = permit.preApprovedBy.fullName || permit.preApprovedBy.username || '-';
+        } else if (permit.preApproverName) {
+            preApproverName = permit.preApproverName;
+        }
         row.innerHTML = `
             <td class="small">${permit._id || '-'}</td>
             <td class="small fw-medium">${permit.permitTitle || '-'}</td>
             <td class="small">${submittedDate}</td>
-            <td class="small">${permit.preApprovedBy?.username || permit.preApproverName || '-'}</td>
+            <td class="small">${preApproverName}</td>
             <td class="small">${permit.preApproverComments || '-'}</td>
             <td class="small">
                 <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-primary btn-sm" onclick="viewPermitDetails('${permit._id}')" title="View Details">
                         <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-success btn-sm" onclick="handlePermitAction('${permit._id}', 'approve')" title="Approve">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="handlePermitAction('${permit._id}', 'reject')" title="Reject">
-                        <i class="fas fa-times"></i>
                     </button>
                 </div>
             </td>
@@ -1231,31 +1232,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Permit action handler
 async function handlePermitAction(permitId, action) {
+    // Require comments from modal textarea instead of prompt
     try {
-        const response = await fetch(`${API_BASE}/api/permit/${permitId}/action`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+        const commentsEl = document.getElementById('modal_approvalComments');
+        const comments = commentsEl ? commentsEl.value.trim() : '';
+        if (!comments) {
+            alert('Please enter approval comments before proceeding.');
+            if (commentsEl) commentsEl.focus();
+            return;
+        }
+
+        const payload = { action, comments };
+        const response = await fetch(`${API_BASE}/api/permits/${encodeURIComponent(permitId)}/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-                action,
-                remarks: prompt(`Enter remarks for ${action}ing this permit:`) || ''
-            })
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            alert(`Permit ${action}ed successfully`);
-            // Refresh permits data
+            showNotification(`Permit ${action}ed successfully`, 'success');
+            // close modal
+            const modalEl = document.getElementById('permitDetailsModal');
+            if (modalEl) {
+                const bs = bootstrap.Modal.getInstance(modalEl);
+                if (bs) bs.hide();
+            }
+            // Refresh permits data and stats
             await fetchPermits();
             await fetchDashboardStats();
         } else {
-            const data = await response.json();
-            alert(`Failed to ${action} permit: ${data.message}`);
+            const data = await response.json().catch(() => ({}));
+            showNotification(`Failed to ${action} permit: ${data.message || 'server error'}`, 'error');
         }
     } catch (error) {
         console.error(`Error ${action}ing permit:`, error);
-        alert(`Network error while ${action}ing permit`);
+        showNotification(`Network error while ${action}ing permit`, 'error');
     }
 }
 
@@ -1288,174 +1300,124 @@ async function confirmLogout() {
 // View permit details function
 async function viewPermitDetails(permitId) {
     try {
-        const response = await fetch(`${API_BASE}/api/permit/${permitId}`, {
+        const response = await fetch(`${API_BASE}/api/permits/${encodeURIComponent(permitId)}`, {
             credentials: 'include'
         });
-
         if (!response.ok) {
             throw new Error('Failed to fetch permit details');
         }
-
         const permit = await response.json();
-        showPermitDetailsModal(permit);
+        // If the endpoint returns { permit: {...} } normalize
+        const payload = permit.permit || permit;
+        showPermitDetailsModal(payload);
     } catch (error) {
         console.error('Error fetching permit details:', error);
-        alert('Failed to load permit details. Please try again.');
+        showNotification('Failed to load permit details. Please try again.', 'error');
     }
 }
 
 function showPermitDetailsModal(permit) {
-    const modal = new bootstrap.Modal(document.getElementById('permitDetailsModal'));
-    const contentDiv = document.getElementById('permitDetailsContent');
-    const actionsDiv = document.getElementById('permitActions');
+    try {
+        const modalEl = document.getElementById('permitDetailsModal');
+        const modal = new bootstrap.Modal(modalEl);
+        // Defensive: clear all modal fields first
+        const form = document.getElementById('permitDetailsForm');
+        if (form) form.reset();
+        document.getElementById('modal_approvalComments').value = '';
 
-    // Format dates
-    const formatDate = (date) => {
-        if (!date) return 'Not available';
-        return new Date(date).toLocaleDateString() + ', ' + new Date(date).toLocaleTimeString();
-    };
-
-    // Format status badge
-    const getStatusBadge = (status) => {
-        const badges = {
-            'Pending': 'bg-warning text-dark',
-            'In Progress': 'bg-info',
-            'Approved': 'bg-success',
-            'Rejected': 'bg-danger'
+        // Helper to get nested fields robustly
+        const get = (obj, ...paths) => {
+            for (const p of paths) {
+                const parts = p.split('.');
+                let cur = obj;
+                let ok = true;
+                for (const k of parts) {
+                    if (cur && typeof cur === 'object' && (k in cur)) cur = cur[k];
+                    else { ok = false; break; }
+                }
+                if (ok && cur !== undefined && cur !== null) return cur;
+            }
+            return '';
         };
-        return `<span class="badge ${badges[status] || 'bg-secondary'}">${status}</span>`;
-    };
 
-    // Create detailed content
-    contentDiv.innerHTML = `
-        <div class="row">
-            <!-- Basic Information -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm table-borderless">
-                            <tr><td><strong>Permit ID:</strong></td><td>${permit._id || 'N/A'}</td></tr>
-                            <tr><td><strong>Permit Title:</strong></td><td>${permit.permitTitle || 'N/A'}</td></tr>
-                            <tr><td><strong>Status:</strong></td><td>${getStatusBadge(permit.status)}</td></tr>
-                            <tr><td><strong>Submitted Date:</strong></td><td>${formatDate(permit.createdAt)}</td></tr>
-                            <tr><td><strong>Start Date:</strong></td><td>${formatDate(permit.startDateTime)}</td></tr>
-                            <tr><td><strong>End Date:</strong></td><td>${formatDate(permit.endDateTime)}</td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Applicant Information -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>Applicant Information</h6>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm table-borderless">
-                            <tr><td><strong>Full Name:</strong></td><td>${permit.fullName || 'N/A'}</td></tr>
-                            <tr><td><strong>Email:</strong></td><td>${permit.corpEmailId || 'N/A'}</td></tr>
-                            <tr><td><strong>Contact:</strong></td><td>${permit.contactDetails || 'N/A'}</td></tr>
-                            <tr><td><strong>Alt Contact:</strong></td><td>${permit.altContactDetails || 'N/A'}</td></tr>
-                            <tr><td><strong>Designation:</strong></td><td>${permit.designation || 'N/A'}</td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Work Details -->
-            <div class="col-12">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-tools me-2"></i>Work Details</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <table class="table table-sm table-borderless">
-                                    <tr><td><strong>Terminal:</strong></td><td>${permit.terminal || 'N/A'}</td></tr>
-                                    <tr><td><strong>Facility:</strong></td><td>${permit.facility || 'N/A'}</td></tr>
-                                    <tr><td><strong>Equipment Type:</strong></td><td>${permit.equipmentTypeInput || 'N/A'}</td></tr>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <table class="table table-sm table-borderless">
-                                    <tr><td><strong>HSE Risk:</strong></td><td>${permit.hseRisk || 'N/A'}</td></tr>
-                                    <tr><td><strong>Ops Risk:</strong></td><td>${permit.opRisk || 'N/A'}</td></tr>
-                                    <tr><td><strong>Impact:</strong></td><td>${permit.impact || 'N/A'}</td></tr>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <h6><strong>Work Description:</strong></h6>
-                            <p class="border p-3 bg-light">${permit.workDescription || 'No description provided'}</p>
-                        </div>
-                        ${permit.impactDetailsInput ? `
-                        <div class="mt-3">
-                            <h6><strong>Impact Details:</strong></h6>
-                            <p class="border p-3 bg-light">${permit.impactDetailsInput}</p>
-                        </div>` : ''}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Pre-Approver Information -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Pre-Approver Details</h6>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm table-borderless">
-                            <tr><td><strong>Pre-Approver:</strong></td><td>${permit.preApprovedBy?.username || 'Not assigned'}</td></tr>
-                            <tr><td><strong>Decision Date:</strong></td><td>${formatDate(permit.preApprovedAt)}</td></tr>
-                            <tr><td><strong>Status:</strong></td><td>${permit.status === 'Pending' ? '<span class="badge bg-warning text-dark">Pending Review</span>' : '<span class="badge bg-info">Reviewed</span>'}</td></tr>
-                        </table>
-                        ${permit.preApproverComments ? `
-                        <div class="mt-3">
-                            <h6><strong>Pre-Approver Remarks:</strong></h6>
-                            <p class="border p-3 bg-light">${permit.preApproverComments}</p>
-                        </div>` : '<p class="text-muted">No remarks available</p>'}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Final Approver Information -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-stamp me-2"></i>Final Approver Status</h6>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm table-borderless">
-                            <tr><td><strong>Status:</strong></td><td>${permit.status === 'Approved' ? '<span class="badge bg-success">Approved</span>' : permit.status === 'Rejected' ? '<span class="badge bg-danger">Rejected</span>' : '<span class="badge bg-warning text-dark">Pending Decision</span>'}</td></tr>
-                            <tr><td><strong>Decision Date:</strong></td><td>${formatDate(permit.approvedAt)}</td></tr>
-                        </table>
-                        <p class="text-muted mt-3">Awaiting final decision from approver</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+        // Basic requester
+        document.getElementById('modal_permitId').value = get(permit, '_id', 'id');
+        document.getElementById('modal_fullName').value = get(permit, 'fullName', 'requester.fullName', 'requester.username');
+        document.getElementById('modal_lastName').value = get(permit, 'lastName', 'requester.lastName');
+        document.getElementById('modal_corpEmailId').value = get(permit, 'corpEmailId', 'requester.email');
+        document.getElementById('modal_contactDetails').value = get(permit, 'contactDetails', 'requester.phone');
+        if (document.getElementById('modal_altContactDetails')) document.getElementById('modal_altContactDetails').value = get(permit, 'altContactDetails');
 
-    // Add action buttons based on permit status
-    if (permit.status === 'Pending' || permit.status === 'In Progress') {
-        actionsDiv.innerHTML = `
-            <button type="button" class="btn btn-success me-2" onclick="handlePermitAction('${permit._id}', 'approve')">
-                <i class="fas fa-check me-1"></i>Approve
-            </button>
-            <button type="button" class="btn btn-danger" onclick="handlePermitAction('${permit._id}', 'reject')">
-                <i class="fas fa-times me-1"></i>Reject
-            </button>
-        `;
-    } else {
-        actionsDiv.innerHTML = '';
+        // Work details
+        if (document.getElementById('modal_permitTitle')) document.getElementById('modal_permitTitle').value = get(permit, 'permitTitle', 'title');
+        if (document.getElementById('modal_terminal')) document.getElementById('modal_terminal').value = get(permit, 'terminal');
+        if (document.getElementById('modal_facility')) document.getElementById('modal_facility').value = get(permit, 'facility');
+        if (document.getElementById('modal_specifyTerminal')) document.getElementById('modal_specifyTerminal').value = get(permit, 'specifyTerminal');
+        if (document.getElementById('modal_specifyFacility')) document.getElementById('modal_specifyFacility').value = get(permit, 'specifyFacility');
+        if (document.getElementById('modal_impact')) document.getElementById('modal_impact').value = get(permit, 'impact');
+        if (document.getElementById('modal_levelOfImpact')) document.getElementById('modal_levelOfImpact').value = get(permit, 'levelOfImpact');
+        if (document.getElementById('modal_equipmentTypeInput')) document.getElementById('modal_equipmentTypeInput').value = get(permit, 'equipmentTypeInput');
+        if (document.getElementById('modal_impactDetailsInput')) document.getElementById('modal_impactDetailsInput').value = get(permit, 'impactDetailsInput');
+        if (document.getElementById('modal_natureOfWork')) document.getElementById('modal_natureOfWork').value = get(permit, 'natureOfWork');
+        if (document.getElementById('modal_workDescription')) document.getElementById('modal_workDescription').value = get(permit, 'workDescription');
+
+        // Documents
+        if (document.getElementById('modal_ePermit')) document.getElementById('modal_ePermit').value = get(permit, 'ePermit');
+        if (document.getElementById('modal_ePermitReason')) document.getElementById('modal_ePermitReason').value = get(permit, 'ePermitReason');
+        if (document.getElementById('modal_fmmWorkorder')) document.getElementById('modal_fmmWorkorder').value = get(permit, 'fmmWorkorder');
+        if (document.getElementById('modal_noFmmWorkorder')) document.getElementById('modal_noFmmWorkorder').value = get(permit, 'noFmmWorkorder');
+        if (document.getElementById('modal_hseRisk')) document.getElementById('modal_hseRisk').value = get(permit, 'hseRisk');
+        if (document.getElementById('modal_noHseRiskAssessmentReason')) document.getElementById('modal_noHseRiskAssessmentReason').value = get(permit, 'noHseRiskAssessmentReason');
+        if (document.getElementById('modal_opRisk')) document.getElementById('modal_opRisk').value = get(permit, 'opRisk');
+        if (document.getElementById('modal_noOpsRiskAssessmentReason')) document.getElementById('modal_noOpsRiskAssessmentReason').value = get(permit, 'noOpsRiskAssessmentReason');
+
+        // Files
+        const filesDiv = document.getElementById('modal_files');
+        if (filesDiv) {
+            filesDiv.innerHTML = '';
+            const files = get(permit, 'files') || [];
+            if (Array.isArray(files) && files.length) {
+                files.forEach(f => {
+                    const a = document.createElement('a');
+                    a.href = f.url || f.path || (`/api/permits/${permit._id}/file/${f._id}`);
+                    a.textContent = f.originalName || f.name || f.filename || 'File';
+                    a.target = '_blank';
+                    a.className = 'd-block';
+                    filesDiv.appendChild(a);
+                });
+            } else {
+                filesDiv.textContent = 'No files attached';
+            }
+        }
+
+        // Date & Time
+        if (document.getElementById('modal_startDateTime')) document.getElementById('modal_startDateTime').value = permit.startDateTime ? new Date(permit.startDateTime).toLocaleString() : '';
+        if (document.getElementById('modal_endDateTime')) document.getElementById('modal_endDateTime').value = permit.endDateTime ? new Date(permit.endDateTime).toLocaleString() : '';
+
+        // Signature
+        if (document.getElementById('modal_signName')) document.getElementById('modal_signName').value = get(permit, 'signName');
+        if (document.getElementById('modal_signDate')) document.getElementById('modal_signDate').value = get(permit, 'signDate');
+        if (document.getElementById('modal_signTime')) document.getElementById('modal_signTime').value = get(permit, 'signTime');
+        if (document.getElementById('modal_designation')) document.getElementById('modal_designation').value = get(permit, 'designation');
+
+        // Approval comments prefill if present
+        document.getElementById('modal_approvalComments').value = get(permit, 'preApproverComments', 'approverComments', 'preApprover.comments') || '';
+
+        // Wire approve/reject buttons
+        const approveBtn = document.getElementById('modalApproveBtn');
+        const rejectBtn = document.getElementById('modalRejectBtn');
+        if (approveBtn) {
+            approveBtn.onclick = () => handlePermitAction(get(permit, '_id', 'id'), 'approve');
+        }
+        if (rejectBtn) {
+            rejectBtn.onclick = () => handlePermitAction(get(permit, '_id', 'id'), 'reject');
+        }
+
+        modal.show();
+    } catch (err) {
+        showNotification('Failed to load permit details. Please try again.', 'error');
+        console.error('Error populating permit modal:', err);
     }
-
-    modal.show();
 }
 
 // Make functions globally available

@@ -1,6 +1,6 @@
 {
     "editor.fontSize": 16,
-    "workbench.colorTheme": "Default Dark+",
+    "workbench.colorTheme": "Default Dark Modern",
     "window.autoDetectColorScheme": false,
     "editor.formatOnSave": true,
     "files.autoSave": "afterDelay",

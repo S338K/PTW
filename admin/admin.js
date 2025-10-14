@@ -1282,66 +1282,183 @@ window.openViewUserModal = openViewUserModal;
 window.closeViewUserModal = closeViewUserModal;
 function viewPermit(permitId) {
     if (!permitId) return;
-    window.location.href = `admin-permit.html?id=${encodeURIComponent(permitId)}`;
+    openViewPermitModal(permitId);
 }
 
-// Try POST toggle endpoint first; fallback to PATCH if needed
-async function toggleUser(userId, currentStatus) {
-    if (!userId) return;
+// Fetch a single permit by id (with approval chain, files, comments)
+async function getPermitById(permitId) {
     try {
-        const res = await fetch(`${API_BASE}/admin/toggle-status/${userId}`, {
-            method: "POST",
-            credentials: "include",
+        const res = await fetch(`${API_BASE}/api/permits/${encodeURIComponent(permitId)}`, { credentials: 'include' });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        console.error('getPermitById error', err);
+        return null;
+    }
+}
+
+function populatePermitModal(permit) {
+    if (!permit) return;
+    // Defensive: support both flat and nested shapes, fallback to '—' for missing
+    const get = (...paths) => {
+        for (const path of paths) {
+            let val = permit;
+            for (const key of path.split('.')) {
+                if (val && typeof val === 'object' && key in val) val = val[key];
+                else { val = undefined; break; }
+            }
+            if (val !== undefined && val !== null && val !== '') return val;
+        }
+        return undefined;
+    };
+    document.getElementById('permit_id').value = get('id', '_id') || '';
+    document.getElementById('permit_title').textContent = get('title', 'permitTitle') || '—';
+    document.getElementById('permit_number').textContent = get('permitNumber', 'number') || '—';
+    document.getElementById('permit_status').textContent = get('status') || '—';
+    // Submitted: prefer submitted, then createdAt
+    const submitted = get('submitted', 'createdAt');
+    document.getElementById('permit_submitted').textContent = submitted ? formatDate24(submitted) : '—';
+
+    // Requester details
+    const requesterName = get('requesterName', 'requester.fullName', 'requester.username', 'requester.name');
+    document.getElementById('permit_requester_name').textContent = requesterName || '—';
+    // Requester submitted time: prefer submitted, then requester.submitted, then createdAt
+    const requesterTime = get('submitted', 'requester.submitted', 'createdAt');
+    document.getElementById('permit_requester_time').textContent = requesterTime ? formatDate24(requesterTime) : '—';
+    // Requester comments
+    document.getElementById('permit_requester_comments').textContent = get('requesterComments', 'requester.comments', 'requester.comment') || '—';
+
+    // Pre-Approver details
+    const preApproverName = get('preApproverName', 'preApprover.fullName', 'preApprover.username', 'preApprover.name');
+    document.getElementById('permit_preapprover_name').textContent = preApproverName || '—';
+    const preApproverTime = get('preApproverTime', 'preApprover.date', 'preApprover.time');
+    document.getElementById('permit_preapprover_time').textContent = preApproverTime ? formatDate24(preApproverTime) : '—';
+    document.getElementById('permit_preapprover_comments').textContent = get('preApproverComments', 'preApprover.comments', 'preApprover.comment') || '—';
+
+    // Approver details
+    const approverName = get('approverName', 'approver.fullName', 'approver.username', 'approver.name');
+    document.getElementById('permit_approver_name').textContent = approverName || '—';
+    const approverTime = get('approverTime', 'approver.date', 'approver.time');
+    document.getElementById('permit_approver_time').textContent = approverTime ? formatDate24(approverTime) : '—';
+    document.getElementById('permit_approver_comments').textContent = get('approverComments', 'approver.comments', 'approver.comment') || '—';
+
+    // Files
+    const filesDiv = document.getElementById('permit_files');
+    filesDiv.innerHTML = '';
+    const files = get('files');
+    if (Array.isArray(files) && files.length) {
+        files.forEach(f => {
+            const a = document.createElement('a');
+            a.href = f.url || f.path || '#';
+            a.textContent = f.name || f.filename || 'File';
+            a.target = '_blank';
+            a.className = 'underline text-blue-600 hover:text-blue-800';
+            filesDiv.appendChild(a);
         });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-            showToast(`Status updated: ${data.status || "OK"}`, "success");
-            await loadUsers();
+    } else {
+        filesDiv.textContent = '—';
+    }
+}
+
+function openViewPermitModal(permitId) {
+    const modal = document.getElementById('viewPermitModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    // Clear all fields and disable action buttons
+    document.getElementById('permit_id').value = '';
+    document.getElementById('permit_title').textContent = 'Loading…';
+    document.getElementById('permit_number').textContent = '';
+    document.getElementById('permit_status').textContent = '';
+    document.getElementById('permit_submitted').textContent = '';
+    document.getElementById('permit_requester_name').textContent = '';
+    document.getElementById('permit_requester_time').textContent = '';
+    document.getElementById('permit_preapprover_name').textContent = '';
+    document.getElementById('permit_preapprover_time').textContent = '';
+    document.getElementById('permit_preapprover_comments').textContent = '';
+    document.getElementById('permit_approver_name').textContent = '';
+    document.getElementById('permit_approver_time').textContent = '';
+    document.getElementById('permit_approver_comments').textContent = '';
+    const filesDiv = document.getElementById('permit_files');
+    if (filesDiv) filesDiv.innerHTML = '';
+    // Disable action buttons until loaded
+    ['permitApproveBtn', 'permitRejectBtn', 'permitUpdateBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.setAttribute('disabled', '');
+    });
+    getPermitById(permitId).then(permit => {
+        if (!permit) {
+            document.getElementById('permit_title').textContent = 'Permit not found';
+            showToast('Permit not found', 'error');
             return;
         }
-        // Fallback
-        const newStatus = currentStatus === "Active" ? "Disabled" : "Active";
-        const res2 = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ status: newStatus }),
-        });
-        if (res2.ok) {
-            showToast(`User ${newStatus}`, "success");
-            await loadUsers();
-        } else {
-            const msg = await res2.text().catch(() => "");
-            showToast(msg || "Failed to update user status", "error");
+        populatePermitModal(permit);
+        // Enable action buttons if permit loaded and has id
+        if (permit.id || permit._id) {
+            ['permitApproveBtn', 'permitRejectBtn', 'permitUpdateBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.removeAttribute('disabled');
+            });
         }
-    } catch (err) {
-        console.error(err);
-        showToast("⚠️ Error toggling status", "error");
-    }
+    }).catch(err => {
+        document.getElementById('permit_title').textContent = 'Failed to load';
+        showToast('Failed to load permit', 'error');
+    });
 }
 
-async function resetPassword(userId) {
-    const newPassword = prompt("Enter new password for this user:");
-    if (!newPassword) return;
-
-    try {
-        const res = await fetch(`${API_BASE}/admin/reset-password/${userId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ newPassword }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-            showToast(data.message || "Password reset", "success");
-        } else {
-            showToast(data.error || "Failed to reset password", "error");
-        }
-    } catch (err) {
-        console.error(err);
-        showToast("⚠️ Error resetting password", "error");
-    }
+function closeViewPermitModal() {
+    const modal = document.getElementById('viewPermitModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
 }
+
+// Approve/Reject/Update Permit handlers (stubbed, to be implemented)
+async function approvePermit() {
+    const id = document.getElementById('permit_id').value;
+    if (!id) {
+        showToast('Permit ID missing. Please reload the permit details.', 'error');
+        return;
+    }
+    // TODO: Implement API call to approve permit
+    showToast('Approve Permit: Not yet implemented', 'warning');
+}
+async function rejectPermit() {
+    const id = document.getElementById('permit_id').value;
+    if (!id) {
+        showToast('Permit ID missing. Please reload the permit details.', 'error');
+        return;
+    }
+    // TODO: Implement API call to reject permit
+    showToast('Reject Permit: Not yet implemented', 'warning');
+}
+async function updatePermit() {
+    const id = document.getElementById('permit_id').value;
+    if (!id) {
+        showToast('Permit ID missing. Please reload the permit details.', 'error');
+        return;
+    }
+    // TODO: Implement API call to update permit
+    showToast('Update Permit: Not yet implemented', 'warning');
+}
+
+// Wire permit modal buttons
+(function () {
+    document.addEventListener('DOMContentLoaded', () => {
+        const permitClose = document.getElementById('viewPermitClose');
+        if (permitClose) permitClose.addEventListener('click', closeViewPermitModal);
+        const approveBtn = document.getElementById('permitApproveBtn');
+        if (approveBtn) approveBtn.addEventListener('click', approvePermit);
+        const rejectBtn = document.getElementById('permitRejectBtn');
+        if (rejectBtn) rejectBtn.addEventListener('click', rejectPermit);
+        const updateBtn = document.getElementById('permitUpdateBtn');
+        if (updateBtn) updateBtn.addEventListener('click', updatePermit);
+    });
+})();
+
+// Expose for inline use if necessary
+window.openViewPermitModal = openViewPermitModal;
+window.closeViewPermitModal = closeViewPermitModal;
 
 /* ===== DOMContentLoaded init ===== */
 document.addEventListener("DOMContentLoaded", async () => {

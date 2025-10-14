@@ -47,6 +47,11 @@ const permitSchema = new mongoose.Schema(
     preApprovedAt: Date,
     preApproverComments: String,
 
+    // 🔹 Approver tracking (canonical, lowercase)
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: { type: Date },
+    approverComments: String,
+
     status: {
       type: String,
       enum: ['Pending', 'In Progress', 'Approved', 'Rejected'],
@@ -56,8 +61,7 @@ const permitSchema = new mongoose.Schema(
     permitNumber: { type: String, unique: true, sparse: true }, // only set when approved
     role: String,
 
-    // ✅ New field for approval timestamp
-    approvedAt: { type: Date },
+    // (removed duplicate approvedAt and approvedBy fields)
   },
   {
     timestamps: true,
