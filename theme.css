@@ -1,7 +1,11 @@
 /* Light mode defaults */
 :root {
     --bg-surface: #ffffff;
-    --text-primary: #1E245E;
+    --text-primary: #273172;
+    /* requested light theme primary text */
+    --text-secondary: #6b7280;
+    /* Section background: light grey card background for sections */
+    --section-bg: #f3f4f8;
     --button-bg: #273172;
     --button-text: #ffffff;
     --button-hover-bg: #1a245a;
@@ -16,7 +20,7 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --bg-surface: #1c1c28;
-        --text-primary: #e0e3ff;
+        --text-primary: #ffffff;
         --button-bg: #3f4b9a;
         --button-text: #ffffff;
         --button-hover-bg: #5a66c5;
@@ -31,7 +35,7 @@
 /* Manual overrides */
 :root[data-theme="light"] {
     --bg-surface: #ffffff;
-    --text-primary: #1E245E;
+    --text-primary: #273172;
     --button-bg: #273172;
     --button-text: #ffffff;
     --button-hover-bg: #1a245a;
@@ -44,7 +48,10 @@
 
 :root[data-theme="dark"] {
     --bg-surface: #1c1c28;
-    --text-primary: #e0e3ff;
+    --text-primary: #ffffff;
+    --text-secondary: #9aa4d6;
+    /* In dark theme keep sections the same as the surface color */
+    --section-bg: var(--bg-surface);
     --button-bg: #3f4b9a;
     --button-text: #ffffff;
     --button-hover-bg: #5a66c5;

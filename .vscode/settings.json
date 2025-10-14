@@ -7,5 +7,6 @@
     "chat.agent.maxRequests": 250,
     "chat.agentSessionsViewLocation": "view",
     "chat.allowAnonymousAccess": true,
-    "chat.fontSize": 14
+    "chat.fontSize": 14,
+    "githubPullRequests.experimental.useQuickChat": false
 }

@@ -122,8 +122,9 @@ router.get('/users', async (req, res) => {
       company: u.company || '',
       role: u.role || (source === 'User' ? 'Requester' : u.role || '—'),
       status: u.status || u.userStatus || 'Active',
-      registered: u.createdAt ? u.createdAt.toISOString().split('T')[0] : '—',
-      lastLogin: u.lastLogin ? u.lastLogin.toISOString().split('T')[0] : '—',
+      // Return full ISO datetimes so the client can format time correctly
+      registered: u.createdAt ? u.createdAt.toISOString() : '—',
+      lastLogin: u.lastLogin ? u.lastLogin.toISOString() : '—',
       source: source,
     });
 
@@ -319,6 +320,104 @@ router.post('/reset-password/:id', async (req, res) => {
   } catch (err) {
     console.error('Error resetting password:', err);
     res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+// PATCH /admin/users/:id - update user fields (Admin, Approver, or User)
+router.patch('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const allowed = ['fullName', 'email', 'mobile', 'company', 'department', 'designation', 'role'];
+    const updates = {};
+    for (const key of allowed) {
+      if (typeof req.body[key] !== 'undefined') updates[key] = req.body[key];
+    }
+
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No updatable fields provided' });
+
+    // Try Approver
+    let target = await Approver.findById(id);
+    if (target) {
+      Object.assign(target, updates);
+      // Normalize role if provided
+      if (updates.role) {
+        const r = String(updates.role).trim().toLowerCase();
+        if (r === 'pre-approver' || r === 'preapprover') target.role = 'PreApprover';
+        else if (r === 'approver') target.role = 'Approver';
+        else if (r === 'admin') target.role = 'Admin';
+        else if (r === 'requester' || r === 'user') target.role = 'Requester';
+      }
+      await target.save();
+      return res.json({ message: 'User updated', user: target });
+    }
+
+    // Try Admin
+    target = await Admin.findById(id);
+    if (target) {
+      Object.assign(target, updates);
+      if (updates.role) {
+        const r = String(updates.role).trim().toLowerCase();
+        if (r === 'admin') target.role = 'Admin';
+        else if (r === 'approver' || r === 'pre-approver' || r === 'preapprover') target.role = 'Approver';
+        else if (r === 'requester') target.role = 'Requester';
+      }
+      await target.save();
+      return res.json({ message: 'User updated', user: target });
+    }
+
+    // Try User (Requester)
+    target = await User.findById(id);
+    if (target) {
+      // Note: some user models use `username` instead of fullName
+      if (typeof updates.fullName !== 'undefined') target.fullName = updates.fullName;
+      if (typeof updates.email !== 'undefined') target.email = updates.email;
+      if (typeof updates.mobile !== 'undefined') target.mobile = updates.mobile;
+      if (typeof updates.company !== 'undefined') target.company = updates.company;
+      if (typeof updates.department !== 'undefined') target.department = updates.department;
+      if (typeof updates.designation !== 'undefined') target.designation = updates.designation;
+      if (updates.role) {
+        const r = String(updates.role).trim().toLowerCase();
+        if (r === 'requester' || r === 'user') target.role = 'Requester';
+        else if (r === 'approver' || r === 'pre-approver') target.role = 'Approver';
+        else if (r === 'admin') target.role = 'Admin';
+      }
+      await target.save();
+      return res.json({ message: 'User updated', user: target });
+    }
+
+    return res.status(404).json({ error: 'User not found' });
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({ error: 'Failed to update user', details: err.message });
+  }
+});
+
+// DELETE /admin/users/:id - permanently delete a user (Admin/Approver/User)
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Try Approver
+    let target = await Approver.findById(id);
+    if (target) {
+      await Approver.deleteOne({ _id: id });
+      return res.json({ message: 'User deleted' });
+    }
+    // Try Admin
+    target = await Admin.findById(id);
+    if (target) {
+      await Admin.deleteOne({ _id: id });
+      return res.json({ message: 'User deleted' });
+    }
+    // Try User
+    target = await User.findById(id);
+    if (target) {
+      await User.deleteOne({ _id: id });
+      return res.json({ message: 'User deleted' });
+    }
+    return res.status(404).json({ error: 'User not found' });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({ error: 'Failed to delete user', details: err.message });
   }
 });
 

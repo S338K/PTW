@@ -26,15 +26,19 @@
             <div class="flex items-center lg:justify-between gap-4">
                 <div class="flex items-center space-x-6">
                     <div class="space-y-1">
-                        <h1 id="profileDisplayName" class="text-white text-xl font-bold">Welcome, Admin</h1>
+                        <h1 id="profileDisplayName" class="text-xl font-bold text-[var(--text-primary)]">&nbsp;</h1>
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-3">
+                    <button id="themeToggle" class="theme-toggle" aria-pressed="false" title="Toggle theme">
+                        <i id="themeIcon" class="fa-solid fa-moon"></i>
+                    </button>
                     <button id="addUserBtn"
-                        class="px-4 py-2 bg-white/20 text-white rounded-lg border border-white/20 hover:bg-white/25">Add
+                        class="px-4 py-2 bg-white/20 rounded-lg border border-white/20 hover:bg-white/25 text-[var(--text-primary)]">Add
                         New User</button>
-                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Log
+                    <button id="logoutBtn"
+                        class="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 text-[var(--text-primary)]">Log
                         Out</button>
                 </div>
             </div>
@@ -47,143 +51,284 @@
         <!-- Keep users table with expected ID -->
         <section>
             <div class="section-header flex items-center justify-between">
-                <h2 class="text-lg font-bold">User Details & Role Management</h2>
-                <button class="expandBtn icon-only" aria-label="Toggle user list"
+                <h2 class="text-lg font-bold text-[var(--text-primary)]">User Details & Role Management</h2>
+                <button class="expandBtn icon-only" aria-label="Toggle user list" aria-expanded="false"
                     onclick="toggleDetails('usersSection', this)">
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
             <div id="usersSection" class="panel">
-                <table id="usersTable" class="w-full">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Registered</th>
-                            <th>Last Login</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="8">Loading…</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Restored small stats summary expected by admin.js -->
-        <div class="mb-6 stats-grid mt-6" aria-hidden="false">
-            <div class="card">
-                <h3>Total Users</h3>
-                <div id="statUsers" class="value">0</div>
-                <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
-                    <div>Active<br /><strong id="statActiveUsers">0</strong></div>
-                    <div>Inactive<br /><strong id="statInactiveUsers">0</strong></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>Total Permits</h3>
-                <div id="statPermits" class="value">0</div>
-                <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
-                    <div>Pending<br /><strong id="statPending">0</strong></div>
-                    <div>In Progress<br /><strong id="statInProgress">0</strong></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>Permit Outcome</h3>
-                <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
-                    <div>Approved<br /><strong id="statApproved">0</strong></div>
-                    <div>Rejected<br /><strong id="statRejected">0</strong></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Permits table expected ID -->
-        <section class="mt-6">
-            <div class="section-header flex items-center justify-between">
-                <h2 class="text-lg font-bold">Submitted Permit Details</h2>
-                <button class="expandBtn icon-only" aria-label="Toggle permits list"
-                    onclick="toggleDetails('permitsSection', this)">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-            </div>
-            <div id="permitsSection" class="panel">
-                <div class="overflow-x-auto">
-                    <table id="permitsTable" class="w-full">
+                <div class="table-responsive">
+                    <table id="usersTable" class="w-full">
                         <thead>
                             <tr>
-                                <th>Serial No.</th>
-                                <th>Submitted Date & Time</th>
-                                <th>Permit Title</th>
-                                <th>Status</th>
-                                <th>Permit Number</th>
-                                <th>Actions</th>
+                                <th data-key="name" class="text-[var(--text-primary)]">Name</th>
+                                <th data-key="email" class="text-[var(--text-primary)]">Email</th>
+                                <th data-key="phone" class="text-[var(--text-primary)]">Phone</th>
+                                <th data-key="role" class="text-[var(--text-primary)]">Role</th>
+                                <th data-key="status" class="text-[var(--text-primary)]">Status</th>
+                                <th data-key="registered" class="text-[var(--text-primary)]">Registered</th>
+                                <th data-key="last-login" class="text-[var(--text-primary)]">Last Login</th>
+                                <th data-key="actions" class="text-[var(--text-primary)]">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="usersTableSkeleton">
+                            <!-- Skeleton loading row -->
                             <tr>
-                                <td colspan="6">Loading…</td>
+                                <td>
+                                    <div class="skeleton h-4 w-24"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-16"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-28"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-8 w-32"></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="skeleton h-4 w-24"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-16"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-28"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-8 w-32"></div>
+                                </td>
                             </tr>
                         </tbody>
+                        <tbody id="usersTableBody" style="display:none"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- Stats (mapped to existing IDs) -->
-        <section class="mt-8">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
-                <div class="xl:col-span-2 space-y-6">
-                    <!-- Stats and charts area (chart canvases with expected IDs) -->
-                    <div class="bg-[var(--bg-surface)] rounded-2xl p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="text-center" id="statCardPermits">
-                                <div id="totalPermits" class="text-2xl font-bold">0</div>
-                                <div class="text-sm">Total Permits</div>
-                            </div>
-                            <div class="text-center">
-                                <div id="approvedPermits" class="text-2xl font-bold">0</div>
-                                <div class="text-sm">Approved</div>
-                            </div>
-                            <div class="text-center">
-                                <div id="pendingPermits" class="text-2xl font-bold">0</div>
-                                <div class="text-sm">Pending</div>
-                            </div>
-                        </div>
+        <!-- small stats grid removed from here and moved below Submitted Permit Details -->
 
-                        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="bg-gray-50 rounded-xl p-4">
-                                <h4 class="text-sm font-semibold mb-3">Status Distribution</h4>
-                                <canvas id="permitStatusChart" height="200"></canvas>
-                            </div>
-                            <div class="bg-gray-50 rounded-xl p-4">
-                                <h4 class="text-sm font-semibold mb-3">Monthly Trends</h4>
-                                <canvas id="monthlyTrendChart" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[var(--bg-surface)] rounded-2xl p-6">
-                        <h3 class="font-bold">Recent Activity</h3>
-                        <div id="recentActivityList" class="mt-4">
-                            <div class="text-center py-8 text-[var(--text-primary)] opacity-60">Loading recent
-                                activity...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-[var(--bg-surface)] rounded-2xl p-4">
-                    <h3 class="font-bold">Permit Statistics</h3>
-                    <canvas id="profileStatsChart" height="160"></canvas>
+        <!-- Permits table expected ID -->
+        <section class="mt-6">
+            <div class="section-header flex items-center justify-between">
+                <h2 class="text-lg font-bold text-[var(--text-primary)]">Permit Details</h2>
+                <button class="expandBtn icon-only" aria-label="Toggle permits list" aria-expanded="false"
+                    onclick="toggleDetails('permitsSection', this)">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div id="permitsSection" class="panel">
+                <div class="table-responsive">
+                    <table id="permitsTable" class="w-full min-w-full divide-y divide-gray-200 table-auto">
+                        <thead class="bg-[var(--bg-surface)]">
+                            <tr>
+                                <th data-key="serial"
+                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                    Serial No.</th>
+                                <th data-key="submitted"
+                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                    Submitted Date &amp; Time</th>
+                                <th data-key="title"
+                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                    Permit Title</th>
+                                <th data-key="status"
+                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                    Status</th>
+                                <th data-key="permit-number"
+                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                    Permit Number</th>
+                                <th data-key="actions"
+                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="permitsTableSkeleton">
+                            <tr class="placeholder-row">
+                                <td colspan="6">Loading…</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="skeleton h-4 w-12"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-40"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-24"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-8 w-32"></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="skeleton h-4 w-12"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-32"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-40"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-20"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-4 w-24"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton h-8 w-32"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody id="permitsTableBody" style="display:none"></tbody>
+                    </table>
                 </div>
             </div>
+        </section>
+
+        <!-- Statistics & Visuals section -->
+        <section class="mt-10">
+            <div class="section-header flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-[var(--text-primary)]">Statistics & Visuals</h2>
+            </div>
+            <!-- Statistics row (Users) -->
+            <div class="bg-[var(--bg-surface)] rounded-2xl p-6 mb-8">
+                <div class="mt-4 stats-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Total Users</h3>
+                        <div id="statUsers" class="value">&nbsp;</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Active Users</h3>
+                        <div id="statActiveUsers" class="value">&nbsp;</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Inactive Users</h3>
+                        <div id="statInactiveUsers" class="value">&nbsp;</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Admins</h3>
+                        <div id="statAdmins" class="value">&nbsp;</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Approvers</h3>
+                        <div id="statApprovers" class="value">&nbsp;</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Pre-Approvers</h3>
+                        <div id="statPreApprovers" class="value">&nbsp;</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3 class="text-sm font-medium">Requesters</h3>
+                        <div id="statRequesters" class="value">&nbsp;</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Visuals row (Users) -->
+            <section class="mt-8">
+                <h3 class="font-bold mb-4 text-[var(--text-primary)]">User Visuals</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="bg-[var(--bg-surface)] rounded-xl p-4 flex flex-col h-full min-h-[64px] shadow border border-[var(--input-border)]">
+                        <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">User Status</h4>
+                        <div class="flex-1 flex items-center justify-center">
+                            <canvas id="userStatusChart" class="w-full aspect-[16/9] max-h-[150px]"></canvas>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-[var(--bg-surface)] rounded-xl p-4 flex flex-col h-full min-h-[64px] shadow border border-[var(--input-border)]">
+                        <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">User Roles</h4>
+                        <div class="flex-1 flex items-center justify-center">
+                            <canvas id="userRoleChart" class="w-full aspect-[16/9] max-h-[150px]"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Permits Statistics & Visuals -->
+            <section class="mt-10">
+                <div class="section-header flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-[var(--text-primary)]">Permit Statistics & Visuals</h2>
+                </div>
+                <div class="bg-[var(--bg-surface)] rounded-2xl p-6 mb-8">
+                    <div class="mt-4 stats-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="card stat-card">
+                            <h3 class="text-sm font-medium">Total Permits</h3>
+                            <div id="statPermits" class="value">&nbsp;</div>
+                        </div>
+                        <div class="card stat-card">
+                            <h3 class="text-sm font-medium">Pending</h3>
+                            <div id="statPending" class="value">&nbsp;</div>
+                        </div>
+                        <div class="card stat-card">
+                            <h3 class="text-sm font-medium">In Progress</h3>
+                            <div id="statInProgress" class="value">&nbsp;</div>
+                        </div>
+                        <div class="card stat-card">
+                            <h3 class="text-sm font-medium">Approved</h3>
+                            <div id="statApproved" class="value">&nbsp;</div>
+                        </div>
+                        <div class="card stat-card">
+                            <h3 class="text-sm font-medium">Rejected</h3>
+                            <div id="statRejected" class="value">&nbsp;</div>
+                        </div>
+                    </div>
+                </div>
+                <section class="mt-4">
+                    <h3 class="font-bold mb-4 text-[var(--text-primary)]">Permit Visuals</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div
+                            class="bg-[var(--bg-surface)] rounded-xl p-4 flex flex-col h-full min-h-[220px] shadow border border-[var(--input-border)]">
+                            <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">Permit Status</h4>
+                            <div class="flex-1 flex items-center justify-center">
+                                <canvas id="permitStatusChart" class="w-full h-full aspect-[16/9]"></canvas>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-[var(--bg-surface)] rounded-xl p-4 flex flex-col h-full min-h-[220px] shadow border border-[var(--input-border)]">
+                            <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">Monthly Trends of Permits
+                            </h4>
+                            <div class="flex-1 flex items-center justify-center">
+                                <canvas id="monthlyTrendChart" class="w-full h-full aspect-[16/9]"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
         </section>
     </main>
 
@@ -344,10 +489,137 @@
         </div>
     </div>
 
+    <!-- View / Edit User Modal (Admin) -->
+    <div id="viewUserModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div
+                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">User Profile</h3>
+                    <div class="flex items-center gap-2">
+                        <button id="viewEditBtn"
+                            class="px-3 py-1 text-sm rounded-md bg-white/10 hover:bg-white/20">Edit</button>
+                        <button id="viewUserClose" class="close">&times;</button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="view_userId" />
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-xl font-semibold text-gray-600">
+                            U</div>
+                        <div>
+                            <div id="view_displayName" class="text-lg font-semibold text-[var(--text-primary)]">&nbsp;
+                            </div>
+                            <div id="view_displayEmail" class="text-sm text-[var(--text-secondary)]">&nbsp;</div>
+                        </div>
+                    </div>
+                    <div id="view_statusBadge" class="ml-4"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Full Name</label>
+                        <input id="view_fullName" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Email</label>
+                        <input id="view_email" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Mobile</label>
+                        <input id="view_mobile" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Company</label>
+                        <input id="view_company" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Department</label>
+                        <input id="view_department" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Designation</label>
+                        <input id="view_designation" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Role</label>
+                        <select id="view_role" class="w-full px-3 py-2 border rounded-md bg-[var(--bg-surface)]"
+                            disabled>
+                            <option value="admin">Admin</option>
+                            <option value="approver">Approver</option>
+                            <option value="pre-approver">Pre-Approver</option>
+                            <option value="requester">Requester</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Registered</label>
+                        <div id="view_registered"
+                            class="px-3 py-2 border rounded-md bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)]">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Last Login</label>
+                        <div id="view_lastLogin"
+                            class="px-3 py-2 border rounded-md bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)]">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-action-row pt-4">
+                    <!-- Visible trigger to enter edit mode; Save still commits changes -->
+                    <button id="viewUpdateProfileBtn" class="modal-action-btn">Update Profile</button>
+                    <button id="viewResetBtn" class="modal-action-btn">Reset Password</button>
+                    <div id="viewStatusWrap" class="tooltip">
+                        <button id="viewToggleBtn" class="modal-action-btn" aria-live="polite">Status</button>
+                        <span class="tooltiptext" id="viewToggleTooltip">&nbsp;</span>
+                    </div>
+                    <button id="viewDeleteBtn" class="modal-action-btn delete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
     <script type="module" src="../session.js"></script>
     <script type="module" src="admin.js"></script>
+
+    <!-- Idle timeout modal (appears when session is about to expire) -->
+    <div id="idleWarningModal" class="fixed inset-0 z-50 hidden items-center justify-center" aria-hidden="true">
+        <div class="absolute inset-0 idle-backdrop"></div>
+        <div class="relative max-w-lg w-full mx-4">
+            <div class="idle-modal-content rounded-2xl shadow-lg p-6 border">
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl text-yellow-500 mt-1"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-[var(--text-primary)]">Your session is about to expire</h3>
+                        <p id="idleWarningText" class="text-sm text-[var(--text-secondary)] mt-2">You will be
+                            automatically logged out due to inactivity.</p>
+                        <div id="idleWarningCountdown"
+                            class="mt-4 inline-block px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-md font-mono text-xl">
+                            3:00</div>
+                        <div class="mt-5 flex gap-3">
+                            <button id="idleExtendBtn"
+                                class="flex-1 px-4 py-2 bg-gradient-to-r from-[#273172] to-[#3b82f6] text-white rounded-lg font-semibold">Continue
+                                Session</button>
+                            <button id="idleLogoutBtn"
+                                class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

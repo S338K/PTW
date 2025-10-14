@@ -1,3 +1,97 @@
+html {
+    --visual-primary: #273172;
+}
+
+html[data-theme="dark"] {
+    --visual-primary: #fff;
+    /* Removed stray closing brace */
+}
+
+/* Theme toggle icon color (keeps the icon aligned with the visual color token)
+   Light: #273172, Dark: #FFFFFF */
+:root {
+    --theme-toggle-icon: #273172;
+}
+
+html[data-theme="dark"] {
+    --theme-toggle-icon: #ffffff;
+}
+
+html[data-theme="light"] {
+    --theme-toggle-icon: #273172;
+}
+
+.stat-card .value,
+.visual-card h4,
+.visual-card canvas {
+    color: var(--visual-primary) !important;
+}
+
+html {
+    --text-primary: #273172;
+}
+
+html[data-theme="dark"] {
+    --text-primary: #FFFFFF;
+}
+
+/* Skeleton loader styles */
+.skeleton {
+    display: inline-block;
+    background: linear-gradient(90deg, #23263a 25%, #2d3250 37%, #23263a 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.2s ease-in-out infinite;
+    border-radius: 6px;
+    min-height: 1em;
+    min-width: 1em;
+}
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* Status chip styles */
+.status-chip {
+    display: inline-block;
+    padding: 0.25em 0.75em;
+    font-size: 0.95em;
+    font-weight: 600;
+    border-radius: 999px;
+    color: #fff;
+    background: #6b7280;
+    letter-spacing: 0.02em;
+    text-align: center;
+    min-width: 80px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.status-chip.active {
+    background: var(--success-color, #10b981);
+}
+
+.status-chip.disabled {
+    background: var(--error-color, #ef4444);
+}
+
+.status-chip.pending {
+    background: var(--warning-color, #f59e0b);
+    color: #222;
+}
+
+.status-chip.inprogress {
+    background: var(--inprogress-color, #9333ea);
+}
+
+.status-chip.expired {
+    background: #6b7280;
+}
+
 /* General page styling */
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -8,12 +102,13 @@ body {
 
 /* Header */
 header {
-    display: flex;
-    justify-content: space-between;
+    --text-primary: #273172;
+    --visual-primary: #273172;
     align-items: center;
     padding: 5px 15px;
     background: var(--button-bg);
-    color: var(--button-text);
+    --text-primary: #ffffff;
+    --visual-primary: #ffffff;
 }
 
 /* Modern admin header */
@@ -22,10 +117,10 @@ header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    color: var(--visual-primary);
     padding: 12px 20px;
     background: linear-gradient(90deg, rgba(39, 49, 114, 1) 0%, rgba(38, 58, 133, 1) 100%);
-    color: #fff;
+    color: var(--button-text);
 }
 
 .admin-header .header-left {
@@ -45,7 +140,7 @@ header {
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #fff;
+    color: var(--button-text);
 }
 
 .admin-header .header-right {
@@ -61,11 +156,17 @@ header {
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    color: #fff;
+    color: var(--button-text);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+}
+
+/* Ensure the icon inside the theme toggle matches the selected theme color */
+.theme-toggle i,
+#themeIcon {
+    color: var(--theme-toggle-icon) !important;
 }
 
 .theme-toggle .sun {
@@ -100,7 +201,7 @@ header {
     height: 36px;
     border-radius: 10px;
     background: linear-gradient(135deg, #6c8ef5, #3b4a9a);
-    color: #fff;
+    color: var(--button-text);
     font-weight: 700;
 }
 
@@ -203,7 +304,9 @@ main {
 
 /* Section cards */
 section {
-    background: var(--bg-surface);
+    /* Use a section-specific background variable with a fallback to the theme surface.
+       We'll override this for light mode below to provide a soft light-grey card background. */
+    background: var(--section-bg, var(--bg-surface));
     border: 1px solid var(--input-border);
     border-radius: 8px;
     padding: 16px;
@@ -340,6 +443,43 @@ td.actions .btn {
     text-align: center;
 }
 
+/* Uniform stat cards */
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 110px;
+    padding: 16px;
+}
+
+.stat-card .value {
+    font-size: 28px;
+    margin-top: 6px;
+}
+
+/* Ensure statistic numbers and visual headings use the theme-aware visual color */
+main .stat-card .value,
+main .stat-card h3,
+main .card .value,
+main .card h3,
+main .mt-10 h4,
+main .mt-10 h3 {
+    color: var(--visual-primary) !important;
+}
+
+/* Ensure chart cards align visually with stat cards */
+.bg-gray-50.rounded-xl.p-4 {
+    background: var(--bg-surface);
+    border: 1px solid var(--input-border);
+}
+
+/* Make charts larger and responsive */
+.stat-charts canvas {
+    width: 100% !important;
+    height: 300px !important;
+}
+
 .card h3 {
     margin: 0 0 6px;
     font-size: 14px;
@@ -349,8 +489,8 @@ td.actions .btn {
 /* Totals (big numbers) */
 .card .value {
     font-size: 32px;
-    font-weight: 700;
-    color: var(--button-bg);
+    font-weight: 800;
+    color: var(--visual-primary);
     margin: 8px 0;
     letter-spacing: -0.5px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -365,6 +505,25 @@ td.actions .btn {
     margin: 6px auto 0;
     border-radius: 2px;
     opacity: 0.6;
+}
+
+/* Remove the decorative underline/bar under the large stat values (Total Users / Total Permits) */
+.card .value::after {
+    display: none !important;
+}
+
+/* Divider line between the large stat value and the breakdown grid beneath it */
+.card .value+.grid {
+    border-top: 1px solid var(--input-border);
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+/* Remove any accidental underlines on numeric counts inside stat cards */
+.card .grid strong,
+.card .value,
+.card strong {
+    text-decoration: none !important;
 }
 
 /* Expand/Collapse button */
@@ -389,15 +548,22 @@ td.actions .btn {
 }
 
 .expandBtn::after {
-    content: "▸";
-    font-size: 12px;
-    display: inline-block;
-    transform: rotate(0deg);
-    transition: transform 0.25s ease;
+    /* Remove the CSS-generated caret so the inline <i class="fas fa-chevron-..."> is the single visible icon */
+    content: none !important;
 }
 
 .expandBtn.active::after {
-    transform: rotate(90deg);
+    display: none !important;
+}
+
+/* Animate the chevron icon inside expand buttons */
+.expandBtn i {
+    transition: transform 220ms cubic-bezier(.2, .9, .2, 1);
+    display: inline-block;
+}
+
+.expandBtn.active i {
+    transform: rotate(180deg);
 }
 
 /* Modal background adapts to theme variables */
@@ -501,6 +667,8 @@ td.actions .btn {
 
 .expandBtn.icon-only::after {
     color: var(--text-primary);
+    /* Hide the CSS-generated caret for icon-only buttons; the inline <i> chevron will be used instead */
+    content: none;
 }
 
 /* Breakdown slide animation */
@@ -593,7 +761,7 @@ td.actions .btn {
     display: block;
     margin-top: 6px;
     font-size: 12px;
-    color: #ef4444;
+    color: var(--error-color);
     /* red */
     opacity: 0;
     transform: translateY(-2px);
@@ -608,14 +776,14 @@ td.actions .btn {
 /* Input error state */
 input.error,
 select.error {
-    border-color: #ef4444 !important;
+    border-color: var(--error-color) !important;
     box-shadow: 0 6px 18px rgba(239, 68, 68, 0.06);
 }
 
 /* Buttons in modal */
 /* Modal buttons: primary and cancel */
 .btn.create {
-    background: linear-gradient(90deg, #273172 0%, #3b82f6 100%);
+    background: linear-gradient(90deg, var(--button-bg) 0%, #3b82f6 100%);
     color: #fff;
     border: none;
     box-shadow: 0 6px 20px rgba(39, 49, 114, 0.18);
@@ -628,12 +796,12 @@ select.error {
     transform: translateY(-3px);
     box-shadow: 0 12px 30px rgba(39, 49, 114, 0.22);
     filter: brightness(1.03);
-    background: linear-gradient(90deg, #1f6feb 0%, #273172 100%);
+    background: linear-gradient(90deg, #1f6feb 0%, var(--button-bg) 100%);
 }
 
 .btn.cancel {
     background: #e6eaf0;
-    color: #273172;
+    color: var(--text-primary);
     border: 1px solid #bfc8e6;
     transition: transform 120ms ease, background 120ms ease, color 120ms ease;
     font-weight: 600;
@@ -645,19 +813,19 @@ select.error {
     color: #1a224d;
 }
 
-/* Modal input fields: gray bg, #273172 text */
+/* Modal input fields: gray bg, themed text */
 #userModal input,
 #userModal select,
 #userModal textarea {
     background: var(--button-border);
-    color: #273172;
-    border: 1px solid #bfc8e6;
+    color: var(--text-primary);
+    border: 1px solid var(--input-border);
     font-weight: 500;
 }
 
 #userModal input::placeholder,
 #userModal textarea::placeholder {
-    color: #b0b6c8;
+    color: var(--text-secondary);
     opacity: 1;
 }
 
@@ -847,6 +1015,71 @@ select.error {
     }
 }
 
+/* Responsive improvements for admin page */
+/* Make tables horizontally scrollable on small screens */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Header adjustments on small screens */
+@media (max-width: 900px) {
+
+    header .container,
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    header .flex {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Make header buttons stack and shrink */
+    header .flex.items-center.lg\:justify-between,
+    .flex.items-center.lg\:justify-between {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 640px) {
+
+    /* Reduce padding on main content */
+    main.container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    /* Modal sizing on small screens */
+    #userModal>div {
+        width: calc(100% - 24px) !important;
+        max-width: calc(100% - 24px) !important;
+        border-radius: 12px;
+        margin: 0 12px;
+    }
+
+    /* Stack action buttons */
+    .flex.gap-3.pt-4 {
+        flex-direction: column;
+    }
+
+    .flex.gap-3.pt-4 .flex-1 {
+        width: 100%;
+    }
+
+    /* Smaller header elements */
+    header {
+        padding: 8px;
+    }
+
+    .theme-toggle {
+        width: 40px;
+        height: 40px;
+    }
+}
+
 /* Toast Notification */
 #toast {
     visibility: hidden;
@@ -908,4 +1141,203 @@ input.error,
 select.error {
     border-color: var(--error-color);
     background: #fff5f5;
+}
+
+/* Idle warning modal styling */
+#idleWarningModal {
+    display: none;
+}
+
+#idleWarningModal[data-visible="true"],
+#idleWarningModal.show {
+    display: flex;
+}
+
+/* When modal open, blur the background content for focus — apply via JS by adding class to body */
+body.modal-open>main,
+body.modal-open>header {
+    filter: blur(4px) grayscale(0.03);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Ensure modal content sits above blurred content */
+#idleWarningModal>div.relative {
+    z-index: 100000;
+}
+
+/* Theme-aware idle modal */
+.idle-backdrop {
+    background: rgba(2, 6, 23, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.idle-modal-content {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--input-border);
+}
+
+#idleWarningCountdown {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+    color: var(--error-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Segoe UI Mono', monospace;
+}
+
+.idle-modal-content .btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+/* Primary extend button uses theme primary color */
+#idleExtendBtn {
+    background: linear-gradient(90deg, var(--button-bg) 0%, #3b82f6 100%);
+    color: var(--button-text);
+    border: none;
+}
+
+#idleLogoutBtn {
+    background: var(--error-color);
+    color: var(--button-text);
+    border: none;
+}
+
+/* Dark-mode adjustments: ensure backdrop is slightly lighter so blur works */
+:root[data-theme='dark'] .idle-backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme='light'] .idle-backdrop {
+    background: rgba(2, 6, 23, 0.45);
+}
+
+/* Base layout and appearance for modal action buttons */
+.modal-action-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.modal-action-btn {
+    background: var(--button-bg, #273172);
+    color: var(--button-text, #ffffff);
+    border: 0;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(39, 49, 114, 0.12);
+    font-weight: 600;
+    min-width: 120px;
+    text-align: center;
+}
+
+.modal-action-btn.save {
+    background: var(--success-color, #10b981);
+    color: #fff;
+}
+
+.modal-action-btn.delete {
+    background: var(--error-color, #ef4444);
+    color: #fff;
+}
+
+/* simple tooltip */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: max-content;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 6px 8px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+/* Modal action button animations and hover visuals */
+@keyframes modalBtnIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-action-row .modal-action-btn {
+    animation: modalBtnIn 220ms cubic-bezier(.2, .8, .2, 1) both;
+    transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+}
+
+.modal-action-row .modal-action-btn:nth-child(1) {
+    animation-delay: 0ms;
+}
+
+.modal-action-row .modal-action-btn:nth-child(2) {
+    animation-delay: 40ms;
+}
+
+.modal-action-row .modal-action-btn:nth-child(3) {
+    animation-delay: 80ms;
+}
+
+.modal-action-row .modal-action-btn:nth-child(4) {
+    animation-delay: 120ms;
+}
+
+.modal-action-row .modal-action-btn:nth-child(5) {
+    animation-delay: 160ms;
+}
+
+.modal-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(39, 49, 114, 0.14);
+}
+
+.modal-action-btn:active {
+    transform: translateY(0);
+}
+
+.modal-action-btn:focus {
+    outline: none;
+    box-shadow: 0 6px 18px rgba(39, 49, 114, 0.18), 0 0 0 4px rgba(39, 49, 114, 0.08);
+    transform: translateY(-2px) scale(1.01);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .modal-action-row .modal-action-btn,
+    .modal-action-btn:hover,
+    .modal-action-btn:focus {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
 }
