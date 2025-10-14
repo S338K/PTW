@@ -94,7 +94,7 @@ fieldset {
     padding: 20px;
     margin-bottom: 20px;
     background-color: #fff;
-    opacity: 0;
+    opacity: 1;
     transform: translateY(75px);
     /* Start position */
     transition: opacity 0.5s ease, transform 0.5s ease;
