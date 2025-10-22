@@ -11,8 +11,9 @@ const helmet = require('helmet');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const apiRoutes = require('./routes/api');
-const puppeteer = require('puppeteer-core');
+const puppeteerCore = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
+let puppeteer = puppeteerCore; // may be swapped to full 'puppeteer' if available
 const path = require('path');
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -133,13 +134,97 @@ if (!isProd) {
 let browser;
 async function getBrowser() {
   if (!browser) {
-    browser = await puppeteer.launch({
-      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+    // Determine executable path in a resilient way across OSes and environments
+    const fs = require('fs');
+    let executablePath;
+
+    // 1) Env var override (highest priority)
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      logger.debug('Using PUPPETEER_EXECUTABLE_PATH from env:', executablePath);
+    }
+
+    // 2) Try @sparticuz/chromium helper (may throw if binary not present)
+    if (!executablePath) {
+      try {
+        executablePath = await chromium.executablePath();
+        logger.debug('chromium.executablePath() returned:', executablePath);
+      } catch (err) {
+        logger.warn('chromium.executablePath() failed:', err && err.message);
+      }
+    }
+
+    // 3) Try common OS locations if still missing
+    if (!executablePath) {
+      const candidates = [];
+      if (process.platform === 'win32') {
+        candidates.push(
+          `${process.env['PROGRAMFILES'] || 'C:\\Program Files'}\\Google\\Chrome\\Application\\chrome.exe`,
+          `${process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)'}\\Google\\Chrome\\Application\\chrome.exe`,
+          `${process.env['LOCALAPPDATA'] || (process.env.USERPROFILE + '\\AppData\\Local')}\\Google\\Chrome\\Application\\chrome.exe`,
+          `${process.env['LOCALAPPDATA'] || (process.env.USERPROFILE + '\\AppData\\Local')}\\Microsoft\\Edge\\Application\\msedge.exe`
+        );
+      } else if (process.platform === 'darwin') {
+        candidates.push(
+          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+          '/Applications/Chromium.app/Contents/MacOS/Chromium'
+        );
+      } else {
+        // linux/unix
+        candidates.push(
+          '/usr/bin/google-chrome',
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/chromium-browser',
+          '/usr/bin/chromium'
+        );
+      }
+
+      for (const p of candidates) {
+        try {
+          if (p && fs.existsSync(p)) {
+            executablePath = p;
+            logger.debug('Found local Chrome/Chromium executable at', p);
+            break;
+          }
+        } catch (ex) {
+          logger.warn('Error checking candidate executable path', ex && ex.message);
+        }
+      }
+    }
+
+    // 4) If still not found, attempt to use full 'puppeteer' package if it's installed.
+    // Full puppeteer bundles a Chromium download and can launch without an external executablePath.
+    if (!executablePath && puppeteer === puppeteerCore) {
+      try {
+        // try to require full puppeteer dynamically
+        // eslint-disable-next-line global-require
+        const fullPuppeteer = require('puppeteer');
+        puppeteer = fullPuppeteer;
+        logger.info('Using full puppeteer package (bundled Chromium) as fallback');
+      } catch (err) {
+        logger.debug('Full puppeteer not available as a fallback:', err && err.message);
+      }
+    }
+
+    const launchOptions = {
+      args: [...(chromium.args || []), '--no-sandbox', '--disable-setuid-sandbox'],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
-    logger.info('✅ Chromium launched and cached');
+      headless: process.env.PUPPETEER_HEADLESS === '0' ? false : chromium.headless,
+    };
+
+    if (executablePath) {
+      launchOptions.executablePath = executablePath;
+    } else if (puppeteer === puppeteerCore) {
+      // puppeteer-core requires an executable; if we reach here, none was found
+      logger.error('Chromium executable not found and puppeteer-core is in use. Set PUPPETEER_EXECUTABLE_PATH or install the full "puppeteer" package. See https://pptr.dev/troubleshooting');
+      throw new Error('No Chromium executable found for puppeteer-core');
+    } else {
+      // using full puppeteer which includes a Chromium; no executablePath required
+      logger.debug('Launching full puppeteer (bundled Chromium)');
+    }
+
+    browser = await puppeteer.launch(launchOptions);
+    logger.info('✅ Chromium/Chrome launched and cached');
   }
   return browser;
 }
@@ -194,19 +279,39 @@ app.use((err, req, res, _next) => {
 
 // ===== START SERVER ======= //
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.debug(`CORS allowed for origins: ${allowedOrigins}`);
-  // Warm up Chromium so first request is fast (disabled for local testing)
-  // getBrowser().then(() => logger.info('Chromium warmed up 🚀'));
+// Before starting the server, run a quick browser health-check so failures are visible early.
+async function startServerWithBrowserCheck() {
+  logger.info('Running browser startup check...');
+  try {
+    // Attempt to launch browser once to validate environment
+    const b = await getBrowser();
+    if (b) {
+      logger.info('Browser startup check passed');
+    }
+  } catch (err) {
+    logger.error('Browser startup check failed:', err && err.message);
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('Exiting because browser is required in production. See README or set PUPPETEER_EXECUTABLE_PATH.');
+      process.exit(1);
+    } else {
+      logger.warn('Continuing startup in development despite browser startup failure. PDF generation may not work until resolved.');
+    }
+  }
 
-  // Graceful shutdown
-  process.on('SIGINT', async () => {
-    await closeBrowser();
-    process.exit(0);
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.debug(`CORS allowed for origins: ${allowedOrigins}`);
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      await closeBrowser();
+      process.exit(0);
+    });
+    process.on('SIGTERM', async () => {
+      await closeBrowser();
+      process.exit(0);
+    });
   });
-  process.on('SIGTERM', async () => {
-    await closeBrowser();
-    process.exit(0);
-  });
-});
+}
+
+startServerWithBrowserCheck();

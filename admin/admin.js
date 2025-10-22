@@ -1,3 +1,47 @@
+// ===== System Message (Carousel) Logic =====
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('systemMessageForm');
+    const textarea = document.getElementById('systemMessageInput');
+    const status = document.getElementById('systemMessageStatus');
+    if (form && textarea) {
+        // Fetch current message
+        fetch(`${API_BASE}/system-message`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => { textarea.value = data.message || ''; })
+            .catch(() => { textarea.value = ''; });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = textarea.value.trim();
+            if (!msg) {
+                status.textContent = 'Message cannot be empty.';
+                status.style.color = 'red';
+                return;
+            }
+            status.textContent = 'Saving...';
+            status.style.color = '';
+            try {
+                const res = await fetch(`${API_BASE}/system-message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    status.textContent = 'Message updated!';
+                    status.style.color = 'green';
+                } else {
+                    status.textContent = data.message || 'Failed to update.';
+                    status.style.color = 'red';
+                }
+            } catch {
+                status.textContent = 'Network error.';
+                status.style.color = 'red';
+            }
+        });
+    }
+});
 // ===== Skeleton loader helpers =====
 function showSkeleton(tableId, show = true) {
     const skeleton = document.getElementById(tableId + 'Skeleton');

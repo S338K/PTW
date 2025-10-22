@@ -69,36 +69,51 @@
             </div>
         </div>
 
-        <!-- Full Width Carousel Container (Outside constrained layout) -->
-        <div class="w-full bg-[var(--bg-surface)] border-t border-[var(--input-border)]/20 py-3">
+        <!-- Accessible, Responsive Carousel Area -->
+        <section id="loginCarousel" class="w-full bg-[var(--bg-surface)] border-t border-[var(--input-border)]/20 py-3"
+            aria-label="Login Information Carousel">
             <div class="container mx-auto px-4">
-                <div class="h-6 relative overflow-hidden header-carousel select-none">
-                    <div class="carousel-item absolute inset-0 
-                              flex items-center justify-center text-xs lg:text-sm font-medium" id="dateTimeDisplay">
-                        <div class="flex items-center space-x-2">
-                            <i class="fas fa-calendar-alt text-hia-blue text-xs lg:text-sm"></i>
-                            <span class="carousel-text"></span>
-                        </div>
+                <div class="relative overflow-hidden header-carousel" tabindex="0" aria-roledescription="carousel"
+                    aria-live="polite">
+                    <!-- Slides -->
+                    <div class="carousel-slide flex items-center justify-center min-h-[3.5rem]" data-slide="0"
+                        aria-hidden="false">
+                        <span id="greetingMessage"
+                            class="text-base lg:text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <!-- Greeting and time will be injected here -->
+                        </span>
                     </div>
-                    <div class="carousel-item absolute inset-0 
-                              flex items-center justify-center text-xs lg:text-sm font-medium" id="tempDisplay">
-                        <div class="flex items-center space-x-2">
-                            <i class="fas fa-cloud-sun text-hia-blue text-xs lg:text-sm"></i>
-                            <span class="carousel-text text-center px-2"></span>
-                        </div>
+                    <div class="carousel-slide flex items-center justify-center min-h-[3.5rem]" data-slide="1"
+                        aria-hidden="true">
+                        <span id="weatherMessage"
+                            class="text-base lg:text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <!-- Weather info will be injected here -->
+                        </span>
                     </div>
-                    <!-- Carousel indicators -->
-                    <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                        <div
-                            class="w-1 h-1 rounded-full bg-[var(--text-primary)] opacity-30 carousel-dot active-dot transition-all duration-300">
-                        </div>
-                        <div
-                            class="w-1 h-1 rounded-full bg-[var(--text-primary)] opacity-30 carousel-dot transition-all duration-300">
-                        </div>
+                    <div class="carousel-slide flex items-center justify-center min-h-[3.5rem]" data-slide="2"
+                        aria-hidden="true">
+                        <span id="adminMessage"
+                            class="text-base lg:text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <!-- Admin message will be injected here -->
+                        </span>
+                    </div>
+                    <!-- Controls removed for clean layout -->
+                    <!-- Progress Indicators -->
+                    <div class="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-2" role="tablist"
+                        aria-label="Carousel Progress">
+                        <button
+                            class="carousel-dot w-2 h-2 rounded-full bg-[var(--text-primary)] opacity-30 focus:opacity-80 transition-all duration-300"
+                            aria-label="Go to slide 1" data-dot="0" tabindex="0"></button>
+                        <button
+                            class="carousel-dot w-2 h-2 rounded-full bg-[var(--text-primary)] opacity-30 focus:opacity-80 transition-all duration-300"
+                            aria-label="Go to slide 2" data-dot="1" tabindex="0"></button>
+                        <button
+                            class="carousel-dot w-2 h-2 rounded-full bg-[var(--text-primary)] opacity-30 focus:opacity-80 transition-all duration-300"
+                            aria-label="Go to slide 3" data-dot="2" tabindex="0"></button>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </header>
 
     <!-- Dynamic Background Image Carousel (Below header carousel) -->

@@ -2,79 +2,42 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Profile - HIA Baggage Handling System</title>
-    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="../images/HIA_logo.png">
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Theme integration -->
     <link rel="stylesheet" href="../theme.css" />
     <link rel="stylesheet" href="profile.css" />
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script>
-
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'hia-blue': '#273172',
-                        'hia-light-blue': '#1a245a',
-                        'hia-dark': '#1E245E',
-                        'hia-surface': 'var(--bg-surface)',
-                        'hia-text': 'var(--text-primary)',
-                    },
-                    fontFamily: {
-                        'sans': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-                        'system': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 
 <body class="bg-[var(--bg-surface)] text-[var(--text-primary)] font-system min-h-screen transition-all duration-300">
-    <!-- Stylish Header with User Profile -->
+
+    <!-- Header -->
     <header class="relative overflow-hidden">
-        <!-- Background Pattern -->
         <div class="absolute inset-0 bg-gradient-to-br from-hia-blue via-hia-light-blue to-hia-blue opacity-90"></div>
         <div class="absolute inset-0 bg-black/20"></div>
 
-        <!-- Header Content -->
         <div class="relative z-10 container mx-auto px-4 py-4">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <!-- Left Section: Icons + Profile -->
                 <div class="flex items-center space-x-6">
-                    <!-- User Profile Section -->
-                    <!-- Profile Avatar with Dropdown -->
+                    <div class="flex-1"></div>
                     <div class="relative">
                         <button id="profileDropdownBtn"
-                            class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center 
-                               border-3 border-white/30 shadow-lg backdrop-blur-sm cursor-pointer
-                               hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50">
+                            class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-3 border-white/30 shadow-lg backdrop-blur-sm cursor-pointer hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50">
                             <span id="profileInitials" class="text-white text-xl font-bold">U</span>
                         </button>
-                        <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white 
-                                flex items-center justify-center">
-                            <i class="fas fa-check text-white text-xs"></i>
-                        </div>
 
-                        <!-- Profile Details Dropdown -->
-                        <div id="profileDropdown" class="w-96 bg-white/98 backdrop-blur-md rounded-2xl 
-                            shadow-2xl border border-white/40 p-5 transition-all duration-300 
-                            max-h-[80vh] overflow-y-auto hidden">
+                        <div id="profileDropdown"
+                            class="w-96 bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-white/40 p-5 transition-all duration-300 max-h-[80vh] overflow-y-auto hidden">
                             <div class="space-y-4">
-                                <!-- Profile Overview -->
                                 <div class="text-center pb-4 border-b border-gray-200">
                                     <div
                                         class="w-16 h-16 bg-hia-blue/10 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <span id="hoverInitials" class="text-hia-blue font-bold text-2xl">U</span>
                                     </div>
                                     <h3 id="hoverName" class="text-white-800 font-bold text-lg mb-1">Loading...</h3>
-
                                     <div id="hoverStatusBadge"
                                         class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
                                         <div id="hoverStatusDot"
@@ -83,8 +46,65 @@
                                             User</span>
                                     </div>
                                 </div>
+                                <!-- Quick Actions -->
+                                <div class="pt-3 border-t border-gray-100">
+                                    <h4 class="text-gray-800 font-semibold text-sm mb-2">Quick Actions</h4>
+                                    <div class="grid grid-cols-2 sm:grid-cols-2 gap-2 mt-2">
+                                        <button data-action="showUpdatePasswordModal hideProfileSettings"
+                                            class="quick-action p-3 flex items-center gap-3 rounded-lg bg-[var(--input-border)]/6 hover:bg-[var(--input-border)]/20 transition-colors">
+                                            <!-- lock SVG -->
+                                            <svg class="w-5 h-5 quick-action-icon" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" fill="currentColor" />
+                                                <path d="M17 8V7a5 5 0 00-10 0v1H5v11h14V8h-2zM9 8V7a3 3 0 116 0v1H9z"
+                                                    fill="currentColor" />
+                                            </svg>
+                                            <span class="text-sm">Change Password</span>
+                                        </button>
 
-                                <!-- Personal Information -->
+                                        <button data-action="submitNewRequest"
+                                            class="quick-action p-3 flex items-center gap-3 rounded-lg bg-[var(--input-border)]/6 hover:bg-[var(--input-border)]/20 transition-colors">
+                                            <!-- plus SVG -->
+                                            <svg class="w-5 h-5 quick-action-icon" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="text-sm">Submit Request</span>
+                                        </button>
+
+                                        <button data-action="downloadActivity"
+                                            class="quick-action p-3 flex items-center gap-3 rounded-lg bg-[var(--input-border)]/6 hover:bg-[var(--input-border)]/20 transition-colors">
+                                            <!-- download SVG -->
+                                            <svg class="w-5 h-5 quick-action-icon" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 3v12" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M8 11l4 4 4-4" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M21 21H3" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="text-sm">Download Report</span>
+                                        </button>
+
+                                        <button id="hoverLogoutBtn"
+                                            class="quick-action p-3 flex items-center gap-3 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">
+                                            <!-- logout SVG -->
+                                            <svg class="w-5 h-5 quick-action-icon" viewBox="0 0 24 24" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M21 12H9" stroke="currentColor" stroke-width="2"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M13 19H6a2 2 0 01-2-2V7a2 2 0 012-2h7" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <span class="text-sm">Log Out</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <h4 class="text-gray-800 font-semibold text-sm mb-3 flex items-center gap-2">
                                         <i class="fas fa-user text-hia-blue"></i>
@@ -92,17 +112,16 @@
                                     </h4>
                                     <div class="grid grid-cols-1 gap-2 text-sm">
                                         <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                            <i class="fas fa-envelope text-hia-blue w-4"></i>
-                                            <span id="hoverEmail" class="text-gray-700">Loading...</span>
-                                        </div>
-                                        <!-- company row removed from personal information -->
-                                        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                            <i class="fas fa-phone text-hia-blue w-4"></i>
-                                            <span id="hoverPhone" class="text-gray-700">Loading...</span>
+                                            <i class="fas fa-envelope text-hia-blue w-4"></i><span id="hoverEmail"
+                                                class="text-gray-700">Loading...</span>
                                         </div>
                                         <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                            <i class="fas fa-calendar-plus text-hia-blue w-4"></i>
-                                            <span id="hoverJoinDate" class="text-gray-700">Loading...</span>
+                                            <i class="fas fa-phone text-hia-blue w-4"></i><span id="hoverPhone"
+                                                class="text-gray-700">Loading...</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                            <i class="fas fa-calendar-plus text-hia-blue w-4"></i><span
+                                                id="hoverJoinDate" class="text-gray-700">Loading...</span>
                                         </div>
                                         <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                                             <i class="fas fa-clock text-hia-blue w-4"></i>
@@ -113,129 +132,66 @@
                                             <span id="hoverIp" class="text-gray-700">IP Address: Loading...</span>
                                         </div>
                                     </div>
-                                </div>
 
-                                <!-- Quick Actions -->
-                                <div class="pt-2 border-t border-gray-200">
-                                    <h4 class="text-gray-800 font-semibold text-sm mb-3 flex items-center gap-2">
-                                        <i class="fas fa-bolt text-hia-blue"></i>
-                                        Quick Actions
-                                    </h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <!-- Edit Profile quick-action removed; use Profile Settings modal -->
-                                        <button onclick="showUpdatePasswordModal()"
-                                            class="flex flex-col items-center gap-2 p-3 bg-hia-blue/10 hover:bg-hia-blue/20 
-                                                   rounded-xl transition-all duration-200 text-gray-700 hover:text-hia-blue group">
-                                            <i
-                                                class="fas fa-key text-lg group-hover:scale-110 transition-transform"></i>
-                                            <span class="text-xs font-medium">Change Password</span>
-                                        </button>
-                                        <button onclick="submitNewRequest()"
-                                            class="flex flex-col items-center gap-2 p-3 bg-green-50 hover:bg-green-100 
-                                                   rounded-xl transition-all duration-200 text-green-700 hover:text-green-800 group border border-green-200">
-                                            <i
-                                                class="fas fa-plus-circle text-lg group-hover:scale-110 transition-transform"></i>
-                                            <span class="text-xs font-medium">Submit Request</span>
-                                        </button>
-                                        <button onclick="downloadActivity()"
-                                            class="flex flex-col items-center gap-2 p-3 bg-hia-blue/10 hover:bg-hia-blue/20 
-                                                   rounded-xl transition-all duration-200 text-gray-700 hover:text-hia-blue group">
-                                            <i
-                                                class="fas fa-download text-lg group-hover:scale-110 transition-transform"></i>
-                                            <span class="text-xs font-medium">Download Report</span>
-                                        </button>
-                                        <button id="hoverLogoutBtn" onclick="logoutUser()"
-                                            class="flex flex-col items-center gap-2 p-3 bg-red-50 hover:bg-red-100 
-                                                   rounded-xl transition-all duration-200 text-red-600 hover:text-red-700 group border border-red-200">
-                                            <i
-                                                class="fas fa-sign-out-alt text-lg group-hover:scale-110 transition-transform"></i>
-                                            <span class="text-xs font-medium">Sign Out</span>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- profileDisplayName removed from header to keep header compact; user name and welcome moved into dropdown -->
                     </div>
 
-                    <!-- Simplified Profile Info -->
-                    <div class="space-y-1">
-                        <h1 id="profileDisplayName" class="text-white text-xl font-bold">Welcome, User</h1>
-                    </div>
-                </div>
+                    <div class="flex items-center space-x-3 header-controls">
+                        <button id="themeToggleBtn"
+                            class="relative w-10 h-10 bg-white/15 border-2 border-white/30 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-white hover:scale-110 active:scale-95 hover:bg-white/25"><i
+                                id="themeToggleIcon" class="fas fa-moon text-sm"></i></button>
 
-                <!-- Right Section: Theme Toggle + Notifications -->
-                <div class="flex items-center space-x-3">
-                    <!-- Theme Toggle Button -->
-                    <button id="themeToggleBtn" class="relative w-10 h-10 bg-white/15 border-2 border-white/30 
-                           rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
-                           flex items-center justify-center text-white
-                           hover:scale-110 active:scale-95 hover:bg-white/25">
-                        <i id="themeToggleIcon" class="fas fa-moon text-sm"></i>
-                    </button>
+                        <div class="relative">
+                            <button id="notificationBtn"
+                                class="relative w-10 h-10 bg-white/15 border-2 border-white/30 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-white hover:scale-110 active:scale-95 hover:bg-white/25"><i
+                                    class="fas fa-bell text-sm"></i><span id="notificationCount"
+                                    class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-white animate-pulse hidden">0</span></button>
 
-                    <!-- Notification Icon with Dropdown -->
-                    <div class="relative">
-                        <button id="notificationBtn" class="relative w-10 h-10 bg-white/15 border-2 border-white/30 
-                               rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
-                               flex items-center justify-center text-white
-                               hover:scale-110 active:scale-95 hover:bg-white/25">
-                            <i class="fas fa-bell text-sm"></i>
-                            <!-- Notification Count Badge -->
-                            <span id="notificationCount" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 
-                              rounded-full flex items-center justify-center text-xs font-bold text-white
-                              border-2 border-white animate-pulse hidden">0</span>
-                        </button>
-
-                        <!-- Notification Dropdown -->
-                        <div id="notificationDropdown" class="w-80 bg-white/98 backdrop-blur-md 
-                            rounded-2xl shadow-2xl border border-white/40 transition-all duration-300 
-                            max-h-[70vh] overflow-hidden hidden">
-
-                            <!-- Notification Header -->
-                            <div
-                                class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-4 py-3 border-b border-gray-200">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="text-gray-800 font-bold text-sm flex items-center gap-2">
-                                        <i class="fas fa-bell text-hia-blue"></i>
-                                        Notifications
-                                    </h4>
-                                    <button onclick="markAllAsRead()"
-                                        class="text-hia-blue hover:text-hia-light-blue text-xs font-medium">
-                                        Mark all read
-                                    </button>
+                            <div id="notificationDropdown"
+                                class="w-80 bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-white/40 transition-all duration-300 max-h-[70vh] overflow-hidden hidden">
+                                <div
+                                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-4 py-3 border-b border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-gray-800 font-bold text-sm flex items-center gap-2">
+                                            <i class="fas fa-bell text-hia-blue"></i>
+                                            Notifications
+                                        </h4><button data-action="markAllAsRead"
+                                            class="text-hia-blue hover:text-hia-light-blue text-xs font-medium">Mark
+                                            all read</button>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <!-- Notification List -->
-                            <div class="p-4 overflow-y-auto max-h-64" id="notificationList">
-                                <div class="text-center py-8 text-gray-500">
-                                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                    <p class="text-sm">Loading notifications...</p>
+                                <div class="p-4 overflow-y-auto max-h-64" id="notificationList">
+                                    <div class="text-center py-8 text-gray-500"><i
+                                            class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                        <p class="text-sm">Loading notifications...
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <!-- Notification Footer -->
-                            <div class="border-t border-gray-200 p-3 text-center">
-                                <button onclick="showAllNotifications()" class="text-hia-blue hover:text-hia-light-blue 
-                                    text-sm font-medium flex items-center gap-2 mx-auto">
-                                    <i class="fas fa-list"></i>
-                                    View All Notifications
-                                </button>
+                                <div class="border-t border-gray-200 p-3 text-center">
+                                    <button data-action="showAllNotifications"
+                                        class="text-hia-blue hover:text-hia-light-blue text-sm font-medium flex items-center gap-2 mx-auto"><i
+                                            class="fas fa-list"></i> View All
+                                        Notifications</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     </header>
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
-        <!-- Consolidated Profile & Statistics -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
-            <!-- Permit Analytics Cards -->
-            <div class="xl:col-span-2 space-y-6">
-                <!-- Permit Statistics Overview -->
+
+        <!-- Analytics stack: vertically centered cards with equal sizing -->
+        <div class="flex flex-col items-center gap-6 mb-8">
+
+            <!-- Permit Analytics -->
+            <section class="analytics-card w-full max-w-3xl">
                 <div
                     class="bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
                     <div
@@ -245,57 +201,55 @@
                                 <i class="fas fa-chart-line text-hia-blue"></i>
                                 Permit Analytics Overview
                             </h2>
-                            <button onclick="toggleSection('permitAnalytics')"
-                                class="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                <i id="permitAnalyticsIcon"
-                                    class="fas fa-chevron-up text-[var(--text-primary)] text-sm"></i>
-                            </button>
+                            <button data-action="toggleSection" data-section="permitAnalytics"
+                                class="p-2 rounded-lg transition-colors"><i id="permitAnalyticsIcon"
+                                    class="chevron-icon fas fa-chevron-down text-[var(--text-primary)] text-sm"></i></button>
                         </div>
                     </div>
 
-                    <div id="permitAnalyticsContent" class="p-6">
+                    <div id="permitAnalyticsContent" class="p-6 hidden">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                            <!-- Total Permits -->
                             <div
                                 class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
                                 <div
                                     class="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="fas fa-file-alt text-blue-600 dark:text-blue-400 text-xl"></i>
                                 </div>
-                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1" id="totalPermits">
+                                <div id="totalPermits" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
                                     0</div>
-                                <div class="text-sm text-blue-700 dark:text-blue-300 font-medium">Total Permits</div>
+                                <div class="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                                    Total Permits</div>
                             </div>
 
-                            <!-- Approved Permits -->
                             <div
                                 class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
                                 <div
                                     class="w-12 h-12 bg-green-100 dark:bg-green-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="fas fa-check-circle text-green-600 dark:text-green-400 text-xl"></i>
                                 </div>
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1"
-                                    id="approvedPermits">0</div>
-                                <div class="text-sm text-green-700 dark:text-green-300 font-medium">Approved</div>
+                                <div id="approvedPermits"
+                                    class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+                                    0</div>
+                                <div class="text-sm text-green-700 dark:text-green-300 font-medium">
+                                    Approved</div>
                             </div>
 
-                            <!-- Pending Permits -->
                             <div
                                 class="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
                                 <div
                                     class="w-12 h-12 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="fas fa-clock text-yellow-600 dark:text-yellow-400 text-xl"></i>
                                 </div>
-                                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1"
-                                    id="pendingPermits">0</div>
-                                <div class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">Pending</div>
+                                <div id="pendingPermits"
+                                    class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
+                                    0</div>
+                                <div class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                                    Pending</div>
                             </div>
                         </div>
 
-                        <!-- Permit Distribution Chart -->
                         <div class="border-t border-[var(--input-border)] pt-6">
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <!-- Permit Status Distribution -->
                                 <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
                                     <h4
                                         class="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
@@ -304,8 +258,6 @@
                                     </h4>
                                     <canvas id="permitStatusChart" height="200"></canvas>
                                 </div>
-
-                                <!-- Monthly Permit Trend -->
                                 <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
                                     <h4
                                         class="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
@@ -316,17 +268,12 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="border-t border-[var(--input-border)] pt-4 mt-6">
-                            <p class="text-center text-[var(--text-primary)] opacity-70 text-sm">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                Real-time analytics of your permit submissions and their current status in the system.
-                            </p>
-                        </div>
                     </div>
                 </div>
+            </section>
 
-                <!-- Approval Time Analytics -->
+            <!-- Approval Time Analytics -->
+            <section class="analytics-card w-full max-w-3xl">
                 <div
                     class="bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
                     <div
@@ -336,43 +283,40 @@
                                 <i class="fas fa-chart-bar text-hia-blue"></i>
                                 Approval Time Analytics
                             </h2>
-                            <button onclick="toggleSection('approvalAnalytics')"
-                                class="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                <i id="approvalAnalyticsIcon"
-                                    class="fas fa-chevron-up text-[var(--text-primary)] text-sm"></i>
-                            </button>
+                            <button data-action="toggleSection" data-section="approvalAnalytics"
+                                class="p-2 rounded-lg transition-colors"><i id="approvalAnalyticsIcon"
+                                    class="chevron-icon fas fa-chevron-down text-[var(--text-primary)] text-sm"></i></button>
                         </div>
                     </div>
 
-                    <div id="approvalAnalyticsContent" class="p-6">
+                    <div id="approvalAnalyticsContent" class="p-6 hidden">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <!-- Average Approval Time -->
                             <div
                                 class="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
                                 <div
                                     class="w-12 h-12 bg-purple-100 dark:bg-purple-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="fas fa-stopwatch text-purple-600 dark:text-purple-400 text-xl"></i>
                                 </div>
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1"
-                                    id="avgApprovalTime">--</div>
-                                <div class="text-sm text-purple-700 dark:text-purple-300 font-medium">Average Approval
-                                </div>
+                                <div id="avgApprovalTime"
+                                    class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+                                    --</div>
+                                <div class="text-sm text-purple-700 dark:text-purple-300 font-medium">
+                                    Average Approval</div>
                             </div>
-
-                            <!-- Fastest Approval -->
                             <div
                                 class="text-center p-4 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl border border-cyan-200 dark:border-cyan-800">
                                 <div
                                     class="w-12 h-12 bg-cyan-100 dark:bg-cyan-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="fas fa-rocket text-cyan-600 dark:text-cyan-400 text-xl"></i>
                                 </div>
-                                <div class="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-1"
-                                    id="fastestApproval">--</div>
-                                <div class="text-sm text-cyan-700 dark:text-cyan-300 font-medium">Fastest Approval</div>
+                                <div id="fastestApproval"
+                                    class="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
+                                    --</div>
+                                <div class="text-sm text-cyan-700 dark:text-cyan-300 font-medium">
+                                    Fastest Approval</div>
                             </div>
                         </div>
 
-                        <!-- Approval Trend Chart -->
                         <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
                             <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                                 <i class="fas fa-chart-line text-hia-blue text-sm"></i>
@@ -382,76 +326,41 @@
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <!-- Recent Activity -->
+            <!-- Permit Statistics -->
+            <section class="analytics-card w-full max-w-3xl">
                 <div
                     class="bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
                     <div
-                        class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)] flex items-center justify-between">
-                        <div class="flex items-center justify-between w-full">
-                            <div class="flex items-center gap-4">
-                                <h2 class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                    <i class="fas fa-history text-hia-blue"></i>
-                                    Recent Activity
-                                </h2>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                    <span class="text-xs text-[var(--text-primary)] opacity-60">Live Updates</span>
-                                </div>
-                            </div>
-                            <button onclick="toggleSection('recentActivity')"
-                                class="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                <i id="recentActivityIcon"
-                                    class="fas fa-chevron-up text-[var(--text-primary)] text-sm"></i>
-                            </button>
+                        class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-4 py-3 border-b border-[var(--input-border)]">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                                <i class="fas fa-chart-pie text-hia-blue"></i>
+                                Permit Statistics
+                            </h3>
+                            <button data-action="toggleSection" data-section="permitStatistics"
+                                class="p-2 rounded-lg"><i id="permitStatisticsIcon"
+                                    class="chevron-icon fas fa-chevron-down text-[var(--text-primary)] text-sm"></i></button>
                         </div>
                     </div>
-
-                    <div id="recentActivityContent" class="p-6">
-                        <div class="space-y-3" id="recentActivityList">
-                            <!-- Activity items will be populated by JavaScript -->
-                            <div class="text-center py-8 text-[var(--text-primary)] opacity-60">
-                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                <p>Loading recent activity...</p>
-                            </div>
-                        </div>
-
-                        <!-- View All Activities -->
-                        <div class="mt-4 pt-4 border-t border-[var(--input-border)] text-center">
-                            <button onclick="showAllActivities()"
-                                class="text-hia-blue hover:text-hia-light-blue font-medium text-sm transition-colors duration-200 flex items-center gap-2 mx-auto">
-                                <i class="fas fa-list"></i>
-                                View All Activities
-                            </button>
-                        </div>
+                    <div id="permitStatisticsContent" class="p-4 hidden">
+                        <canvas id="profileStatsChart" height="160" aria-label="Permit statistics" role="img"></canvas>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Statistics Chart -->
-            <div
-                class="bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
-                <div
-                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-4 py-3 border-b border-[var(--input-border)]">
-                    <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                        <i class="fas fa-chart-pie text-hia-blue"></i>
-                        Permit Statistics
-                    </h3>
-                </div>
-                <div class="p-4">
-                    <canvas id="profileStatsChart" height="160" aria-label="Permit statistics" role="img"></canvas>
-                </div>
-            </div>
         </div>
 
-        <!-- Permits Table Card -->
-        <div class="bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden"
+        <!-- Submitted Permits Table Card (placed below analytics) -->
+        <div class="analytics-card w-full max-w-3xl bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden"
             id="submittedPermitsCard">
             <div
                 class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
                 <h2 class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <i class="fas fa-clipboard-list text-hia-blue"></i>
-                    Submitted Permit Details
+                    Submitted
+                    Permit Details
                 </h2>
             </div>
 
@@ -461,15 +370,18 @@
                         <tr class="border-b border-[var(--input-border)]">
                             <th
                                 class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-                                <i class="fas fa-hashtag mr-2 text-hia-blue"></i>Serial No.
+                                <i class="fas fa-hashtag mr-2 text-hia-blue"></i>Serial
+                                No.
                             </th>
                             <th
                                 class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-                                <i class="fas fa-calendar-alt mr-2 text-hia-blue"></i>Submitted Date & Time
+                                <i class="fas fa-calendar-alt mr-2 text-hia-blue"></i>Submitted
+                                Date & Time
                             </th>
                             <th
                                 class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-                                <i class="fas fa-file-alt mr-2 text-hia-blue"></i>Permit Title
+                                <i class="fas fa-file-alt mr-2 text-hia-blue"></i>Permit
+                                Title
                             </th>
                             <th
                                 class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
@@ -477,7 +389,8 @@
                             </th>
                             <th
                                 class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
-                                <i class="fas fa-download mr-2 text-hia-blue"></i>Permit Number
+                                <i class="fas fa-download mr-2 text-hia-blue"></i>Permit
+                                Number
                             </th>
                         </tr>
                     </thead>
@@ -487,9 +400,10 @@
                 </table>
             </div>
         </div>
+
     </main>
 
-    <!-- Profile Settings Modal -->
+    <!-- Modals -->
     <div id="profileSettingsModal"
         class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div
@@ -498,36 +412,27 @@
                 class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                        <i class="fas fa-user-edit text-hia-blue"></i>
-                        Profile Settings
-                    </h3>
-                    <button onclick="hideProfileSettings()"
-                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                        <i class="fas fa-user-edit text-hia-blue"></i> Profile
+                        Settings
+                    </h3><button data-action="hideProfileSettings"
+                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors"><i
+                            class="fas fa-times text-xl"></i></button>
                 </div>
             </div>
-
-            <div class="p-6">
-                <div class="space-y-4">
-                    <!-- Update Profile button intentionally removed; Profile editing is managed elsewhere -->
-
-                    <button onclick="showUpdatePasswordModal(); hideProfileSettings();" class="w-full flex items-center gap-3 p-4 bg-[var(--input-border)]/20 hover:bg-hia-blue/10 
-                                   rounded-xl transition-all duration-200 group">
-                        <i
-                            class="fas fa-key text-hia-blue text-lg group-hover:scale-110 transition-transform duration-200"></i>
-                        <div class="text-left">
-                            <div class="text-[var(--text-primary)] font-semibold">Change Password</div>
-                            <div class="text-[var(--text-primary)] opacity-60 text-sm">Update your account password
-                            </div>
-                        </div>
-                    </button>
-                </div>
-            </div>
+            <div class="p-6"><button data-action="showUpdatePasswordModal hideProfileSettings"
+                    class="w-full flex items-center gap-3 p-4 bg-[var(--input-border)]/20 hover:bg-hia-blue/10 rounded-xl transition-all duration-200 group"><i
+                        class="fas fa-key text-hia-blue text-lg group-hover:scale-110 transition-transform duration-200"></i>
+                    <div class="text-left">
+                        <div class="text-[var(--text-primary)] font-semibold">
+                            Change
+                            Password</div>
+                        <div class="text-[var(--text-primary)] opacity-60 text-sm">
+                            Update your account password</div>
+                    </div>
+                </button></div>
         </div>
     </div>
 
-    <!-- Update Password Modal -->
     <div id="updatePasswordModal"
         class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div
@@ -536,56 +441,38 @@
                 class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                        <i class="fas fa-key text-hia-blue"></i>
-                        Change Password
-                    </h3>
-                    <button onclick="hideUpdatePasswordModal()"
-                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                        <i class="fas fa-key text-hia-blue"></i> Change Password
+                    </h3><button data-action="hideUpdatePasswordModal"
+                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors"><i
+                            class="fas fa-times text-xl"></i></button>
                 </div>
             </div>
-
             <form id="updatePasswordForm" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Current Password</label>
-                    <input type="password" id="currentPassword" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
+                <div><label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Current
+                        Password</label><input type="password" id="currentPassword"
+                        class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
                 </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">New Password</label>
-                    <input type="password" id="newPassword" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
+                <div><label class="block text-sm font-medium text-[var(--text-primary)] mb-2">New
+                        Password</label><input type="password" id="newPassword"
+                        class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
                 </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Confirm New
-                        Password</label>
-                    <input type="password" id="confirmNewPassword" class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] 
-                                  rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 
-                                  focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
+                <div><label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Confirm
+                        New Password</label><input type="password" id="confirmNewPassword"
+                        class="w-full px-4 py-3 bg-[var(--input-border)]/20 border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-hia-blue/50 focus:border-hia-blue transition-all duration-200">
                 </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="hideUpdatePasswordModal()" class="flex-1 px-6 py-3 bg-[var(--input-border)]/20 hover:bg-[var(--input-border)]/40 
-                                   text-[var(--text-primary)] rounded-lg font-medium transition-all duration-200">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 px-6 py-3 bg-hia-blue hover:bg-hia-light-blue text-white 
-                                   rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95">
-                        Update Password
-                    </button>
-                </div>
+                <div class="flex gap-3 pt-4"><button type="button" onclick="hideUpdatePasswordModal()"
+                        class="flex-1 px-6 py-3 bg-[var(--input-border)]/20 hover:bg-[var(--input-border)]/40 text-[var(--text-primary)] rounded-lg font-medium transition-all duration-200">Cancel</button><button
+                        type="submit"
+                        class="flex-1 px-6 py-3 bg-hia-blue hover:bg-hia-light-blue text-white rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95">Update
+                        Password</button></div>
             </form>
         </div>
     </div>
 
-    <!-- Chart.js for profile statistics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
     <script type="module" src="../session.js"></script>
+
+
     <script type="module" src="profile.js"></script>
 
 </body>

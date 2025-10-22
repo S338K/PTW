@@ -1,11 +1,46 @@
+
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+// ===== SYSTEM MESSAGE ROUTES =====
+const SystemMessage = require('../models/systemMessage');
+
+// Get current system message
+router.get('/system-message', async (req, res) => {
+  try {
+    const msg = await SystemMessage.findOne({}, {}, { sort: { updatedAt: -1 } });
+    res.json({ message: msg ? msg.message : '' });
+  } catch (err) {
+    res.status(500).json({ message: 'Unable to fetch system message', error: err.message });
+  }
+});
+
+// Update system message (admin only)
+router.post('/system-message', async (req, res) => {
+  try {
+    if (!req.session || !req.session.userId || req.session.role !== 'Admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    const { message } = req.body;
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ message: 'Message is required' });
+    }
+    const newMsg = new SystemMessage({
+      message,
+      updatedBy: req.session.userId
+    });
+    await newMsg.save();
+    res.json({ message: 'System message updated' });
+  } catch (err) {
+    res.status(500).json({ message: 'Unable to update system message', error: err.message });
+  }
+});
 
 // ✅ Mount new route modules
 router.use('/', require('./auth')); // /register, /login, /logout, /profile, /forgot-password, /reset-password
 router.use('/', require('./permit')); // /permit, /permit/:id, /permit (POST), /permit/:id/status, /permit/:id/pdf
 router.use('/', require('./api-permit-details')); // /api/permits/:id (admin/approver full details)
+router.use('/', require('./notifications'));
 
 // ===== KEEP SESSION ALIVE =====
 router.get('/ping', (req, res) => {

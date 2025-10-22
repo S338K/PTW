@@ -17,8 +17,117 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }, 0);
+    // --- Accessible Login Carousel Logic ---
+    const slides = Array.from(document.querySelectorAll('.carousel-slide'));
+    const dots = Array.from(document.querySelectorAll('.carousel-dot'));
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+    // Elements used by legacy helpers (may be absent in the rebuilt carousel)
     const dateTimeEl = document.getElementById('dateTimeDisplay');
     const weatherEl = document.getElementById('tempDisplay');
+    let currentSlide = 0;
+    let carouselInterval = null;
+    const SLIDE_DURATION = 6000;
+
+
+    // Personalization: Greeting based on time (looping)
+    function getGreeting() {
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = 'Hello';
+        if (hour >= 0 && hour < 12) greeting = 'Good Morning';
+        else if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
+        else greeting = 'Good Evening';
+        return `${greeting}! It's ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+    }
+
+    // (Removed stray top-level await fetch)
+    async function fetchWeather() {
+        try {
+            const res = await fetch(`${API_BASE}/api/weather`);
+            if (!res.ok) throw new Error('Weather unavailable');
+            const data = await res.json();
+            return {
+                city: 'Doha',
+                temp: data.temperature,
+                desc: data.condition,
+                icon: data.icons?.condition || 'https://openweathermap.org/img/wn/01d.png'
+            };
+        } catch {
+            return {
+                city: 'Doha',
+                temp: '--',
+                desc: 'Weather unavailable',
+                icon: 'https://openweathermap.org/img/wn/01d.png'
+            };
+        }
+    }
+
+    // Admin message: fetch from backend
+    async function fetchAdminMessage() {
+        try {
+            const res = await fetch(`${API_BASE}/system-message`);
+            if (!res.ok) throw new Error('No message');
+            const data = await res.json();
+            return data.message || '';
+        } catch {
+            return '';
+        }
+    }
+
+    // Inject content into slides
+    async function updateCarouselContent() {
+        document.getElementById('greetingMessage').textContent = getGreeting();
+        const weather = await fetchWeather();
+        document.getElementById('weatherMessage').innerHTML =
+            `<img src="${weather.icon}" alt="${weather.desc}" class="inline w-6 h-6 align-middle mr-2" />`
+            + `Today's weather in <b>${weather.city}</b> is ${weather.desc}, ${weather.temp}&deg;C.`;
+        document.getElementById('adminMessage').textContent = await fetchAdminMessage();
+    }
+
+    // Carousel logic (vertical auto-slide)
+    function showSlide(idx) {
+        slides.forEach((slide, i) => {
+            slide.setAttribute('aria-hidden', i !== idx);
+            slide.style.transform = `translateY(${(i - idx) * 100}%)`;
+            slide.style.transition = 'transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.7s cubic-bezier(0.4,0,0.2,1)';
+        });
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === idx);
+        });
+        currentSlide = idx;
+    }
+
+    function nextSlide() {
+        showSlide((currentSlide + 1) % slides.length);
+    }
+    function prevSlide() {
+        showSlide((currentSlide - 1 + slides.length) % slides.length);
+    }
+
+
+    function startCarousel() {
+        if (carouselInterval) clearInterval(carouselInterval);
+        carouselInterval = setInterval(nextSlide, SLIDE_DURATION);
+    }
+
+    // Manual controls
+    // Manual arrow controls removed
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => { showSlide(i); startCarousel(); });
+    });
+
+    // Keyboard navigation
+    document.querySelector('.header-carousel').addEventListener('keydown', e => {
+        if (e.key === 'ArrowUp') { prevSlide(); startCarousel(); }
+        if (e.key === 'ArrowDown') { nextSlide(); startCarousel(); }
+    });
+
+    // Init
+    showSlide(0);
+    updateCarouselContent();
+    setInterval(updateCarouselContent, 60000); // update greeting/weather every minute
+    startCarousel();
 
     // Dynamic Background Image Carousel System
     class BackgroundCarousel {

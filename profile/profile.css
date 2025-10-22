@@ -8,12 +8,14 @@
 }
 
 #profileDropdown {
-  top: 80px !important;
+  /* align under the fixed header (header height ~104px) */
+  top: 104px !important;
   left: 20px !important;
 }
 
 #notificationDropdown {
-  top: 80px !important;
+  /* align under the fixed header (header height ~104px) */
+  top: 104px !important;
   right: 20px !important;
 }
 
@@ -67,10 +69,15 @@ canvas {
   position: relative !important;
 }
 
-/* Stylish Header Enhancements */
+/* Stylish Header Enhancements - make header fixed so only page scrolls */
 header {
   background: linear-gradient(135deg, #273172 0%, #1a245a 50%, #273172 100%);
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 99999;
 }
 
 header::before {
@@ -151,6 +158,69 @@ header::before {
 
 .modal-content {
   animation: slideUp 0.3s ease-out;
+}
+
+/* Ensure main content is pushed below the fixed header to avoid being hidden */
+main {
+  padding-top: 104px;
+  /* matches header height used for dropdown offsets */
+}
+
+/* Analytics card helper: center and equal sizing */
+.analytics-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1900px;
+  /* comfortable max width on large screens */
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Keep right-side controls (theme, notifications) aligned */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Quick action buttons */
+.quick-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.quick-action:hover {
+  transform: translateY(-3px);
+}
+
+.quick-action-icon {
+  display: inline-block;
+  transition: transform 0.28s cubic-bezier(.2, .8, .2, 1), color 0.18s ease;
+  color: var(--text-primary);
+}
+
+.quick-action:hover .quick-action-icon {
+  transform: rotate(-12deg) scale(1.05);
+  color: var(--hia-blue, #273172);
+}
+
+/* Ensure header-controls right alignment (push to end of header flex) */
+.relative.z-10.container .flex>.header-controls {
+  margin-left: auto;
+}
+
+/* Chevron icon animation helper */
+.chevron-icon {
+  display: inline-block;
+  transform-origin: center;
+  transition: transform 0.3s ease;
 }
 
 @keyframes slideUp {
@@ -237,6 +307,14 @@ input:focus {
   height: 160px !important;
 }
 
+/* Ensure chart canvases scale to their container width and don't overflow */
+.analytics-card canvas {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
 /* Download Link Styling */
 #permitTable a {
   color: var(--button-bg);
@@ -267,18 +345,19 @@ input:focus {
   animation: fadeInUp 0.6s ease-out;
 }
 
-/* Enhanced Button Styling */
-button {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* Remove background for chevron toggle buttons */
+button[data-action~="toggleSection"],
+button[data-action~="toggle-section"] {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-button:active {
-  transform: translateY(0);
+button[data-action~="toggleSection"]:hover,
+button[data-action~="toggle-section"]:hover {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 /* Theme Integration */

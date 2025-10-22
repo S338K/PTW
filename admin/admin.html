@@ -1,3 +1,22 @@
+<!-- System Message Update Section (Admin only) -->
+<section class="mt-8" id="systemMessageSection">
+    <div class="section-header flex items-center justify-between mb-2">
+        <h2 class="text-lg font-bold text-[var(--text-primary)]">System Message (Carousel)</h2>
+    </div>
+    <form id="systemMessageForm"
+        class="bg-[var(--bg-surface)] rounded-xl p-4 shadow border border-[var(--input-border)] flex flex-col gap-4 max-w-2xl">
+        <label for="systemMessageInput" class="font-semibold text-[var(--text-primary)]">Current Message:</label>
+        <textarea id="systemMessageInput" rows="2"
+            class="w-full p-2 rounded border border-[var(--input-border)] text-[var(--text-primary)] bg-transparent resize-none"
+            placeholder="Enter system message for all users..."></textarea>
+        <div class="flex gap-2 justify-end">
+            <button type="submit"
+                class="px-4 py-2 rounded bg-hia-blue text-white font-semibold hover:bg-hia-light-blue transition">Save
+                Message</button>
+            <span id="systemMessageStatus" class="text-xs text-green-600 self-center"></span>
+        </div>
+    </form>
+</section>
 <!DOCTYPE html>
 <html lang="en">
 

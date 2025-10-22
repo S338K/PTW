@@ -130,6 +130,73 @@ window.testDropdowns = testDropdowns;
 document.addEventListener('DOMContentLoaded', async function () {
   console.log("✅ profile.js loaded");
 
+  // ========== CENTRAL EVENT DELEGATION FOR [data-action] ========== 
+  document.addEventListener('click', function (e) {
+    let el = e.target;
+    // Traverse up to find [data-action] (in case of icon inside button, etc)
+    while (el && el !== document) {
+      if (el.dataset && el.dataset.action) {
+        // Support multiple actions in data-action (space/comma separated)
+        const actions = el.dataset.action.split(/[ ,]+/);
+        const section = el.dataset.section;
+        const actionMap = {
+          'toggleSection': (sectionId) => toggleSection(sectionId),
+          'toggle-section': (sectionId) => toggleSection(sectionId),
+          'submitNewRequest': () => submitNewRequest(),
+          'submit-new-request': () => submitNewRequest(),
+          'downloadActivity': () => downloadActivity(),
+          'download-activity': () => downloadActivity(),
+          'showUpdatePasswordModal': () => showUpdatePasswordModal(),
+          'show-update-password-modal': () => showUpdatePasswordModal(),
+          'logoutUser': () => logoutUser(),
+          'logout-user': () => logoutUser(),
+          'markAllAsRead': () => markAllAsRead(),
+          'mark-all-as-read': () => markAllAsRead(),
+          'showAllNotifications': () => showAllNotifications(),
+          'show-all-notifications': () => showAllNotifications(),
+          'hideProfileSettings': () => hideProfileSettings(),
+          'hide-profile-settings': () => hideProfileSettings(),
+          'showProfileSettings': () => showProfileSettings(),
+          'show-profile-settings': () => showProfileSettings(),
+          'toggleTheme': () => setupThemeToggle && setupThemeToggle(),
+          'toggle-theme': () => setupThemeToggle && setupThemeToggle(),
+        };
+        let handled = false;
+        for (const action of actions) {
+          if (actionMap[action]) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (action === 'toggleSection' || action === 'toggle-section') {
+              actionMap[action](section);
+            } else {
+              actionMap[action]();
+            }
+            handled = true;
+          }
+        }
+        if (handled) break;
+      }
+      el = el.parentElement;
+    }
+  });
+  // Ensure all toggle sections start collapsed visually (icons reset)
+  try {
+    const toggleIcons = ['permitAnalyticsIcon', 'approvalAnalyticsIcon', 'permitStatisticsIcon'];
+    toggleIcons.forEach(id => {
+      const ic = document.getElementById(id);
+      if (ic) {
+        ic.style.transform = 'rotate(0deg)';
+        // slightly longer, smoother transition for chevrons
+        ic.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+        // ensure it shows chevron-down class if FontAwesome variants used
+        ic.classList.remove('fa-chevron-up');
+        ic.classList.add('fa-chevron-down');
+      }
+    });
+  } catch (e) {
+    console.warn('Error initializing toggle icons', e);
+  }
+
   // ========== DROPDOWN EVENT LISTENER SETUP ==========
   console.log('Setting up dropdown event listeners...');
 
@@ -153,6 +220,41 @@ document.addEventListener('DOMContentLoaded', async function () {
   } else {
     console.error('❌ Notification button not found');
   }
+
+  // Attach safe handlers for inline-onclick buttons (module scope can make inline handlers fail)
+  function attachInlineHandlers() {
+    // mapping: attribute substring -> function to call
+    const map = {
+      'submitNewRequest': submitNewRequest,
+      'downloadActivity': downloadActivity,
+      'toggleSection': toggleSection,
+      'showUpdatePasswordModal': showUpdatePasswordModal,
+      'logoutUser': logoutUser,
+      'markAllAsRead': markAllAsRead,
+      'showAllNotifications': showAllNotifications,
+      'hideProfileSettings': hideProfileSettings
+    };
+
+    Object.keys(map).forEach(key => {
+      try {
+        const els = document.querySelectorAll(`[onclick*="${key}"]`);
+        els.forEach(el => {
+          // avoid double-binding
+          if (!el.dataset.boundInline) {
+            el.addEventListener('click', (e) => {
+              e.preventDefault();
+              try { map[key](); } catch (err) { console.error('inline handler error', key, err); }
+            });
+            el.dataset.boundInline = '1';
+          }
+        });
+      } catch (err) {
+        console.warn('attachInlineHandlers error for', key, err);
+      }
+    });
+  }
+
+  attachInlineHandlers();
 
   const user = await checkSession();
   if (!user) return;
@@ -179,10 +281,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const profileAvatarLarge = document.getElementById("profileAvatarLarge");
   if (profileAvatarLarge) profileAvatarLarge.textContent = profileInitials;
 
-  // Update main display name
-  const profileDisplayName = document.getElementById("profileDisplayName");
-  if (profileDisplayName) profileDisplayName.textContent = `Welcome, ${user.fullName || user.username || "User"}`;
-
+  // Header display name moved into dropdown; ensure main header element is not modified here
   const profileDisplayNameMain = document.getElementById("profileDisplayNameMain");
   if (profileDisplayNameMain) profileDisplayNameMain.textContent = user.fullName || user.username || "User";
 
@@ -198,8 +297,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const hoverEmail = document.getElementById("hoverEmail");
   if (hoverEmail) hoverEmail.textContent = user.email || "—";
-
-  // company removed from profile overview
 
   const hoverPhone = document.getElementById("hoverPhone");
   // Accept mobile, mobileNumber, phoneNumber, contact objects
@@ -272,7 +369,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  /* ===== Welcome + Last Login ===== */
   // Compute last login text
   let lastLoginText = 'Never';
   if (user.prevLogin) {
@@ -320,12 +416,33 @@ document.addEventListener('DOMContentLoaded', async function () {
     try {
       const res = await fetch(`${API_BASE}/api/permit`, { credentials: 'include' });
       if (res.ok) {
-        const permits = await res.json();
+        const data = await res.json();
+        // support both array responses and { permits } envelope
+        const list = Array.isArray(data) ? data : (data.permits || []);
         const tbody = document.querySelector('#permitTable tbody');
         tbody.innerHTML = '';
 
+        // determine current user id from session user object
+        const currentUserId = user && (user._id || user.id || user.userId || user._id) || sessionStorage.getItem('userId');
+
+        // filter permits to only those submitted by current user
+        const userPermits = list.filter(p => {
+          if (!p) return false;
+          // check common requester shapes: object or id
+          if (p.requester) {
+            if (typeof p.requester === 'object') {
+              const rid = p.requester._id || p.requester.id || p.requester;
+              return String(rid) === String(currentUserId);
+            }
+            return String(p.requester) === String(currentUserId);
+          }
+          if (p.requesterId) return String(p.requesterId) === String(currentUserId);
+          if (p.owner) return String(p.owner) === String(currentUserId);
+          return false;
+        });
+
         let stats = { Approved: 0, Pending: 0, Rejected: 0 };
-        permits.forEach((permit, index) => {
+        userPermits.forEach((permit, index) => {
           const row = document.createElement('tr');
 
           // Serial number
@@ -378,11 +495,24 @@ document.addEventListener('DOMContentLoaded', async function () {
           stats[st]++;
         });
 
-        // Initialize profile stats chart with permit data
-        initializeProfileStatsChart(stats);
+        // Initialize or register profile stats chart data
+        try {
+          const statsHandler = () => initializeProfileStatsChart(stats);
+          // If the permitStatistics section is already visible, initialize immediately
+          const permStatsContent = document.getElementById('permitStatisticsContent');
+          if (permStatsContent && !permStatsContent.classList.contains('hidden')) {
+            statsHandler();
+            lazyInitCalled.add('permitStatistics');
+          } else {
+            // register lazy init so it will run when the section is expanded
+            lazyInitMap['permitStatistics'] = statsHandler;
+          }
 
-        // Update permit analytics
-        updatePermitAnalytics(stats, permits);
+          // Update permit analytics with filtered permits
+          updatePermitAnalytics(stats, userPermits);
+        } catch (e) {
+          console.warn('Error registering/initializing profile stats chart', e);
+        }
 
       } else {
         console.warn('Failed to load permits');
@@ -402,25 +532,41 @@ document.addEventListener('DOMContentLoaded', async function () {
     try {
       const res = await fetch(`${API_BASE}/api/permit/${permitId}/pdf`, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: { Accept: 'application/pdf' }
       });
 
+      const contentType = res.headers.get('content-type') || '';
+
       if (!res.ok) {
-        let message = 'Failed to download PDF';
-        try {
-          const data = await res.json();
-          if (data.message) message = data.message;
-        } catch (_) { }
-        alert(message);
+        if (contentType.includes('application/json')) {
+          const err = await res.json();
+          alert(err.message || 'Server error while generating PDF');
+          return;
+        }
+        throw new Error('Server returned ' + res.status);
+      }
+
+      if (contentType.includes('application/json')) {
+        const err = await res.json();
+        alert(err.message || 'Unable to download PDF');
         return;
       }
 
       const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
 
+      // derive filename from Content-Disposition if present
+      let filename = `${permitNumber || permitId}.pdf`;
+      const cd = res.headers.get('content-disposition');
+      if (cd) {
+        const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+        if (m) filename = decodeURIComponent(m[1] || m[2]);
+      }
+
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${permitNumber}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -436,10 +582,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   const submitPtw = document.getElementById('sbmtptw');
   if (submitPtw) {
     submitPtw.addEventListener('click', function () {
-      // Log activity
-      if (typeof logUserActivity === 'function') {
-        logUserActivity('navigation', 'Navigated to permitform', 'User clicked Submit PTW button');
-      }
+      // navigation to permitform
 
       window.location.href = '../permitform/permitform.html';
     });
@@ -449,23 +592,25 @@ document.addEventListener('DOMContentLoaded', async function () {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
-      // Log activity before logout
-      if (typeof logUserActivity === 'function') {
-        logUserActivity('logout', 'User logged out', 'User manually logged out from profile page');
-      }
+      // logout
 
       logoutUser();
     });
   }
 
-  // Enhanced Profile Display Updates
-  updateEnhancedProfileDisplay(user);
+  // Enhanced Profile Display Updates (optional helper defined in permitform.js)
+  if (typeof updateEnhancedProfileDisplay === 'function') {
+    try {
+      updateEnhancedProfileDisplay(user);
+    } catch (e) {
+      console.warn('updateEnhancedProfileDisplay threw an error:', e);
+    }
+  }
 
   // Theme Toggle Handler
   setupThemeToggle();
 
-  // Setup activity tracking
-  setupActivityTracking();
+  // Activity tracking removed from profile page (handled on admin/permitform pages)
 
   // Modal Form Handlers
   setupModalForms();
@@ -473,976 +618,610 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Initialize charts
   createPermitCharts();
 
-  // Initialize notifications
-  updateNotificationCount();
 
-  // Cleanup function for page unload
-  window.addEventListener('beforeunload', () => {
-    // Destroy all chart instances
-    Object.keys(window.chartInstances || {}).forEach(chartId => {
-      destroyChart(chartId);
-    });
-  });
-});
 
-// Enhanced Profile Display Function
-function updateEnhancedProfileDisplay(user) {
-  // Update header profile info
-  const profileInitials = document.getElementById('profileInitials');
-  const profilePhone = document.getElementById('profilePhone');
-  const profileJoinDate = document.getElementById('profileJoinDate');
+  // Theme Toggle Setup
+  function setupThemeToggle() {
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeToggleIcon = document.getElementById('themeToggleIcon');
+    const themeTooltipText = document.getElementById('themeTooltipText');
 
-  // Update hover card elements
-  const hoverInitials = document.getElementById('hoverInitials');
-  const hoverName = document.getElementById('hoverName');
-  const hoverRole = document.getElementById('hoverRole');
-  const hoverEmail = document.getElementById('hoverEmail');
-  const hoverLastLogin = document.getElementById('hoverLastLogin');
-
-  // Update profile initials in both places
-  if (profileInitials || hoverInitials) {
-    const name = user.fullName || user.username || 'User';
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    if (profileInitials) profileInitials.textContent = initials;
-    if (hoverInitials) hoverInitials.textContent = initials;
-  }
-
-  // Update hover card information
-  if (hoverName) {
-    hoverName.textContent = user.fullName || user.username || 'User Name';
-  }
-
-  if (hoverRole) {
-    hoverRole.textContent = user.role || 'System User';
-  }
-
-  // Update status badge inside enhanced display as well
-  const hoverStatusBadge = document.getElementById('hoverStatusBadge');
-  const hoverStatusText = document.getElementById('hoverStatusText');
-  const hoverStatusDot = document.getElementById('hoverStatusDot');
-  const statusVal = (user.userStatus || user.status || user.user_status || 'Active');
-  if (hoverStatusText) hoverStatusText.textContent = statusVal === 'Inactive' ? 'Inactive' : 'Active User';
-  if (hoverStatusBadge) {
-    if (statusVal === 'Inactive') {
-      hoverStatusBadge.classList.remove('bg-green-100');
-      hoverStatusBadge.classList.add('bg-red-100');
-      if (hoverStatusText) hoverStatusText.classList.remove('text-green-700');
-      if (hoverStatusText) hoverStatusText.classList.add('text-red-600');
-    } else {
-      hoverStatusBadge.classList.remove('bg-red-100');
-      hoverStatusBadge.classList.add('bg-green-100');
-      if (hoverStatusText) hoverStatusText.classList.remove('text-red-600');
-      if (hoverStatusText) hoverStatusText.classList.add('text-green-700');
-    }
-  }
-
-  if (hoverEmail) {
-    hoverEmail.textContent = user.email || 'user@hia.gov.ae';
-  }
-
-  // company removed from enhanced display
-
-  // Populate phone/mobile in update flow
-  const hoverPhone = document.getElementById('hoverPhone');
-  const phoneVal = user.mobile || user.mobileNumber || user.phone || user.phoneNumber || (user.contact && (user.contact.mobile || user.contact.phone)) || 'Not provided';
-  if (hoverPhone) hoverPhone.textContent = phoneVal;
-
-  // Populate IP if available in user object
-  const hoverIp = document.getElementById('hoverIp');
-  if (hoverIp) {
-    const ipFromUser = user.clientIp || user.ip || user.ipAddress || user.ip_address || user.remoteAddress || null;
-    if (ipFromUser) hoverIp.textContent = `IP Address: ${ipFromUser}`;
-  }
-
-  if (hoverLastLogin) {
-    // Build 'Last Login at <time> on <day>'
-    let sourceDate = null;
-    if (user.prevLogin) sourceDate = new Date(user.prevLogin);
-    else if (user.lastLogin) sourceDate = new Date(user.lastLogin);
-    else if (user.last_login) sourceDate = new Date(user.last_login);
-
-    if (sourceDate && !isNaN(sourceDate.getTime())) {
-      const now = new Date();
-      const timePart = sourceDate.toLocaleTimeString(undefined, { hour12: false });
-      const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-      const isSameDay = sourceDate.getFullYear() === now.getFullYear() && sourceDate.getMonth() === now.getMonth() && sourceDate.getDate() === now.getDate();
-      const isYesterday = sourceDate.getFullYear() === yesterday.getFullYear() && sourceDate.getMonth() === yesterday.getMonth() && sourceDate.getDate() === yesterday.getDate();
-
-      let dayPart;
-      if (isSameDay) dayPart = 'Today';
-      else if (isYesterday) dayPart = 'Yesterday';
-      else dayPart = sourceDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
-
-      hoverLastLogin.textContent = `Last Login at ${timePart} on ${dayPart}`;
-    } else {
-      hoverLastLogin.textContent = 'Last Login: Never';
-    }
-  }
-
-  // Update other profile elements
-  if (profilePhone) {
-    profilePhone.textContent = user.phone || 'Not provided';
-  }
-
-  if (profileJoinDate) {
-    const joinDate = user.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear();
-    profileJoinDate.textContent = joinDate.toString();
-  }
-}
-
-// Theme Toggle Setup
-function setupThemeToggle() {
-  const themeToggleBtn = document.getElementById('themeToggleBtn');
-  const themeToggleIcon = document.getElementById('themeToggleIcon');
-  const themeTooltipText = document.getElementById('themeTooltipText');
-
-  if (themeToggleBtn && themeToggleIcon) {
-    // Initialize icon and tooltip based on current theme
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    updateThemeIcon(currentTheme, themeToggleIcon, themeTooltipText);
-
-    themeToggleBtn.addEventListener('click', () => {
+    if (themeToggleBtn && themeToggleIcon) {
+      // Initialize icon and tooltip based on current theme
       const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      updateThemeIcon(currentTheme, themeToggleIcon, themeTooltipText);
 
-      // Log activity
-      if (typeof logUserActivity === 'function') {
-        logUserActivity('theme_changed', `Theme switched to ${newTheme}`, `User changed theme from ${currentTheme} to ${newTheme}`);
-      }
+      themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
+        // theme changed
 
-      updateThemeIcon(newTheme, themeToggleIcon, themeTooltipText);
-    });
-  }
-}
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
 
-function updateThemeIcon(theme, iconElement, tooltipElement) {
-  if (theme === 'dark') {
-    iconElement.className = 'fas fa-sun text-sm';
-    if (tooltipElement) tooltipElement.textContent = 'Click to switch to light theme';
-  } else {
-    iconElement.className = 'fas fa-moon text-sm';
-    if (tooltipElement) tooltipElement.textContent = 'Click to switch to dark theme';
-  }
-}
-
-// Modal Functions
-function showProfileSettings() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('modal_opened', 'Opened profile settings', 'User accessed profile settings menu');
-  }
-
-  const modal = document.getElementById('profileSettingsModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-  }
-}
-
-function hideProfileSettings() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('modal_closed', 'Closed profile settings', 'User closed profile settings modal');
-  }
-
-  const modal = document.getElementById('profileSettingsModal');
-  if (modal) {
-    modal.classList.add('hidden');
-  }
-}
-
-function showUpdatePasswordModal() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('modal_opened', 'Opened password change modal', 'User initiated password update');
-  }
-
-  const modal = document.getElementById('updatePasswordModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-  }
-}
-
-function hideUpdatePasswordModal() {
-  const modal = document.getElementById('updatePasswordModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    // Clear form
-    document.getElementById('updatePasswordForm').reset();
-  }
-}
-
-function downloadActivity() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('download_attempted', 'Attempted activity download', 'User clicked to download activity report');
-  }
-
-  // Placeholder for download functionality
-  alert('Download feature coming soon!');
-}
-
-// Setup Modal Forms
-function setupModalForms() {
-  // Profile update form removed from HTML; no client-side handler required here
-
-  // Password Update Form
-  const passwordForm = document.getElementById('updatePasswordForm');
-  if (passwordForm) {
-    passwordForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const currentPassword = document.getElementById('currentPassword').value;
-      const newPassword = document.getElementById('newPassword').value;
-      const confirmPassword = document.getElementById('confirmNewPassword').value;
-
-      if (newPassword !== confirmPassword) {
-        alert('New passwords do not match!');
-        return;
-      }
-
-      try {
-        // Log activity
-        if (typeof logUserActivity === 'function') {
-          logUserActivity('password_changed', 'Password changed', 'User updated account password for security');
-        }
-
-        // Here you would make API call to update password
-        console.log('Updating password');
-
-        hideUpdatePasswordModal();
-        alert('Password updated successfully!');
-      } catch (error) {
-        console.error('Password update error:', error);
-        alert('Error updating password. Please try again.');
-      }
-    });
-  }
-}
-
-// Permit Analytics Functions
-function updatePermitAnalytics(stats, permits) {
-  // Update analytics numbers
-  const total = permits.length;
-  const approved = stats.Approved || 0;
-  const pending = stats.Pending || 0;
-
-  const totalPermitsEl = document.getElementById('totalPermits');
-  const approvedPermitsEl = document.getElementById('approvedPermits');
-  const pendingPermitsEl = document.getElementById('pendingPermits');
-
-  if (totalPermitsEl) totalPermitsEl.textContent = total;
-  if (approvedPermitsEl) approvedPermitsEl.textContent = approved;
-  if (pendingPermitsEl) pendingPermitsEl.textContent = pending;
-
-  // Update approval time analytics
-  updateApprovalTimeAnalytics(permits);
-
-  // Load and update recent activity (including user actions)
-  loadRecentActivity();
-}
-
-// Enhanced Activity Tracking System
-async function loadRecentActivity() {
-  try {
-    // Get user session for current login tracking
-    const user = await checkSession();
-    if (!user) return;
-
-    // Load various activity types
-    const activities = await Promise.all([
-      loadUserActivities(),
-      loadPermitActivities(),
-      loadSessionActivities()
-    ]);
-
-    // Combine and sort all activities by timestamp
-    const allActivities = activities.flat().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    // Take only the most recent 10 activities
-    const recentActivities = allActivities.slice(0, 10);
-
-    updateRecentActivityDisplay(recentActivities);
-  } catch (error) {
-    console.error('Error loading recent activity:', error);
-    const activityList = document.getElementById('recentActivityList');
-    if (activityList) {
-      activityList.innerHTML = `
-        <div class="text-center py-8 text-[var(--text-primary)] opacity-60">
-          <i class="fas fa-exclamation-triangle text-xl mb-2"></i>
-          <p>Error loading activity</p>
-        </div>
-      `;
-    }
-  }
-}
-
-async function loadUserActivities() {
-  const activities = [];
-
-  // Add current session activity
-  const loginTime = sessionStorage.getItem('loginTime') || localStorage.getItem('lastLoginTime');
-  if (loginTime) {
-    activities.push({
-      type: 'login',
-      title: 'Logged in to system',
-      description: 'Started new session',
-      timestamp: loginTime,
-      icon: 'fas fa-sign-in-alt text-green-500',
-      color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-    });
-  }
-
-  // Track profile page visit
-  activities.push({
-    type: 'page_visit',
-    title: 'Viewed profile dashboard',
-    description: 'Accessed profile analytics',
-    timestamp: new Date().toISOString(),
-    icon: 'fas fa-user text-blue-500',
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-  });
-
-  return activities;
-}
-
-async function loadPermitActivities() {
-  try {
-    const res = await fetch(`${API_BASE}/api/permit`, { credentials: 'include' });
-    if (!res.ok) return [];
-
-    const permits = await res.json();
-    const activities = [];
-
-    permits.forEach(permit => {
-      // Permit submission
-      if (permit.submittedAt) {
-        activities.push({
-          type: 'permit_submitted',
-          title: `Submitted permit: ${permit.permitTitle || 'Permit Request'}`,
-          description: `Permit #${permit.permitNumber || 'Pending'}`,
-          timestamp: permit.submittedAt,
-          icon: 'fas fa-file-upload text-blue-500',
-          color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-        });
-      }
-
-      // Status changes
-      if (permit.status === 'Approved' && permit.approvedAt) {
-        activities.push({
-          type: 'permit_approved',
-          title: `Permit approved: ${permit.permitTitle || 'Permit Request'}`,
-          description: `Permit #${permit.permitNumber}`,
-          timestamp: permit.approvedAt,
-          icon: 'fas fa-check-circle text-green-500',
-          color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-        });
-      }
-
-      if (permit.status === 'Rejected' && permit.rejectedAt) {
-        activities.push({
-          type: 'permit_rejected',
-          title: `Permit rejected: ${permit.permitTitle || 'Permit Request'}`,
-          description: `Permit #${permit.permitNumber} - ${permit.rejectionReason || 'No reason provided'}`,
-          timestamp: permit.rejectedAt,
-          icon: 'fas fa-times-circle text-red-500',
-          color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-        });
-      }
-    });
-
-    return activities;
-  } catch (error) {
-    console.error('Error loading permit activities:', error);
-    return [];
-  }
-}
-
-async function loadSessionActivities() {
-  const activities = [];
-
-  // Check for recent logout (from localStorage)
-  const lastLogout = localStorage.getItem('lastLogoutTime');
-  if (lastLogout) {
-    const logoutDate = new Date(lastLogout);
-    const now = new Date();
-    const hoursSinceLogout = (now - logoutDate) / (1000 * 60 * 60);
-
-    // Show logout if it was within the last 24 hours
-    if (hoursSinceLogout < 24) {
-      activities.push({
-        type: 'logout',
-        title: 'Logged out of system',
-        description: 'Session ended',
-        timestamp: lastLogout,
-        icon: 'fas fa-sign-out-alt text-gray-500',
-        color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+        updateThemeIcon(newTheme, themeToggleIcon, themeTooltipText);
       });
     }
   }
 
-  return activities;
-}
-
-function updateRecentActivityDisplay(activities) {
-  const activityList = document.getElementById('recentActivityList');
-  if (!activityList) return;
-
-  if (activities.length === 0) {
-    activityList.innerHTML = `
-      <div class="text-center py-8 text-[var(--text-primary)] opacity-60">
-        <i class="fas fa-inbox text-2xl mb-2"></i>
-        <p>No recent activity</p>
-      </div>
-    `;
-    return;
+  function updateThemeIcon(theme, iconElement, tooltipElement) {
+    if (theme === 'dark') {
+      iconElement.className = 'fas fa-sun text-sm';
+      if (tooltipElement) tooltipElement.textContent = 'Click to switch to light theme';
+    } else {
+      iconElement.className = 'fas fa-moon text-sm';
+      if (tooltipElement) tooltipElement.textContent = 'Click to switch to dark theme';
+    }
   }
 
-  activityList.innerHTML = activities.map(activity => {
-    const timeAgo = getTimeAgo(new Date(activity.timestamp));
-
-    return `
-      <div class="flex items-start gap-3 p-3 bg-[var(--input-border)]/10 rounded-lg hover:bg-[var(--input-border)]/20 transition-colors duration-200">
-        <div class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center border-2 border-gray-200 dark:border-gray-700 flex-shrink-0 mt-0.5">
-          <i class="${activity.icon} text-sm"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="text-[var(--text-primary)] font-medium text-sm truncate">${activity.title}</h4>
-          <p class="text-[var(--text-primary)] opacity-60 text-xs mt-1">${activity.description}</p>
-          <p class="text-[var(--text-primary)] opacity-50 text-xs mt-1">${timeAgo}</p>
-        </div>
-        <div class="flex-shrink-0">
-          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${activity.color}">
-            ${activity.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// Approval Time Analytics
-function updateApprovalTimeAnalytics(permits) {
-  const approvedPermits = permits.filter(p => p.status === 'Approved' && p.submittedAt && p.approvedAt);
-
-  if (approvedPermits.length === 0) {
-    updateApprovalMetrics('--', '--');
-    createApprovalTimeChart([]);
-    return;
+  // Modal Functions
+  function showProfileSettings() {
+    const modal = document.getElementById('profileSettingsModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
   }
 
-  // Calculate approval times in hours
-  const approvalTimes = approvedPermits.map(permit => {
-    const submitted = new Date(permit.submittedAt);
-    const approved = new Date(permit.approvedAt);
-    return Math.round((approved - submitted) / (1000 * 60 * 60)); // Convert to hours
-  });
-
-  // Calculate metrics
-  const avgTime = Math.round(approvalTimes.reduce((a, b) => a + b, 0) / approvalTimes.length);
-  const fastestTime = Math.min(...approvalTimes);
-
-  updateApprovalMetrics(
-    avgTime < 24 ? `${avgTime}h` : `${Math.round(avgTime / 24)}d`,
-    fastestTime < 24 ? `${fastestTime}h` : `${Math.round(fastestTime / 24)}d`
-  );
-
-  // Create trend chart
-  createApprovalTimeChart(approvedPermits);
-}
-
-function updateApprovalMetrics(avgTime, fastestTime) {
-  const avgEl = document.getElementById('avgApprovalTime');
-  const fastestEl = document.getElementById('fastestApproval');
-
-  if (avgEl) avgEl.textContent = avgTime;
-  if (fastestEl) fastestEl.textContent = fastestTime;
-}
-
-function createApprovalTimeChart(approvedPermits) {
-  console.log('createApprovalTimeChart called with permits:', approvedPermits);
-  const ctx = document.getElementById('approvalTimeChart');
-  console.log('Approval chart canvas element:', ctx);
-  console.log('Chart.js available for approval chart:', !!window.Chart);
-
-  if (!ctx) {
-    console.warn('Cannot create approval chart - missing canvas element');
-    return;
+  function hideProfileSettings() {
+    const modal = document.getElementById('profileSettingsModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
   }
 
-  const initApprovalChart = () => {
-    if (window.Chart) {
-      console.log('Initializing approval time chart...');
+  function showUpdatePasswordModal() {
+    const modal = document.getElementById('updatePasswordModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
 
-      // Destroy existing chart using unified system
-      destroyChart('approvalTime');      // Prepare data for last 30 days
-      const last30Days = [];
-      const today = new Date();
+  function hideUpdatePasswordModal() {
+    const modal = document.getElementById('updatePasswordModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      // Clear form
+      document.getElementById('updatePasswordForm').reset();
+    }
+  }
 
-      for (let i = 29; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        last30Days.push({
-          date: date.toISOString().split('T')[0],
-          label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          approvals: []
-        });
-      }
+  function downloadActivity() {
+    // Placeholder UI action — admin will implement server-side export
+    alert('Download feature coming soon!');
+  }
+  // Setup Modal Forms
+  function setupModalForms() {
+    // Password Update Form
+    const passwordForm = document.getElementById('updatePasswordForm');
+    if (passwordForm) {
+      passwordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-      // Map approvals to dates
-      approvedPermits.forEach(permit => {
-        const approvedDate = new Date(permit.approvedAt).toISOString().split('T')[0];
-        const dayData = last30Days.find(d => d.date === approvedDate);
-        if (dayData) {
-          const submitted = new Date(permit.submittedAt);
-          const approved = new Date(permit.approvedAt);
-          const hours = Math.round((approved - submitted) / (1000 * 60 * 60));
-          dayData.approvals.push(hours);
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+        if (newPassword !== confirmPassword) {
+          alert('New passwords do not match!');
+          return;
+        }
+
+        try {
+          // password changed (no activity logging on profile page)
+
+          // Here you would make API call to update password
+          console.log('Updating password');
+
+          hideUpdatePasswordModal();
+          alert('Password updated successfully!');
+        } catch (error) {
+          console.error('Password update error:', error);
+          alert('Error updating password. Please try again.');
         }
       });
+    }
+  }
 
-      // Calculate average for each day
-      const chartData = last30Days.map(day => {
-        if (day.approvals.length === 0) return null;
-        return Math.round(day.approvals.reduce((a, b) => a + b, 0) / day.approvals.length);
-      });
+  // Permit Analytics Functions
+  function updatePermitAnalytics(stats, permits) {
+    // Update analytics numbers
+    const total = permits.length;
+    const approved = stats.Approved || 0;
+    const pending = stats.Pending || 0;
 
-      window.chartInstances.approvalTime = new Chart(ctx, {
-        type: 'line',
+    const totalPermitsEl = document.getElementById('totalPermits');
+    const approvedPermitsEl = document.getElementById('approvedPermits');
+    const pendingPermitsEl = document.getElementById('pendingPermits');
+
+    if (totalPermitsEl) totalPermitsEl.textContent = total;
+    if (approvedPermitsEl) approvedPermitsEl.textContent = approved;
+    if (pendingPermitsEl) pendingPermitsEl.textContent = pending;
+
+    // Update approval time analytics
+    updateApprovalTimeAnalytics(permits);
+  }
+
+  // Recent activity UI and rendering removed from profile.js per request
+
+  // Approval Time Analytics
+  function updateApprovalTimeAnalytics(permits) {
+    const approvedPermits = permits.filter(p => p.status === 'Approved' && p.submittedAt && p.approvedAt);
+
+    if (approvedPermits.length === 0) {
+      updateApprovalMetrics('--', '--');
+      createApprovalTimeChart([]);
+      return;
+    }
+
+    // Calculate approval times in hours
+    const approvalTimes = approvedPermits.map(permit => {
+      const submitted = new Date(permit.submittedAt);
+      const approved = new Date(permit.approvedAt);
+      return Math.round((approved - submitted) / (1000 * 60 * 60)); // Convert to hours
+    });
+
+    // Calculate metrics
+    const avgTime = Math.round(approvalTimes.reduce((a, b) => a + b, 0) / approvalTimes.length);
+    const fastestTime = Math.min(...approvalTimes);
+
+    updateApprovalMetrics(
+      avgTime < 24 ? `${avgTime}h` : `${Math.round(avgTime / 24)}d`,
+      fastestTime < 24 ? `${fastestTime}h` : `${Math.round(fastestTime / 24)}d`
+    );
+
+    // Create trend chart
+    createApprovalTimeChart(approvedPermits);
+  }
+
+  function updateApprovalMetrics(avgTime, fastestTime) {
+    const avgEl = document.getElementById('avgApprovalTime');
+    const fastestEl = document.getElementById('fastestApproval');
+
+    if (avgEl) avgEl.textContent = avgTime;
+    if (fastestEl) fastestEl.textContent = fastestTime;
+  }
+
+  function createApprovalTimeChart(approvedPermits) {
+    console.log('createApprovalTimeChart called with permits:', approvedPermits);
+    const ctx = document.getElementById('approvalTimeChart');
+    console.log('Approval chart canvas element:', ctx);
+    console.log('Chart.js available for approval chart:', !!window.Chart);
+
+    if (!ctx) {
+      console.warn('Cannot create approval chart - missing canvas element');
+      return;
+    }
+
+    const initApprovalChart = () => {
+      if (window.Chart) {
+        console.log('Initializing approval time chart...');
+
+        // Destroy existing chart using unified system
+        destroyChart('approvalTime');      // Prepare data for last 30 days
+        const last30Days = [];
+        const today = new Date();
+
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          last30Days.push({
+            date: date.toISOString().split('T')[0],
+            label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            approvals: []
+          });
+        }
+
+        // Map approvals to dates
+        approvedPermits.forEach(permit => {
+          const approvedDate = new Date(permit.approvedAt).toISOString().split('T')[0];
+          const dayData = last30Days.find(d => d.date === approvedDate);
+          if (dayData) {
+            const submitted = new Date(permit.submittedAt);
+            const approved = new Date(permit.approvedAt);
+            const hours = Math.round((approved - submitted) / (1000 * 60 * 60));
+            dayData.approvals.push(hours);
+          }
+        });
+
+        // Calculate average for each day
+        const chartData = last30Days.map(day => {
+          if (day.approvals.length === 0) return null;
+          return Math.round(day.approvals.reduce((a, b) => a + b, 0) / day.approvals.length);
+        });
+
+        window.chartInstances.approvalTime = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: last30Days.map(d => d.label),
+            datasets: [{
+              label: 'Avg Approval Time (hours)',
+              data: chartData,
+              borderColor: '#273172',
+              backgroundColor: 'rgba(39, 49, 114, 0.1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#273172',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            resizeDelay: 0,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  label: function (context) {
+                    if (context.parsed.y === null) return 'No approvals';
+                    return `Avg: ${context.parsed.y} hours`;
+                  }
+                }
+              }
+            },
+            onResize: function (chart, size) {
+              chart.canvas.style.height = '120px';
+              chart.canvas.style.maxHeight = '120px';
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { maxRotation: 45 }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.1)' },
+                ticks: {
+                  callback: function (value) {
+                    return value + 'h';
+                  }
+                }
+              }
+            },
+            interaction: {
+              mode: 'nearest',
+              axis: 'x',
+              intersect: false
+            }
+          }
+        });
+
+        console.log('Approval time chart created successfully');
+      } else {
+        console.warn('Chart.js not available for approval chart, retrying in 100ms...');
+        setTimeout(initApprovalChart, 100);
+      }
+    };
+
+    initApprovalChart();
+  }
+
+  // Activity logging removed from profile.js (moved to admin/permitform)
+
+  // Expand/Collapse Section Functionality
+  function toggleSection(sectionId) {
+    const content = document.getElementById(`${sectionId}Content`);
+    const icon = document.getElementById(`${sectionId}Icon`);
+
+    if (content && icon) {
+      const isCollapsed = content.classList.contains('hidden');
+
+      // Animate chevron rotation
+      icon.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+      if (isCollapsed) {
+        content.classList.remove('hidden');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        icon.style.transform = 'rotate(180deg)';
+
+        // run lazy init for this section if present and not yet called
+        try {
+          if (lazyInitMap[sectionId] && !lazyInitCalled.has(sectionId)) {
+            lazyInitMap[sectionId]();
+            lazyInitCalled.add(sectionId);
+          }
+        } catch (err) {
+          console.warn('Lazy init for', sectionId, 'failed', err);
+        }
+
+      } else {
+        content.classList.add('hidden');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+  }
+
+  // Submit New Request Function
+  function submitNewRequest() {
+    // request initiated
+
+    // Redirect to permit form or show request form
+    window.location.href = '../permitform/permitform.html';
+  }
+
+  // Toggle Theme in Tooltip
+  function toggleTooltipTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    const iconElement = document.getElementById('tooltipThemeIcon');
+
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    // Update icon
+    if (iconElement) {
+      if (newTheme === 'dark') {
+        iconElement.className = 'fas fa-sun text-lg group-hover:scale-110 transition-transform';
+      } else {
+        iconElement.className = 'fas fa-moon text-lg group-hover:scale-110 transition-transform';
+      }
+    }
+
+    // theme switched via tooltip
+  }
+
+  // Global chart instances to prevent duplicates
+  window.chartInstances = window.chartInstances || {};
+
+  // Lazy init registry: map a sectionId to a function that initializes charts/content when opened
+  const lazyInitMap = {
+    'permitAnalytics': () => createPermitCharts(),
+    'permitStatistics': () => {
+      // profile stats chart is initialized when permit data is loaded; placeholder
+    },
+    'approvalAnalytics': () => {
+      // approval time chart initializes when permits data arrives; placeholder
+    }
+  };
+
+  // Track which lazy inits have already run
+  const lazyInitCalled = new Set();
+
+  // Unified Chart Management System
+  function destroyChart(chartId) {
+    if (window.chartInstances[chartId]) {
+      window.chartInstances[chartId].destroy();
+      delete window.chartInstances[chartId];
+      console.log(`Destroyed chart: ${chartId}`);
+    }
+  }
+
+  function initializeProfileStatsChart(stats) {
+    console.log('Initializing profile stats chart with data:', stats);
+    const ctx = document.getElementById('profileStatsChart');
+
+    if (!ctx) {
+      console.error('Profile stats chart canvas not found');
+      return;
+    }
+
+    // Destroy existing chart
+    destroyChart('profileStats');
+
+    if (!window.Chart) {
+      console.warn('Chart.js not available');
+      return;
+    }
+
+    const labels = Object.keys(stats);
+    const data = labels.map(k => stats[k]);
+
+    window.chartInstances.profileStats = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        resizeDelay: 0,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12 }
+          },
+          tooltip: { enabled: true }
+        },
+        cutout: '58%',
+        animation: { duration: 500 },
+        onResize: function (chart, size) {
+          chart.canvas.style.height = '160px';
+          chart.canvas.style.maxHeight = '160px';
+        }
+      }
+    });
+
+    console.log('Profile stats chart created successfully');
+  }
+
+  // Create Charts for Permit Statistics
+  function createPermitCharts() {
+    console.log('Creating additional permit charts...');
+
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('permitStatusChart');
+    if (statusCtx) {
+      destroyChart('statusChart');
+
+      if (!window.Chart) return;
+
+      window.chartInstances.statusChart = new Chart(statusCtx, {
+        type: 'doughnut',
         data: {
-          labels: last30Days.map(d => d.label),
+          labels: ['Approved', 'Pending', 'Rejected', 'In Review'],
           datasets: [{
-            label: 'Avg Approval Time (hours)',
-            data: chartData,
-            borderColor: '#273172',
-            backgroundColor: 'rgba(39, 49, 114, 0.1)',
+            data: [12, 8, 3, 5],
+            backgroundColor: [
+              '#10b981', // green
+              '#f59e0b', // yellow
+              '#ef4444', // red
+              '#3b82f6'  // blue
+            ],
             borderWidth: 2,
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#273172',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
+            borderColor: '#ffffff'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          resizeDelay: 0,
           plugins: {
-            legend: { display: false },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: {
-                label: function (context) {
-                  if (context.parsed.y === null) return 'No approvals';
-                  return `Avg: ${context.parsed.y} hours`;
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                usePointStyle: true,
+                font: {
+                  size: 12
                 }
               }
             }
-          },
-          onResize: function (chart, size) {
-            chart.canvas.style.height = '120px';
-            chart.canvas.style.maxHeight = '120px';
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { maxRotation: 45 }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(0,0,0,0.1)' },
-              ticks: {
-                callback: function (value) {
-                  return value + 'h';
-                }
-              }
-            }
-          },
-          interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false
           }
         }
       });
-
-      console.log('Approval time chart created successfully');
-    } else {
-      console.warn('Chart.js not available for approval chart, retrying in 100ms...');
-      setTimeout(initApprovalChart, 100);
     }
-  };
 
-  initApprovalChart();
-}
+    // Monthly Trend Chart
+    const trendCtx = document.getElementById('monthlyTrendChart');
+    if (trendCtx) {
+      destroyChart('trendChart');
 
-// Function to show all activities (for the "View All" button)
-function showAllActivities() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('view_expanded', 'Viewed all activities', 'User clicked to view complete activity history');
+      if (!window.Chart) return;
+
+      window.chartInstances.trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Permits Submitted',
+            data: [5, 8, 12, 9, 15, 18],
+            borderColor: '#3b82f6',
+            backgroundColor: '#3b82f6',
+            fill: false,
+            tension: 0.4
+          }, {
+            label: 'Permits Approved',
+            data: [4, 7, 10, 8, 13, 16],
+            borderColor: '#10b981',
+            backgroundColor: '#10b981',
+            fill: false,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 2
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                padding: 20,
+                usePointStyle: true,
+                font: {
+                  size: 11
+                }
+              }
+            }
+          }
+        }
+      });
+    }
   }
 
-  // This could open a modal or navigate to a dedicated activities page
-  alert('Full activity history feature coming soon!');
-}
-
-// Activity logging functions (for real-time tracking)
-function logUserActivity(type, title, description) {
-  const activity = {
-    type,
-    title,
-    description,
-    timestamp: new Date().toISOString(),
-    userId: sessionStorage.getItem('userId')
-  };
-
-  // Store locally for immediate display
-  let recentActivities = JSON.parse(localStorage.getItem('recentActivities') || '[]');
-  recentActivities.unshift(activity);
-  recentActivities = recentActivities.slice(0, 50); // Keep last 50 activities
-  localStorage.setItem('recentActivities', JSON.stringify(recentActivities));
-
-  // In a real app, this would also send to the backend
-  console.log('Activity logged:', activity);
-
-  // Refresh activity display
-  loadRecentActivity();
-}
-
-// Set up activity tracking for user actions
-function setupActivityTracking() {
-  // Track login time
-  if (!sessionStorage.getItem('loginTime')) {
-    sessionStorage.setItem('loginTime', new Date().toISOString());
-    logUserActivity('login', 'Logged in to system', 'Started new session');
-  }
-
-  // Track page visibility changes
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      logUserActivity('page_blur', 'Navigated away', 'Page lost focus');
-    } else {
-      logUserActivity('page_focus', 'Returned to page', 'Page regained focus');
-    }
-  });
-
-  // Track logout
-  window.addEventListener('beforeunload', () => {
-    localStorage.setItem('lastLogoutTime', new Date().toISOString());
-  });
-}
-
-// Expand/Collapse Section Functionality
-function toggleSection(sectionId) {
-  const content = document.getElementById(`${sectionId}Content`);
-  const icon = document.getElementById(`${sectionId}Icon`);
-
-  if (content && icon) {
-    const isCollapsed = content.classList.contains('hidden');
-
-    if (isCollapsed) {
-      content.classList.remove('hidden');
-      icon.classList.remove('fa-chevron-down');
-      icon.classList.add('fa-chevron-up');
-
-      // Log activity
-      if (typeof logUserActivity === 'function') {
-        logUserActivity('section_expanded', `Expanded ${sectionId} section`, `User expanded ${sectionId} for better visibility`);
+  // Notification System
+  let notifications = [
+    {
+      id: 1,
+      title: 'Permit Approved',
+      message: 'Your PTW request #12345 has been approved by the safety officer.',
+      type: 'success',
+      timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 minutes ago
+      read: false,
+      details: {
+        permitId: '12345',
+        approvedBy: 'John Smith',
+        approvalDate: new Date().toISOString(),
+        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       }
-    } else {
-      content.classList.add('hidden');
-      icon.classList.remove('fa-chevron-up');
-      icon.classList.add('fa-chevron-down');
-
-      // Log activity
-      if (typeof logUserActivity === 'function') {
-        logUserActivity('section_collapsed', `Collapsed ${sectionId} section`, `User collapsed ${sectionId} to save space`);
-      }
-    }
-  }
-}
-
-// Submit New Request Function
-function submitNewRequest() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('request_initiated', 'New request submission started', 'User clicked submit new request from tooltip');
-  }
-
-  // Redirect to permit form or show request form
-  window.location.href = '../permitform/permitform.html';
-}
-
-// Toggle Theme in Tooltip
-function toggleTooltipTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  const iconElement = document.getElementById('tooltipThemeIcon');
-
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-
-  // Update icon
-  if (iconElement) {
-    if (newTheme === 'dark') {
-      iconElement.className = 'fas fa-sun text-lg group-hover:scale-110 transition-transform';
-    } else {
-      iconElement.className = 'fas fa-moon text-lg group-hover:scale-110 transition-transform';
-    }
-  }
-
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('theme_changed', `Theme switched to ${newTheme} via tooltip`, `User changed theme from ${currentTheme} to ${newTheme} using tooltip`);
-  }
-}
-
-// Global chart instances to prevent duplicates
-window.chartInstances = window.chartInstances || {};
-
-// Unified Chart Management System
-function destroyChart(chartId) {
-  if (window.chartInstances[chartId]) {
-    window.chartInstances[chartId].destroy();
-    delete window.chartInstances[chartId];
-    console.log(`Destroyed chart: ${chartId}`);
-  }
-}
-
-function initializeProfileStatsChart(stats) {
-  console.log('Initializing profile stats chart with data:', stats);
-  const ctx = document.getElementById('profileStatsChart');
-
-  if (!ctx) {
-    console.error('Profile stats chart canvas not found');
-    return;
-  }
-
-  // Destroy existing chart
-  destroyChart('profileStats');
-
-  if (!window.Chart) {
-    console.warn('Chart.js not available');
-    return;
-  }
-
-  const labels = Object.keys(stats);
-  const data = labels.map(k => stats[k]);
-
-  window.chartInstances.profileStats = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d'],
-        borderWidth: 0,
-      }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      resizeDelay: 0,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { boxWidth: 12 }
-        },
-        tooltip: { enabled: true }
-      },
-      cutout: '58%',
-      animation: { duration: 500 },
-      onResize: function (chart, size) {
-        chart.canvas.style.height = '160px';
-        chart.canvas.style.maxHeight = '160px';
+    {
+      id: 2,
+      title: 'Document Required',
+      message: 'Additional safety certificate required for permit #12344.',
+      type: 'warning',
+      timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
+      read: false,
+      details: {
+        permitId: '12344',
+        requiredDocument: 'Safety Certificate Level 2',
+        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    {
+      id: 3,
+      title: 'System Maintenance',
+      message: 'Scheduled maintenance tonight from 2:00 AM to 4:00 AM.',
+      type: 'info',
+      timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1 hour ago
+      read: true,
+      details: {
+        maintenanceWindow: '2:00 AM - 4:00 AM',
+        affectedServices: ['Permit Submission', 'Document Upload'],
+        contact: 'IT Support: +974-1234-5678'
       }
     }
-  });
+  ];
 
-  console.log('Profile stats chart created successfully');
-}
+  function loadNotifications() {
+    const notificationList = document.getElementById('notificationList');
+    if (!notificationList) return;
 
-// Create Charts for Permit Statistics
-function createPermitCharts() {
-  console.log('Creating additional permit charts...');
+    // Sort notifications by timestamp (newest first)
+    const sortedNotifications = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  // Status Distribution Chart
-  const statusCtx = document.getElementById('permitStatusChart');
-  if (statusCtx) {
-    destroyChart('statusChart');
+    notificationList.innerHTML = '';
 
-    if (!window.Chart) return;
-
-    window.chartInstances.statusChart = new Chart(statusCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Approved', 'Pending', 'Rejected', 'In Review'],
-        datasets: [{
-          data: [12, 8, 3, 5],
-          backgroundColor: [
-            '#10b981', // green
-            '#f59e0b', // yellow
-            '#ef4444', // red
-            '#3b82f6'  // blue
-          ],
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              padding: 15,
-              usePointStyle: true,
-              font: {
-                size: 12
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-
-  // Monthly Trend Chart
-  const trendCtx = document.getElementById('monthlyTrendChart');
-  if (trendCtx) {
-    destroyChart('trendChart');
-
-    if (!window.Chart) return;
-
-    window.chartInstances.trendChart = new Chart(trendCtx, {
-      type: 'line',
-      data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [{
-          label: 'Permits Submitted',
-          data: [5, 8, 12, 9, 15, 18],
-          borderColor: '#3b82f6',
-          backgroundColor: '#3b82f6',
-          fill: false,
-          tension: 0.4
-        }, {
-          label: 'Permits Approved',
-          data: [4, 7, 10, 8, 13, 16],
-          borderColor: '#10b981',
-          backgroundColor: '#10b981',
-          fill: false,
-          tension: 0.4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              stepSize: 2
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              padding: 20,
-              usePointStyle: true,
-              font: {
-                size: 11
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-}
-
-// Notification System
-let notifications = [
-  {
-    id: 1,
-    title: 'Permit Approved',
-    message: 'Your PTW request #12345 has been approved by the safety officer.',
-    type: 'success',
-    timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 minutes ago
-    read: false,
-    details: {
-      permitId: '12345',
-      approvedBy: 'John Smith',
-      approvalDate: new Date().toISOString(),
-      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  },
-  {
-    id: 2,
-    title: 'Document Required',
-    message: 'Additional safety certificate required for permit #12344.',
-    type: 'warning',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
-    read: false,
-    details: {
-      permitId: '12344',
-      requiredDocument: 'Safety Certificate Level 2',
-      deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    }
-  },
-  {
-    id: 3,
-    title: 'System Maintenance',
-    message: 'Scheduled maintenance tonight from 2:00 AM to 4:00 AM.',
-    type: 'info',
-    timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1 hour ago
-    read: true,
-    details: {
-      maintenanceWindow: '2:00 AM - 4:00 AM',
-      affectedServices: ['Permit Submission', 'Document Upload'],
-      contact: 'IT Support: +974-1234-5678'
-    }
-  }
-];
-
-function loadNotifications() {
-  const notificationList = document.getElementById('notificationList');
-  if (!notificationList) return;
-
-  // Sort notifications by timestamp (newest first)
-  const sortedNotifications = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-  notificationList.innerHTML = '';
-
-  if (sortedNotifications.length === 0) {
-    notificationList.innerHTML = `
+    if (sortedNotifications.length === 0) {
+      notificationList.innerHTML = `
       <div class="text-center py-8 text-gray-500">
         <i class="fas fa-bell-slash text-2xl mb-2"></i>
         <p class="text-sm">No notifications</p>
       </div>
     `;
-    return;
-  }
+      return;
+    }
 
-  sortedNotifications.forEach(notification => {
-    const timeAgo = getTimeAgo(new Date(notification.timestamp));
-    const typeIcon = getNotificationIcon(notification.type);
-    const typeColor = getNotificationColor(notification.type);
+    sortedNotifications.forEach(notification => {
+      const timeAgo = getTimeAgo(new Date(notification.timestamp));
+      const typeIcon = getNotificationIcon(notification.type);
+      const typeColor = getNotificationColor(notification.type);
 
-    const notificationEl = document.createElement('div');
-    notificationEl.className = `p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${notification.read ? 'opacity-60' : ''}`;
-    notificationEl.onclick = () => showNotificationDetails(notification.id);
+      const notificationEl = document.createElement('div');
+      notificationEl.className = `p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${notification.read ? 'opacity-60' : ''}`;
+      notificationEl.onclick = () => showNotificationDetails(notification.id);
 
-    notificationEl.innerHTML = `
+      notificationEl.innerHTML = `
       <div class="flex items-start gap-3">
         <div class="w-8 h-8 rounded-full ${typeColor} flex items-center justify-center flex-shrink-0 mt-0.5">
           <i class="${typeIcon} text-white text-sm"></i>
@@ -1458,78 +1237,78 @@ function loadNotifications() {
       </div>
     `;
 
-    notificationList.appendChild(notificationEl);
-  });
+      notificationList.appendChild(notificationEl);
+    });
 
-  // Update notification count
-  updateNotificationCount();
-}
-
-function getNotificationIcon(type) {
-  switch (type) {
-    case 'success': return 'fas fa-check';
-    case 'warning': return 'fas fa-exclamation-triangle';
-    case 'error': return 'fas fa-times';
-    case 'info': return 'fas fa-info';
-    default: return 'fas fa-bell';
-  }
-}
-
-function getNotificationColor(type) {
-  switch (type) {
-    case 'success': return 'bg-green-500';
-    case 'warning': return 'bg-yellow-500';
-    case 'error': return 'bg-red-500';
-    case 'info': return 'bg-blue-500';
-    default: return 'bg-gray-500';
-  }
-}
-
-function getTimeAgo(date) {
-  // Ensure we have a valid Date object
-  const dateObj = (date instanceof Date) ? date : new Date(date);
-
-  // Check if date is valid
-  if (isNaN(dateObj.getTime())) {
-    console.warn('Invalid date passed to getTimeAgo:', date);
-    return 'Unknown time';
+    // Update notification count
+    updateNotificationCount();
   }
 
-  const now = new Date();
-  const diffMs = now - dateObj;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return dateObj.toLocaleDateString();
-}
-
-function showNotificationDetails(notificationId) {
-  const notification = notifications.find(n => n.id === notificationId);
-  if (!notification) return;
-
-  // Mark as read
-  notification.read = true;
-  updateNotificationCount();
-  loadNotifications();
-
-  // Create modal for notification details
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4';
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      document.body.removeChild(modal);
+  function getNotificationIcon(type) {
+    switch (type) {
+      case 'success': return 'fas fa-check';
+      case 'warning': return 'fas fa-exclamation-triangle';
+      case 'error': return 'fas fa-times';
+      case 'info': return 'fas fa-info';
+      default: return 'fas fa-bell';
     }
-  };
+  }
 
-  const typeColor = getNotificationColor(notification.type);
-  const typeIcon = getNotificationIcon(notification.type);
+  function getNotificationColor(type) {
+    switch (type) {
+      case 'success': return 'bg-green-500';
+      case 'warning': return 'bg-yellow-500';
+      case 'error': return 'bg-red-500';
+      case 'info': return 'bg-blue-500';
+      default: return 'bg-gray-500';
+    }
+  }
 
-  modal.innerHTML = `
+  function getTimeAgo(date) {
+    // Ensure we have a valid Date object
+    const dateObj = (date instanceof Date) ? date : new Date(date);
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn('Invalid date passed to getTimeAgo:', date);
+      return 'Unknown time';
+    }
+
+    const now = new Date();
+    const diffMs = now - dateObj;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return dateObj.toLocaleDateString();
+  }
+
+  function showNotificationDetails(notificationId) {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (!notification) return;
+
+    // Mark as read
+    notification.read = true;
+    updateNotificationCount();
+    loadNotifications();
+
+    // Create modal for notification details
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4';
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    };
+
+    const typeColor = getNotificationColor(notification.type);
+    const typeIcon = getNotificationIcon(notification.type);
+
+    modal.innerHTML = `
     <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md max-h-[80vh] overflow-y-auto">
       <div class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
@@ -1575,132 +1354,126 @@ function showNotificationDetails(notificationId) {
     </div>
   `;
 
-  document.body.appendChild(modal);
+    document.body.appendChild(modal);
 
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('notification_viewed', `Viewed notification: ${notification.title}`, `User opened notification details for ${notification.title}`);
-  }
-}
-
-function markAllAsRead() {
-  notifications.forEach(n => n.read = true);
-  updateNotificationCount();
-  loadNotifications();
-
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('notifications_marked_read', 'Marked all notifications as read', 'User marked all notifications as read');
-  }
-}
-
-function showAllNotifications() {
-  // Log activity
-  if (typeof logUserActivity === 'function') {
-    logUserActivity('all_notifications_viewed', 'Viewed all notifications', 'User requested to view all notifications');
+    // notification viewed (no activity logging)
   }
 
-  alert('Full notifications page feature coming soon!');
-}
+  function markAllAsRead() {
+    notifications.forEach(n => n.read = true);
+    updateNotificationCount();
+    loadNotifications();
 
-function updateNotificationCount() {
-  console.log('updateNotificationCount called');
-  const countEl = document.getElementById('notificationCount');
-  console.log('Notification count element:', countEl);
-  if (!countEl) {
-    console.warn('Notification count element not found');
-    return;
+    // notifications marked read
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  console.log('Unread notifications count:', unreadCount);
-  console.log('Total notifications:', notifications.length);
+  function showAllNotifications() {
+    // all notifications viewed
 
-  if (unreadCount > 0) {
-    countEl.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
-    countEl.classList.remove('hidden');
-    console.log('Showing notification count:', countEl.textContent);
-  } else {
-    countEl.classList.add('hidden');
-    console.log('Hiding notification count (no unread)');
-  }
-}
-
-// Reset dropdown states function for debugging
-function resetDropdownStates() {
-  console.log('Resetting all dropdown states...');
-  const profileDropdown = document.getElementById('profileDropdown');
-  const notificationDropdown = document.getElementById('notificationDropdown');
-
-  if (profileDropdown) {
-    profileDropdown.classList.add('hidden');
-    profileDropdown.style.display = 'none';
-    profileDropdown.style.opacity = '0';
-    profileDropdown.style.transform = 'translateY(4px)';
+    alert('Full notifications page feature coming soon!');
   }
 
-  if (notificationDropdown) {
-    notificationDropdown.classList.add('hidden');
-    notificationDropdown.style.display = 'none';
-    notificationDropdown.style.opacity = '0';
-    notificationDropdown.style.transform = 'translateY(4px)';
+  function updateNotificationCount() {
+    console.log('updateNotificationCount called');
+    const countEl = document.getElementById('notificationCount');
+    console.log('Notification count element:', countEl);
+    if (!countEl) {
+      console.warn('Notification count element not found');
+      return;
+    }
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+    console.log('Unread notifications count:', unreadCount);
+    console.log('Total notifications:', notifications.length);
+
+    if (unreadCount > 0) {
+      countEl.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
+      countEl.classList.remove('hidden');
+      console.log('Showing notification count:', countEl.textContent);
+    } else {
+      countEl.classList.add('hidden');
+      console.log('Hiding notification count (no unread)');
+    }
   }
 
-  console.log('Dropdown states reset');
-}
+  // Reset dropdown states function for debugging
+  function resetDropdownStates() {
+    console.log('Resetting all dropdown states...');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const notificationDropdown = document.getElementById('notificationDropdown');
 
-// Add keyboard shortcut to reset dropdowns (Ctrl+Shift+R)
-document.addEventListener('keydown', function (e) {
-  if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-    e.preventDefault();
-    resetDropdownStates();
+    if (profileDropdown) {
+      profileDropdown.classList.add('hidden');
+      profileDropdown.style.display = 'none';
+      profileDropdown.style.opacity = '0';
+      profileDropdown.style.transform = 'translateY(4px)';
+    }
+
+    if (notificationDropdown) {
+      notificationDropdown.classList.add('hidden');
+      notificationDropdown.style.display = 'none';
+      notificationDropdown.style.opacity = '0';
+      notificationDropdown.style.transform = 'translateY(4px)';
+    }
+
+    console.log('Dropdown states reset');
   }
-});
 
-// ========== GLOBAL FUNCTION EXPORTS ==========
-window.toggleProfileDropdown = toggleProfileDropdown;
-window.toggleNotifications = toggleNotifications;
-window.setupDropdownCloseHandlers = setupDropdownCloseHandlers;
-window.showProfileSettings = showProfileSettings;
-window.hideProfileSettings = hideProfileSettings;
-window.showUpdatePasswordModal = showUpdatePasswordModal;
-window.hideUpdatePasswordModal = hideUpdatePasswordModal;
-window.downloadActivity = downloadActivity;
-window.showAllActivities = showAllActivities;
-window.logUserActivity = logUserActivity;
-window.toggleSection = toggleSection;
-window.submitNewRequest = submitNewRequest;
-window.toggleTooltipTheme = toggleTooltipTheme;
-window.markAllAsRead = markAllAsRead;
-window.showAllNotifications = showAllNotifications;
-window.resetDropdownStates = resetDropdownStates;
-window.testDropdowns = testDropdowns;
-// Ensure logoutUser is available globally for inline onclick handlers
-try {
-  if (typeof logoutUser === 'function') {
-    window.logoutUser = logoutUser;
+  // Add keyboard shortcut to reset dropdowns (Ctrl+Shift+R)
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+      e.preventDefault();
+      resetDropdownStates();
+    }
+  });
+
+  // ========== GLOBAL FUNCTION EXPORTS ==========
+  window.toggleProfileDropdown = toggleProfileDropdown;
+  window.toggleNotifications = toggleNotifications;
+  window.setupDropdownCloseHandlers = setupDropdownCloseHandlers;
+  window.showProfileSettings = showProfileSettings;
+  window.hideProfileSettings = hideProfileSettings;
+  window.showUpdatePasswordModal = showUpdatePasswordModal;
+  window.hideUpdatePasswordModal = hideUpdatePasswordModal;
+  window.toggleSection = toggleSection;
+  window.submitNewRequest = submitNewRequest;
+  window.toggleTooltipTheme = toggleTooltipTheme;
+  window.markAllAsRead = markAllAsRead;
+  window.showAllNotifications = showAllNotifications;
+  window.resetDropdownStates = resetDropdownStates;
+  window.testDropdowns = testDropdowns;
+  window.downloadActivity = downloadActivity;
+  // expose some helpers used by inline onclicks
+  window.logoutUser = (typeof logoutUser === 'function') ? logoutUser : window.logoutUser;
+  window.showProfileSettings = (typeof showProfileSettings === 'function') ? showProfileSettings : window.showProfileSettings;
+  // Ensure logoutUser is available globally for inline onclick handlers
+  try {
+    if (typeof logoutUser === 'function') {
+      window.logoutUser = logoutUser;
+    }
+  } catch (e) {
+    console.warn('logoutUser not available to expose on window yet', e);
   }
-} catch (e) {
-  console.warn('logoutUser not available to expose on window yet', e);
-}
 
-// Attach a safe click handler to the Sign Out button in case inline onclick is unreliable
-setTimeout(() => {
-  const logoutBtn = document.getElementById('hoverLogoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      try {
-        if (typeof window.logoutUser === 'function') {
-          window.logoutUser();
-        } else if (typeof logoutUser === 'function') {
-          logoutUser();
-        } else {
-          console.error('Logout function not found');
+  // Attach a safe click handler to the Sign Out button in case inline onclick is unreliable
+  setTimeout(() => {
+    const logoutBtn = document.getElementById('hoverLogoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        try {
+          if (typeof window.logoutUser === 'function') {
+            window.logoutUser();
+          } else if (typeof logoutUser === 'function') {
+            logoutUser();
+          } else {
+            console.error('Logout function not found');
+          }
+        } catch (err) {
+          console.error('Error calling logoutUser:', err);
         }
-      } catch (err) {
-        console.error('Error calling logoutUser:', err);
-      }
-    });
-  }
-}, 100);
+      });
+    }
+  }, 100);
+
+});
