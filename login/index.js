@@ -146,26 +146,67 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordEl = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
 
-    function showError(el, msg) {
-        if (!el) return;
-        const g = el.closest('.form-group') || el.parentElement;
-        let span = g.querySelector('.error-message');
-        if (!span) { span = document.createElement('span'); span.className = 'error-message modern-error-message'; span.setAttribute('aria-live', 'polite'); g.appendChild(span); }
-        span.textContent = msg || '';
-        if (msg) { el.classList.add('invalid'); span.style.opacity = 1; span.style.display = 'block'; } else { el.classList.remove('invalid'); span.style.display = 'none'; }
+    // New: per-field error display using .field-error elements
+    function showError(elOrKey, msg) {
+        // Accept either an element or a string key
+        let key = null;
+        let el = null;
+        if (typeof elOrKey === 'string') key = elOrKey; else if (elOrKey && elOrKey.id) { el = elOrKey; key = elOrKey.id; }
+
+        // Find the error container for this field: prefer data-for attribute, fall back to .field-error within same group
+        let container = document.querySelector(`.field-error[data-for="${key}"]`);
+        if (!container && el) {
+            const g = el.closest('.form-group') || el.parentElement;
+            container = g ? g.querySelector('.field-error') : null;
+        }
+
+        if (!container) {
+            // last resort: create an inline span after element
+            if (el) {
+                container = document.createElement('div');
+                container.className = 'field-error text-red-500 text-xs mt-1';
+                el.parentElement.appendChild(container);
+            } else return;
+        }
+
+        if (msg) {
+            container.textContent = msg;
+            container.classList.remove('hidden');
+            if (el) el.classList.add('invalid');
+        } else {
+            container.textContent = '';
+            container.classList.add('hidden');
+            if (el) el.classList.remove('invalid');
+        }
     }
 
     function validateEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
     function validatePassword(v) { return v.trim().length >= 8; }
 
-    function validateField(el) { if (!el) return true; if (el.id === 'email') { const ok = validateEmail(el.value); showError(el, ok ? '' : 'Enter a valid email address 📧'); return ok; } if (el.id === 'password') { const ok = validatePassword(el.value); showError(el, ok ? '' : 'Enter a valid password 🔑'); return ok; } return true; }
+    function validateField(el) {
+        if (!el) return true;
+        if (el.id === 'email') {
+            const ok = validateEmail(el.value);
+            showError(el, ok ? '' : 'Enter a valid email address.');
+            return ok;
+        }
+        if (el.id === 'password') {
+            const ok = validatePassword(el.value);
+            showError('password', ok ? '' : 'Password must be at least 8 characters.');
+            return ok;
+        }
+        return true;
+    }
 
     [emailEl, passwordEl].forEach(i => { if (i) i.addEventListener('input', () => validateField(i)); });
 
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!validateField(emailEl) || !validateField(passwordEl)) return;
+            // Validate each field and show errors for every failed validation
+            const emailOk = validateField(emailEl);
+            const passwordOk = validateField(passwordEl);
+            if (!emailOk || !passwordOk) return;
             const email = emailEl.value.trim();
             const password = passwordEl.value.trim();
             loginBtn.disabled = true; loginBtn.innerHTML = `<span class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Signing in...</span>`;
