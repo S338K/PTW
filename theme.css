@@ -2,6 +2,8 @@
 :root {
     --bg-surface: #ffffff;
     --text-primary: #273172;
+    /* Page/accent color for selected states (light theme) */
+    --page-color: #273172;
     /* requested light theme primary text */
     --text-secondary: #6b7280;
     /* Section background: light grey card background for sections */
@@ -49,6 +51,8 @@
 :root[data-theme="dark"] {
     --bg-surface: #1c1c28;
     --text-primary: #ffffff;
+    /* Page/accent color for selected states (dark theme) */
+    --page-color: #ffffff;
     --text-secondary: #9aa4d6;
     /* In dark theme keep sections the same as the surface color */
     --section-bg: var(--bg-surface);
@@ -249,4 +253,36 @@ button {
         transform: scale(1);
         box-shadow: 0 0 0 rgba(0, 0, 0, 0);
     }
+}
+
+/* Page color utilities: use --page-color for selected/highlighted elements */
+.selected-bg {
+    background-color: var(--page-color) !important;
+    color: var(--button-text) !important;
+}
+
+.selected-border {
+    border-color: var(--page-color) !important;
+}
+
+/* Input focus uses page color for ring/border */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--page-color) 20%, transparent);
+    border-color: var(--page-color);
+}
+
+/* Buttons that use the page color when selected */
+.btn-selected {
+    background: var(--page-color);
+    color: var(--button-text);
+    border-color: var(--page-color);
+}
+
+/* Nav selected */
+.nav-item.selected {
+    color: var(--page-color);
+    font-weight: 700;
 }

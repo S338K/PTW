@@ -6,7 +6,7 @@
 /* Vertical Carousel Styles */
 .header-carousel {
     min-height: 3.5rem;
-    background: var(--bg-surface);
+    background: transparent;
     outline: none;
     position: relative;
     overflow: hidden;
@@ -16,6 +16,7 @@
 .carousel-slide {
     position: absolute;
     left: 0;
+    right: 0;
     width: 100%;
     height: 100%;
     opacity: 1;
@@ -30,6 +31,33 @@
 .carousel-slide[aria-hidden="false"] {
     pointer-events: auto;
     z-index: 2;
+}
+
+/* Ensure overlay controls don't block carousel text on very small screens */
+.header-carousel .absolute img#logo {
+    display: block;
+}
+
+.header-carousel .absolute #themeToggle {
+    display: inline-flex;
+}
+
+@media (max-width: 420px) {
+
+    .header-carousel .absolute.left-4,
+    .header-carousel .absolute.right-4 {
+        display: none;
+    }
+
+    /* Hide the carousel completely on very small screens to avoid crowding */
+    .header-carousel {
+        display: none !important;
+    }
+
+    #loginCarousel {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
 }
 
 .carousel-control {
@@ -58,12 +86,40 @@
 
 @media (max-width: 768px) {
     .header-carousel {
-        min-height: 2.5rem;
-        height: 2.5rem;
+        /* increase height on smaller screens to allow multi-line messages */
+        min-height: 4.2rem;
+        height: auto;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+
+    /* Force-hide individual carousel slide elements (extra safety) */
+    .carousel-slide,
+    .carousel-slide * {
+        display: none !important;
+    }
+
+    /* Ensure overlay logo and theme toggle inside #loginCarousel remain visible */
+    #loginCarousel .absolute {
+        display: block !important;
+        pointer-events: auto !important;
+    }
+
+    #loginCarousel .absolute img#logo {
+        height: 40px !important;
+    }
+
+    #loginCarousel #themeToggle {
+        display: inline-flex !important;
     }
 
     .carousel-slide span {
         font-size: 0.95rem;
+        white-space: normal;
+        /* allow wrapping */
+        line-height: 1.2;
+        padding: 0 8px;
     }
 
     .carousel-control {
@@ -154,6 +210,27 @@
     border-color: var(--input-border);
 }
 
+/* Make navigation/link colors respect page color variable */
+/* Force anchor/link colors on this page to follow the page color variable (theme-aware) */
+#loginCarousel a,
+.forgot-password-link a,
+.sign-up-link a,
+.nav-item,
+.login-card a,
+footer a,
+.container a {
+    color: var(--page-color) !important;
+}
+
+/* Ensure link hover/active states stay readable */
+#loginCarousel a:hover,
+.forgot-password-link a:hover,
+.sign-up-link a:hover,
+footer a:hover {
+    text-decoration: underline;
+    opacity: 0.95;
+}
+
 /* Dark mode specific enhancements */
 [data-theme="dark"] .gradient-bg {
     background: linear-gradient(135deg, rgba(30, 36, 94, 0.2) 0%, rgba(45, 55, 110, 0.3) 100%);
@@ -165,7 +242,6 @@
 
 /* Theme toggle button styles */
 #themeToggle {
-    backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -190,24 +266,22 @@
 [data-theme="dark"] .login-card {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
     background: rgba(30, 41, 59, 0.8);
-    backdrop-filter: blur(20px);
 }
 
 [data-theme="light"] .login-card {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 25px 50px -12px rgb(240, 241, 243), 0 0 0 1px rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
 }
 
 /* Form input enhancements for dark mode */
 [data-theme="dark"] input:focus {
     border-color: #60a5fa !important;
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
+    box-shadow: 0 0 0 3px rgb(240, 241, 243) !important;
 }
 
 [data-theme="light"] input:focus {
     border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    box-shadow: 0 0 0 3px rgb(224, 242, 254) !important;
 }
 
 /* Button hover states for both themes */
@@ -238,7 +312,6 @@
 }
 
 /* Enhanced Header Carousel Animations */
-/* Carousel area styles removed for rebuild */
 
 .carousel-item {
     transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
@@ -614,12 +687,12 @@
 /* Input validation states enhanced */
 .form-group input.valid {
     border-color: #10b981 !important;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
 }
 
 .form-group input.invalid {
     border-color: #ef4444 !important;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
 }
 
 /* Password toggle button enhancement */
