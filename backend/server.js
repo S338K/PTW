@@ -138,10 +138,16 @@ async function getBrowser() {
     const fs = require('fs');
     let executablePath;
 
-    // 1) Env var override (highest priority)
+
+    // 1) Env var override (highest priority), but only if file exists
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-      executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-      logger.debug('Using PUPPETEER_EXECUTABLE_PATH from env:', executablePath);
+      const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      if (fs.existsSync(envPath)) {
+        executablePath = envPath;
+        logger.debug('Using PUPPETEER_EXECUTABLE_PATH from env:', executablePath);
+      } else {
+        logger.warn('PUPPETEER_EXECUTABLE_PATH is set but file does not exist:', envPath);
+      }
     }
 
     // 2) Try @sparticuz/chromium helper (may throw if binary not present)
