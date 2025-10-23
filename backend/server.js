@@ -192,8 +192,7 @@ async function getBrowser() {
       }
     }
 
-    // 4) If still not found, attempt to use full 'puppeteer' package if it's installed.
-    // Full puppeteer bundles a Chromium download and can launch without an external executablePath.
+
     if (!executablePath && puppeteer === puppeteerCore) {
       try {
         // try to require full puppeteer dynamically
@@ -281,6 +280,25 @@ app.use((err, req, res, _next) => {
 const PORT = process.env.PORT || 5000;
 // Before starting the server, run a quick browser health-check so failures are visible early.
 async function startServerWithBrowserCheck() {
+  // Diagnostic: print Puppeteer executable path and file status
+  const fs = require('fs');
+  const execPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  logger.info('[DIAGNOSTIC] PUPPETEER_EXECUTABLE_PATH env:', execPath);
+  if (execPath) {
+    try {
+      const exists = fs.existsSync(execPath);
+      logger.info(`[DIAGNOSTIC] Executable exists: ${exists}`);
+      if (exists) {
+        const stat = fs.statSync(execPath);
+        logger.info(`[DIAGNOSTIC] Executable permissions: mode=${stat.mode.toString(8)} size=${stat.size}`);
+      }
+    } catch (e) {
+      logger.error('[DIAGNOSTIC] Error checking executable:', e && e.message);
+    }
+  } else {
+    logger.warn('[DIAGNOSTIC] PUPPETEER_EXECUTABLE_PATH env not set');
+  }
+
   logger.info('Running browser startup check...');
   try {
     // Attempt to launch browser once to validate environment
@@ -291,7 +309,7 @@ async function startServerWithBrowserCheck() {
   } catch (err) {
     logger.error('Browser startup check failed:', err && err.message);
     if (process.env.NODE_ENV === 'production') {
-      logger.error('Exiting because browser is required in production. See README or set PUPPETEER_EXECUTABLE_PATH.');
+      logger.error('Exiting because browser is required in production.');
       process.exit(1);
     } else {
       logger.warn('Continuing startup in development despite browser startup failure. PDF generation may not work until resolved.');
