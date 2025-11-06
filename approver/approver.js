@@ -547,19 +547,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var trigger = document.getElementById('sidebarTrigger');
     var body = document.body;
 
-    // Show sidebar
-    function openSidebar() {
-        sidebar.classList.add('active');
-        body.classList.add('sidebar-open');
-    }
+    // Only wire sidebar logic if elements exist
+    if (sidebar && trigger) {
+        function openSidebar() {
+            try { sidebar.classList.add('active'); } catch (_) { }
+            try { body.classList.add('sidebar-open'); } catch (_) { }
+        }
 
-    // Hide sidebar
-    function closeSidebar() {
-        sidebar.classList.remove('active');
-        body.classList.remove('sidebar-open');
-    }
+        function closeSidebar() {
+            try { sidebar.classList.remove('active'); } catch (_) { }
+            try { body.classList.remove('sidebar-open'); } catch (_) { }
+        }
 
-    if (trigger) {
         trigger.addEventListener('click', function (e) {
             e.stopPropagation();
             if (sidebar.classList.contains('active')) {
@@ -568,23 +567,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 openSidebar();
             }
         });
-    }
 
-    // Hide sidebar on ESC
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeSidebar();
-    });
+        // Hide sidebar on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
 
-    // Optional: close sidebar if clicking outside
-    document.addEventListener('click', function (e) {
-        if (!sidebar.contains(e.target) && !trigger.contains(e.target)) {
-            closeSidebar();
+        // Optional: close sidebar if clicking outside
+        document.addEventListener('click', function (e) {
+            if (!sidebar.contains(e.target) && !trigger.contains(e.target)) {
+                closeSidebar();
+            }
+        });
+
+        // Tooltip for trigger
+        if (window.bootstrap && trigger) {
+            try { new bootstrap.Tooltip(trigger); } catch (_) { }
         }
-    });
-
-    // Tooltip for trigger
-    if (window.bootstrap && trigger) {
-        var tooltip = new bootstrap.Tooltip(trigger);
     }
 
     // Enhanced Theme System with localStorage persistence

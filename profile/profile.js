@@ -2,133 +2,25 @@ import { checkSession, initIdleTimer, logoutUser } from "../session.js";
 import { formatDate24, formatLastLogin } from "../date-utils.js";
 import { API_BASE } from '../config.js';
 
-// ========== ENHANCED DROPDOWN MANAGEMENT SYSTEM ==========
-function toggleProfileDropdown(event) {
-  console.log('🔴 toggleProfileDropdown CALLED');
-
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  const dropdown = document.getElementById('profileDropdown');
-  const button = document.getElementById('profileDropdownBtn');
-
-  if (!dropdown || !button) {
-    console.error('Dropdown elements not found');
-    return;
-  }
-
-  const isHidden = dropdown.classList.contains('hidden');
-
-  // Close notification dropdown first
-  const notificationDropdown = document.getElementById('notificationDropdown');
-  if (notificationDropdown) {
-    notificationDropdown.classList.add('hidden');
-  }
-
-  // Toggle profile dropdown
-  if (isHidden) {
-    dropdown.classList.remove('hidden');
-  } else {
-    dropdown.classList.add('hidden');
-  }
-
-  console.log('✅ Profile dropdown toggled, new state:', isHidden ? 'visible' : 'hidden');
-}
-
-function toggleNotifications(event) {
-  console.log('🔔 toggleNotifications CALLED');
-
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  const dropdown = document.getElementById('notificationDropdown');
-  const button = document.getElementById('notificationBtn');
-
-  if (!dropdown || !button) {
-    console.error('Notification elements not found');
-    return;
-  }
-
-  const isHidden = dropdown.classList.contains('hidden');
-
-  // Close profile dropdown first
-  const profileDropdown = document.getElementById('profileDropdown');
-  if (profileDropdown) {
-    profileDropdown.classList.add('hidden');
-  }
-
-  // Toggle notification dropdown
-  if (isHidden) {
-    dropdown.classList.remove('hidden');
-    loadNotifications();
-  } else {
-    dropdown.classList.add('hidden');
-  }
-
-  console.log('✅ Notifications dropdown toggled, new state:', isHidden ? 'visible' : 'hidden');
-}
-
-function setupDropdownCloseHandlers() {
-  document.addEventListener('click', function (e) {
-    const profileButton = document.getElementById('profileDropdownBtn');
-    const profileDropdown = document.getElementById('profileDropdown');
-    const notificationButton = document.getElementById('notificationBtn');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-
-    // Check if click is outside profile dropdown
-    if (profileDropdown && !profileDropdown.contains(e.target) && profileButton && !profileButton.contains(e.target)) {
-      if (!profileDropdown.classList.contains('hidden')) {
-        console.log('Closing profile dropdown via outside click');
-        profileDropdown.classList.add('hidden');
-      }
-    }
-
-    // Check if click is outside notification dropdown
-    if (notificationDropdown && !notificationDropdown.contains(e.target) && notificationButton && !notificationButton.contains(e.target)) {
-      if (!notificationDropdown.classList.contains('hidden')) {
-        console.log('Closing notification dropdown via outside click');
-        notificationDropdown.classList.add('hidden');
-      }
-    }
-  });
-
-  // Close dropdowns when pressing Escape key
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      const profileDropdown = document.getElementById('profileDropdown');
-      const notificationDropdown = document.getElementById('notificationDropdown');
-
-      if (profileDropdown) profileDropdown.classList.add('hidden');
-      if (notificationDropdown) notificationDropdown.classList.add('hidden');
-    }
-  });
-}
-
-// ========== DEBUGGING HELPER ==========
-function testDropdowns() {
-  console.log('=== DROPDOWN DEBUG INFO ===');
-  console.log('Profile button:', document.getElementById('profileDropdownBtn'));
-  console.log('Profile dropdown:', document.getElementById('profileDropdown'));
-  console.log('Notification button:', document.getElementById('notificationBtn'));
-  console.log('Notification dropdown:', document.getElementById('notificationDropdown'));
-  console.log('toggleProfileDropdown function:', typeof toggleProfileDropdown);
-  console.log('toggleNotifications function:', typeof toggleNotifications);
-
-  // Test CSS classes
-  const profileDropdown = document.getElementById('profileDropdown');
-  if (profileDropdown) {
-    console.log('Profile dropdown classes:', profileDropdown.className);
-    console.log('Profile dropdown hidden:', profileDropdown.classList.contains('hidden'));
-  }
-}
-window.testDropdowns = testDropdowns;
-
 document.addEventListener('DOMContentLoaded', async function () {
-  console.log("✅ profile.js loaded");
+
+  // Keep the latest data in memory for charts/toggles
+  let latestUserPermits = [];
+  let latestStats = { Approved: 0, Pending: 0, Rejected: 0 };
+
+  // Global chart instances to prevent duplicates
+  window.chartInstances = window.chartInstances || {};
+
+  // Track which lazy inits have already run
+  const lazyInitCalled = new Set();
+
+  // Lazy init registry: map a sectionId to a function that initializes charts/content when opened
+  const lazyInitMap = {
+    'permitAnalytics': () => createPermitCharts(),
+    'approvalAnalytics': () => {
+      // approval time chart initializes when permits data arrives; placeholder
+    }
+  };
 
   // ========== CENTRAL EVENT DELEGATION FOR [data-action] ========== 
   document.addEventListener('click', function (e) {
@@ -150,16 +42,10 @@ document.addEventListener('DOMContentLoaded', async function () {
           'show-update-password-modal': () => showUpdatePasswordModal(),
           'logoutUser': () => logoutUser(),
           'logout-user': () => logoutUser(),
-          'markAllAsRead': () => markAllAsRead(),
-          'mark-all-as-read': () => markAllAsRead(),
-          'showAllNotifications': () => showAllNotifications(),
-          'show-all-notifications': () => showAllNotifications(),
           'hideProfileSettings': () => hideProfileSettings(),
           'hide-profile-settings': () => hideProfileSettings(),
           'showProfileSettings': () => showProfileSettings(),
           'show-profile-settings': () => showProfileSettings(),
-          'toggleTheme': () => setupThemeToggle && setupThemeToggle(),
-          'toggle-theme': () => setupThemeToggle && setupThemeToggle(),
         };
         let handled = false;
         for (const action of actions) {
@@ -179,46 +65,28 @@ document.addEventListener('DOMContentLoaded', async function () {
       el = el.parentElement;
     }
   });
-  // Ensure all toggle sections start collapsed visually (icons reset)
+  // Ensure toggle icons reflect current expanded/collapsed state
   try {
-    const toggleIcons = ['permitAnalyticsIcon', 'approvalAnalyticsIcon', 'permitStatisticsIcon'];
-    toggleIcons.forEach(id => {
-      const ic = document.getElementById(id);
-      if (ic) {
-        ic.style.transform = 'rotate(0deg)';
-        // slightly longer, smoother transition for chevrons
-        ic.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
-        // ensure it shows chevron-down class if FontAwesome variants used
-        ic.classList.remove('fa-chevron-up');
-        ic.classList.add('fa-chevron-down');
-      }
+    const toggleTargets = [
+      { iconId: 'submittedPermitsIcon', contentId: 'submittedPermitsContent' },
+      { iconId: 'approvalTrendIcon', contentId: 'approvalTrendContent' },
+      { iconId: 'fastestTrendIcon', contentId: 'fastestTrendContent' }
+    ];
+
+    toggleTargets.forEach(({ iconId, contentId }) => {
+      const icon = document.getElementById(iconId);
+      if (!icon) return;
+
+      const content = contentId ? document.getElementById(contentId) : null;
+      const isExpanded = content ? !content.classList.contains('hidden') : false;
+
+      icon.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+      icon.classList.toggle('fa-chevron-up', isExpanded);
+      icon.classList.toggle('fa-chevron-down', !isExpanded);
+      icon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
     });
   } catch (e) {
     console.warn('Error initializing toggle icons', e);
-  }
-
-  // ========== DROPDOWN EVENT LISTENER SETUP ==========
-  console.log('Setting up dropdown event listeners...');
-
-  // Setup dropdown close handlers
-  setupDropdownCloseHandlers();
-
-  // Setup profile dropdown
-  const profileBtn = document.getElementById('profileDropdownBtn');
-  if (profileBtn) {
-    console.log('✅ Setting up profile dropdown handler');
-    profileBtn.addEventListener('click', toggleProfileDropdown);
-  } else {
-    console.error('❌ Profile button not found');
-  }
-
-  // Setup notification dropdown
-  const notificationBtn = document.getElementById('notificationBtn');
-  if (notificationBtn) {
-    console.log('✅ Setting up notification dropdown handler');
-    notificationBtn.addEventListener('click', toggleNotifications);
-  } else {
-    console.error('❌ Notification button not found');
   }
 
   // Attach safe handlers for inline-onclick buttons (module scope can make inline handlers fail)
@@ -230,8 +98,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       'toggleSection': toggleSection,
       'showUpdatePasswordModal': showUpdatePasswordModal,
       'logoutUser': logoutUser,
-      'markAllAsRead': markAllAsRead,
-      'showAllNotifications': showAllNotifications,
       'hideProfileSettings': hideProfileSettings
     };
 
@@ -417,8 +283,10 @@ document.addEventListener('DOMContentLoaded', async function () {
       const res = await fetch(`${API_BASE}/api/permit`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
+        console.log('API Response:', data); // Debug log
         // support both array responses and { permits } envelope
         const list = Array.isArray(data) ? data : (data.permits || []);
+        console.log('Permits list:', list); // Debug log
         const tbody = document.querySelector('#permitTable tbody');
         tbody.innerHTML = '';
 
@@ -441,6 +309,8 @@ document.addEventListener('DOMContentLoaded', async function () {
           return false;
         });
 
+        console.log('User permits:', userPermits); // Debug log
+
         let stats = { Approved: 0, Pending: 0, Rejected: 0 };
         userPermits.forEach((permit, index) => {
           const row = document.createElement('tr');
@@ -455,13 +325,30 @@ document.addEventListener('DOMContentLoaded', async function () {
 
           // Permit title
           const titleTd = document.createElement('td');
-          titleTd.textContent = permit.permitTitle || '—';
+          // Fix the title column width so the text stays on one line with ellipsis
+          titleTd.className = 'w-[320px] md:w-[420px] lg:w-[520px]';
+          const titleText = permit.permitTitle || '—';
+          const titleWrap = document.createElement('span');
+          // Truncate to a single line inside the fixed-width cell
+          titleWrap.className = 'truncate block w-full';
+          titleWrap.textContent = titleText;
+          titleWrap.title = titleText;
+          titleTd.appendChild(titleWrap);
+
+          // Requester name (from populated requester or fields on permit)
+          const requesterTd = document.createElement('td');
+          const requesterName = (permit.requester && (permit.requester.fullName || permit.requester.username))
+            || [permit.fullName, permit.lastName].filter(Boolean).join(' ') || '—';
+          requesterTd.textContent = requesterName;
 
           // Status with badge
           const statusTd = document.createElement('td');
           const badge = document.createElement('span');
-          badge.textContent = permit.status || 'Pending';
-          badge.classList.add('status-badge', (permit.status || 'pending').toLowerCase());
+          const statusValue = permit.status || 'Pending';
+          badge.textContent = statusValue;
+          // Sanitize status for CSS class: replace spaces with hyphens and lowercase
+          const statusClass = statusValue.toLowerCase().replace(/\s+/g, '-');
+          badge.classList.add('status-badge', statusClass);
           statusTd.appendChild(badge);
 
           // Permit number (download link if approved)
@@ -477,15 +364,51 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
 
             numberTd.appendChild(link);
+          } else if (permit.status === 'Rejected') {
+            // Show rejection message with reason
+            const rejectionReason = permit.approverComments || permit.preApproverComments || 'incomplete or incorrect information';
+            const msg = document.createElement('span');
+            msg.style.color = '#ef4444';
+            msg.style.fontSize = '0.875rem';
+            msg.style.fontStyle = 'italic';
+            msg.textContent = `Request rejected: ${rejectionReason}. Please submit a new request with correct details.`;
+            numberTd.appendChild(msg);
           } else {
-            numberTd.textContent = 'Permit no not yet generated';
+            // For Pending, In Progress, or any other status - show em dash
+            numberTd.textContent = '—';
           }
 
-          row.appendChild(serialTd);
-          row.appendChild(submittedTd);
-          row.appendChild(titleTd);
-          row.appendChild(statusTd);
-          row.appendChild(numberTd);
+          // Approvals data
+          const preApproverTd = document.createElement('td');
+          preApproverTd.textContent = (permit.preApprovedBy && (permit.preApprovedBy.fullName || permit.preApprovedBy.username)) || '—';
+
+          const preApproveTimeTd = document.createElement('td');
+          preApproveTimeTd.textContent = permit.preApprovedAt ? formatDate24(permit.preApprovedAt) : '—';
+
+          const approverTd = document.createElement('td');
+          approverTd.textContent = (permit.approvedBy && (permit.approvedBy.fullName || permit.approvedBy.username)) || '—';
+
+          const approveTimeTd = document.createElement('td');
+          approveTimeTd.textContent = permit.approvedAt ? formatDate24(permit.approvedAt) : '—';
+
+          const preApproverCommentTd = document.createElement('td');
+          preApproverCommentTd.textContent = permit.preApproverComments || '—';
+
+          const approverCommentTd = document.createElement('td');
+          approverCommentTd.textContent = permit.approverComments || '—';
+
+          row.appendChild(serialTd);                 // Serial Number
+          row.appendChild(submittedTd);              // Submitted On
+          row.appendChild(requesterTd);              // Name
+          row.appendChild(titleTd);                  // Permit Title
+          row.appendChild(preApproverTd);            // Pre Approver Name
+          row.appendChild(preApproveTimeTd);         // Pre Approved On
+          row.appendChild(preApproverCommentTd);     // Comments (Pre-Approver)
+          row.appendChild(approverTd);               // Approver Name
+          row.appendChild(approveTimeTd);            // Approved On
+          row.appendChild(approverCommentTd);        // Comments (Approver)
+          row.appendChild(statusTd);                 // Status
+          row.appendChild(numberTd);                 // Permit Number
 
           tbody.appendChild(row);
 
@@ -495,24 +418,14 @@ document.addEventListener('DOMContentLoaded', async function () {
           stats[st]++;
         });
 
-        // Initialize or register profile stats chart data
-        try {
-          const statsHandler = () => initializeProfileStatsChart(stats);
-          // If the permitStatistics section is already visible, initialize immediately
-          const permStatsContent = document.getElementById('permitStatisticsContent');
-          if (permStatsContent && !permStatsContent.classList.contains('hidden')) {
-            statsHandler();
-            lazyInitCalled.add('permitStatistics');
-          } else {
-            // register lazy init so it will run when the section is expanded
-            lazyInitMap['permitStatistics'] = statsHandler;
-          }
+        // Save latest data for live charts
+        latestUserPermits = userPermits;
+        latestStats = stats;
 
-          // Update permit analytics with filtered permits
-          updatePermitAnalytics(stats, userPermits);
-        } catch (e) {
-          console.warn('Error registering/initializing profile stats chart', e);
-        }
+        // Update permit analytics with filtered permits
+        updatePermitAnalytics(stats, userPermits);
+        // Build permit analytics charts (status distribution, monthly trends)
+        createPermitCharts();
 
       } else {
         console.warn('Failed to load permits');
@@ -578,13 +491,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  /* ===== Redirect to permitform.html ===== */
+  /* ===== Open shared permit modal (no redirect) ===== */
+  function openPermitModal() {
+    try {
+      const trigger = document.querySelector('[data-action="submit-new-request"]');
+      if (trigger) {
+        trigger.click();
+        return true;
+      }
+    } catch (_) { /* ignore */ }
+    return false;
+  }
+
   const submitPtw = document.getElementById('sbmtptw');
   if (submitPtw) {
-    submitPtw.addEventListener('click', function () {
-      // navigation to permitform
-
-      window.location.href = '../permitform/permitform.html';
+    submitPtw.addEventListener('click', function (e) {
+      e.preventDefault();
+      // Use shared layout modal instead of navigation
+      openPermitModal();
     });
   }
 
@@ -607,9 +531,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  // Theme Toggle Handler
-  setupThemeToggle();
-
   // Activity tracking removed from profile page (handled on admin/permitform pages)
 
   // Modal Form Handlers
@@ -617,43 +538,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // Initialize charts
   createPermitCharts();
-
-
-
-  // Theme Toggle Setup
-  function setupThemeToggle() {
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    const themeToggleIcon = document.getElementById('themeToggleIcon');
-    const themeTooltipText = document.getElementById('themeTooltipText');
-
-    if (themeToggleBtn && themeToggleIcon) {
-      // Initialize icon and tooltip based on current theme
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      updateThemeIcon(currentTheme, themeToggleIcon, themeTooltipText);
-
-      themeToggleBtn.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-        // theme changed
-
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-
-        updateThemeIcon(newTheme, themeToggleIcon, themeTooltipText);
-      });
-    }
-  }
-
-  function updateThemeIcon(theme, iconElement, tooltipElement) {
-    if (theme === 'dark') {
-      iconElement.className = 'fas fa-sun text-sm';
-      if (tooltipElement) tooltipElement.textContent = 'Click to switch to light theme';
-    } else {
-      iconElement.className = 'fas fa-moon text-sm';
-      if (tooltipElement) tooltipElement.textContent = 'Click to switch to dark theme';
-    }
-  }
 
   // Modal Functions
   function showProfileSettings() {
@@ -671,19 +555,20 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   function showUpdatePasswordModal() {
-    const modal = document.getElementById('updatePasswordModal');
-    if (modal) {
-      modal.classList.remove('hidden');
+    // Delegate to shared layout's global opener
+    if (window.openUpdatePasswordModal) {
+      window.openUpdatePasswordModal();
+    } else {
+      // fallback: try to click any shared trigger if present
+      const t = document.querySelector('[data-update-password-trigger]');
+      if (t) t.click();
     }
   }
 
   function hideUpdatePasswordModal() {
-    const modal = document.getElementById('updatePasswordModal');
-    if (modal) {
-      modal.classList.add('hidden');
-      // Clear form
-      document.getElementById('updatePasswordForm').reset();
-    }
+    // Close the shared modal if open
+    const m = document.getElementById('update-password-modal');
+    if (m && !m.classList.contains('hidden')) m.classList.add('hidden');
   }
 
   function downloadActivity() {
@@ -692,35 +577,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
   // Setup Modal Forms
   function setupModalForms() {
-    // Password Update Form
-    const passwordForm = document.getElementById('updatePasswordForm');
-    if (passwordForm) {
-      passwordForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmNewPassword').value;
-
-        if (newPassword !== confirmPassword) {
-          alert('New passwords do not match!');
-          return;
-        }
-
-        try {
-          // password changed (no activity logging on profile page)
-
-          // Here you would make API call to update password
-          console.log('Updating password');
-
-          hideUpdatePasswordModal();
-          alert('Password updated successfully!');
-        } catch (error) {
-          console.error('Password update error:', error);
-          alert('Error updating password. Please try again.');
-        }
-      });
-    }
+    // Password update logic moved to shared layout; no per-page wiring needed here
   }
 
   // Permit Analytics Functions
@@ -729,14 +586,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     const total = permits.length;
     const approved = stats.Approved || 0;
     const pending = stats.Pending || 0;
+    // Try common variants for in-progress status
+    const inProgress = (
+      stats['In Progress'] || stats['In progress'] || stats['in progress'] ||
+      stats.InProgress || stats['In Review'] || stats['In review'] || stats['in review'] || 0
+    );
+    const rejected = stats.Rejected || 0;
 
     const totalPermitsEl = document.getElementById('totalPermits');
     const approvedPermitsEl = document.getElementById('approvedPermits');
     const pendingPermitsEl = document.getElementById('pendingPermits');
+    const inProgressPermitsEl = document.getElementById('inProgressPermits');
+    const rejectedPermitsEl = document.getElementById('rejectedPermits');
 
     if (totalPermitsEl) totalPermitsEl.textContent = total;
     if (approvedPermitsEl) approvedPermitsEl.textContent = approved;
     if (pendingPermitsEl) pendingPermitsEl.textContent = pending;
+    if (inProgressPermitsEl) inProgressPermitsEl.textContent = inProgress;
+    if (rejectedPermitsEl) rejectedPermitsEl.textContent = rejected;
 
     // Update approval time analytics
     updateApprovalTimeAnalytics(permits);
@@ -746,7 +613,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // Approval Time Analytics
   function updateApprovalTimeAnalytics(permits) {
-    const approvedPermits = permits.filter(p => p.status === 'Approved' && p.submittedAt && p.approvedAt);
+    // Use createdAt as a fallback for submittedAt when computing durations
+    const approvedPermits = permits.filter(p => p && p.status === 'Approved' && p.approvedAt && (p.submittedAt || p.createdAt));
 
     if (approvedPermits.length === 0) {
       updateApprovalMetrics('--', '--');
@@ -756,7 +624,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Calculate approval times in hours
     const approvalTimes = approvedPermits.map(permit => {
-      const submitted = new Date(permit.submittedAt);
+      const submitted = new Date(permit.submittedAt || permit.createdAt);
       const approved = new Date(permit.approvedAt);
       return Math.round((approved - submitted) / (1000 * 60 * 60)); // Convert to hours
     });
@@ -783,124 +651,240 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   function createApprovalTimeChart(approvedPermits) {
-    console.log('createApprovalTimeChart called with permits:', approvedPermits);
-    const ctx = document.getElementById('approvalTimeChart');
-    console.log('Approval chart canvas element:', ctx);
-    console.log('Chart.js available for approval chart:', !!window.Chart);
+    const averageCtx = document.getElementById('approvalTimeChart');
+    const fastestCtx = document.getElementById('fastestApprovalChart');
 
-    if (!ctx) {
-      console.warn('Cannot create approval chart - missing canvas element');
+    if (!averageCtx && !fastestCtx) {
+      console.warn('Cannot create approval charts - missing canvas elements');
       return;
     }
 
-    const initApprovalChart = () => {
-      if (window.Chart) {
-        console.log('Initializing approval time chart...');
+    const showNoDataMessage = (canvas, message) => {
+      if (!canvas || !canvas.parentElement) return;
+      let note = canvas.parentElement.querySelector('[data-no-data-message]');
+      if (!note) {
+        note = document.createElement('p');
+        note.dataset.noDataMessage = 'true';
+        note.className = 'text-sm text-center text-gray-500 py-6';
+        canvas.parentElement.appendChild(note);
+      }
+      note.textContent = message;
+      note.classList.remove('hidden');
+      canvas.classList.add('hidden');
+    };
 
-        // Destroy existing chart using unified system
-        destroyChart('approvalTime');      // Prepare data for last 30 days
-        const last30Days = [];
-        const today = new Date();
+    const hideNoDataMessage = (canvas) => {
+      if (!canvas || !canvas.parentElement) return;
+      const note = canvas.parentElement.querySelector('[data-no-data-message]');
+      if (note) {
+        note.classList.add('hidden');
+      }
+      canvas.classList.remove('hidden');
+    };
 
-        for (let i = 29; i >= 0; i--) {
+    const updateTrendLabel = (labelId, baseText, days) => {
+      const labelEl = document.getElementById(labelId);
+      if (!labelEl) return;
+      const safeDays = Math.max(1, days);
+      labelEl.textContent = `${baseText} (Last ${safeDays} Day${safeDays === 1 ? '' : 's'})`;
+    };
+
+    const DEFAULT_DAYS = 7;
+    const MAX_DAYS = 30;
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const today = new Date();
+
+    const ensureChartsReady = () => {
+      if (!window.Chart) {
+        console.warn('Chart.js not available for approval charts, retrying in 100ms...');
+        setTimeout(ensureChartsReady, 100);
+        return;
+      }
+
+      if (!Array.isArray(approvedPermits)) approvedPermits = [];
+
+      const buildTimelineData = (days) => {
+        const timeline = [];
+        for (let i = days - 1; i >= 0; i--) {
           const date = new Date(today);
           date.setDate(today.getDate() - i);
-          last30Days.push({
-            date: date.toISOString().split('T')[0],
-            label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          timeline.push({
+            iso: date.toISOString().split('T')[0],
+            label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
             approvals: []
           });
         }
 
-        // Map approvals to dates
         approvedPermits.forEach(permit => {
-          const approvedDate = new Date(permit.approvedAt).toISOString().split('T')[0];
-          const dayData = last30Days.find(d => d.date === approvedDate);
-          if (dayData) {
-            const submitted = new Date(permit.submittedAt);
-            const approved = new Date(permit.approvedAt);
-            const hours = Math.round((approved - submitted) / (1000 * 60 * 60));
-            dayData.approvals.push(hours);
+          if (!permit.approvedAt || !permit.submittedAt) return;
+          const approvedDate = new Date(permit.approvedAt);
+          if (Number.isNaN(approvedDate.getTime())) return;
+          const approvedIso = approvedDate.toISOString().split('T')[0];
+          const entry = timeline.find(day => day.iso === approvedIso);
+          if (!entry) return;
+          const submittedDate = new Date(permit.submittedAt);
+          if (Number.isNaN(submittedDate.getTime())) return;
+          const hours = Math.round((approvedDate - submittedDate) / (1000 * 60 * 60));
+          entry.approvals.push(hours);
+        });
+
+        const averageData = timeline.map(day => {
+          if (!day.approvals.length) return null;
+          const sum = day.approvals.reduce((acc, hours) => acc + hours, 0);
+          return Math.round(sum / day.approvals.length);
+        });
+
+        const fastestData = timeline.map(day => {
+          if (!day.approvals.length) return null;
+          return Math.min(...day.approvals);
+        });
+
+        const hasAverageData = averageData.some(value => value !== null);
+        const hasFastestData = fastestData.some(value => value !== null);
+
+        return { timeline, averageData, fastestData, hasAverageData, hasFastestData };
+      };
+
+      destroyChart('approvalTime');
+      destroyChart('fastestApproval');
+
+      let windowDays = DEFAULT_DAYS;
+      let dataBundle = buildTimelineData(windowDays);
+
+      if (approvedPermits.length > 0 && dataBundle && !dataBundle.hasAverageData && !dataBundle.hasFastestData) {
+        const earliestApproved = approvedPermits.reduce((earliest, permit) => {
+          if (!permit.approvedAt) return earliest;
+          const approvedDate = new Date(permit.approvedAt);
+          if (Number.isNaN(approvedDate.getTime())) return earliest;
+          if (!earliest || approvedDate < earliest) return approvedDate;
+          return earliest;
+        }, null);
+
+        if (earliestApproved) {
+          const diffDays = Math.floor((today - earliestApproved) / MS_PER_DAY) + 1;
+          const expandedWindow = Math.min(MAX_DAYS, Math.max(windowDays, diffDays));
+          if (expandedWindow > windowDays) {
+            windowDays = expandedWindow;
+            dataBundle = buildTimelineData(windowDays);
           }
-        });
+        }
+      }
 
-        // Calculate average for each day
-        const chartData = last30Days.map(day => {
-          if (day.approvals.length === 0) return null;
-          return Math.round(day.approvals.reduce((a, b) => a + b, 0) / day.approvals.length);
-        });
+      if (!dataBundle) {
+        console.warn('Unable to compute approval time data');
+        return;
+      }
 
-        window.chartInstances.approvalTime = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: last30Days.map(d => d.label),
-            datasets: [{
-              label: 'Avg Approval Time (hours)',
-              data: chartData,
-              borderColor: '#273172',
-              backgroundColor: 'rgba(39, 49, 114, 0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.4,
-              pointBackgroundColor: '#273172',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            resizeDelay: 0,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                mode: 'index',
-                intersect: false,
-                callbacks: {
-                  label: function (context) {
-                    if (context.parsed.y === null) return 'No approvals';
-                    return `Avg: ${context.parsed.y} hours`;
-                  }
-                }
+      const { timeline, averageData, fastestData, hasAverageData, hasFastestData } = dataBundle;
+
+      updateTrendLabel('approvalTrendLabel', 'Approval Time Trend', windowDays);
+      updateTrendLabel('fastestTrendLabel', 'Fastest Approval Time Trend', windowDays);
+
+      const commonOptions = (tooltipFormatter) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        resizeDelay: 0,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function (context) {
+                if (context.parsed.y === null) return 'No approvals';
+                return tooltipFormatter(context.parsed.y);
               }
-            },
-            onResize: function (chart, size) {
-              chart.canvas.style.height = '120px';
-              chart.canvas.style.maxHeight = '120px';
-            },
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { maxRotation: 45 }
-              },
-              y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(0,0,0,0.1)' },
-                ticks: {
-                  callback: function (value) {
-                    return value + 'h';
-                  }
-                }
-              }
-            },
-            interaction: {
-              mode: 'nearest',
-              axis: 'x',
-              intersect: false
             }
           }
-        });
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        },
+        onResize: function (chart) {
+          chart.canvas.style.height = '100%';
+          chart.canvas.style.maxHeight = '100%';
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { maxRotation: 45 }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.1)' },
+            ticks: {
+              callback: function (value) {
+                return `${value}h`;
+              }
+            }
+          }
+        }
+      });
 
-        console.log('Approval time chart created successfully');
-      } else {
-        console.warn('Chart.js not available for approval chart, retrying in 100ms...');
-        setTimeout(initApprovalChart, 100);
+      if (averageCtx) {
+        if (!hasAverageData) {
+          showNoDataMessage(averageCtx, 'No approvals recorded in this period.');
+        } else {
+          hideNoDataMessage(averageCtx);
+          window.chartInstances.approvalTime = new Chart(averageCtx, {
+            type: 'line',
+            data: {
+              labels: timeline.map(day => day.label),
+              datasets: [{
+                label: 'Avg Approval Time (hours)',
+                data: averageData,
+                borderColor: '#273172',
+                backgroundColor: 'rgba(39, 49, 114, 0.12)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#273172',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: commonOptions(value => `Avg: ${value} hours`)
+          });
+        }
       }
+
+      if (fastestCtx) {
+        if (!hasFastestData) {
+          showNoDataMessage(fastestCtx, 'No approvals recorded in this period.');
+        } else {
+          hideNoDataMessage(fastestCtx);
+          window.chartInstances.fastestApproval = new Chart(fastestCtx, {
+            type: 'line',
+            data: {
+              labels: timeline.map(day => day.label),
+              datasets: [{
+                label: 'Fastest Approval Time (hours)',
+                data: fastestData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#0f766e',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: commonOptions(value => `Fastest: ${value} hours`)
+          });
+        }
+      }
+
+      console.log('Approval time charts created successfully');
     };
 
-    initApprovalChart();
+    ensureChartsReady();
   }
 
   // Activity logging removed from profile.js (moved to admin/permitform)
@@ -923,7 +907,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // run lazy init for this section if present and not yet called
         try {
-          if (lazyInitMap[sectionId] && !lazyInitCalled.has(sectionId)) {
+          if (typeof lazyInitMap !== 'undefined' && lazyInitMap[sectionId] && typeof lazyInitCalled !== 'undefined' && !lazyInitCalled.has(sectionId)) {
             lazyInitMap[sectionId]();
             lazyInitCalled.add(sectionId);
           }
@@ -941,53 +925,20 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   // Submit New Request Function
-  function submitNewRequest() {
-    // request initiated
-
-    // Redirect to permit form or show request form
-    window.location.href = '../permitform/permitform.html';
-  }
-
-  // Toggle Theme in Tooltip
-  function toggleTooltipTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    const iconElement = document.getElementById('tooltipThemeIcon');
-
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-
-    // Update icon
-    if (iconElement) {
-      if (newTheme === 'dark') {
-        iconElement.className = 'fas fa-sun text-lg group-hover:scale-110 transition-transform';
-      } else {
-        iconElement.className = 'fas fa-moon text-lg group-hover:scale-110 transition-transform';
-      }
+  function submitNewRequest(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    // Use shared layout modal instead of redirecting
+    if (!openPermitModal()) {
+      console.warn('Permit modal trigger not found in shared layout.');
     }
-
-    // theme switched via tooltip
   }
-
-  // Global chart instances to prevent duplicates
-  window.chartInstances = window.chartInstances || {};
-
-  // Lazy init registry: map a sectionId to a function that initializes charts/content when opened
-  const lazyInitMap = {
-    'permitAnalytics': () => createPermitCharts(),
-    'permitStatistics': () => {
-      // profile stats chart is initialized when permit data is loaded; placeholder
-    },
-    'approvalAnalytics': () => {
-      // approval time chart initializes when permits data arrives; placeholder
-    }
-  };
-
-  // Track which lazy inits have already run
-  const lazyInitCalled = new Set();
 
   // Unified Chart Management System
   function destroyChart(chartId) {
+    if (!window.chartInstances) {
+      window.chartInstances = {};
+      return;
+    }
     if (window.chartInstances[chartId]) {
       window.chartInstances[chartId].destroy();
       delete window.chartInstances[chartId];
@@ -995,453 +946,196 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  function initializeProfileStatsChart(stats) {
-    console.log('Initializing profile stats chart with data:', stats);
-    const ctx = document.getElementById('profileStatsChart');
-
-    if (!ctx) {
-      console.error('Profile stats chart canvas not found');
-      return;
-    }
-
-    // Destroy existing chart
-    destroyChart('profileStats');
-
-    if (!window.Chart) {
-      console.warn('Chart.js not available');
-      return;
-    }
-
-    const labels = Object.keys(stats);
-    const data = labels.map(k => stats[k]);
-
-    window.chartInstances.profileStats = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d'],
-          borderWidth: 0,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        resizeDelay: 0,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { boxWidth: 12 }
-          },
-          tooltip: { enabled: true }
-        },
-        cutout: '58%',
-        animation: { duration: 500 },
-        onResize: function (chart, size) {
-          chart.canvas.style.height = '160px';
-          chart.canvas.style.maxHeight = '160px';
-        }
-      }
-    });
-
-    console.log('Profile stats chart created successfully');
-  }
-
   // Create Charts for Permit Statistics
   function createPermitCharts() {
-    console.log('Creating additional permit charts...');
+    console.log('Creating permit analytics charts from live data...');
 
-    // Status Distribution Chart
     const statusCtx = document.getElementById('permitStatusChart');
+    const trendCtx = document.getElementById('monthlyTrendChart');
+
+    // Status Distribution (live)
     if (statusCtx) {
       destroyChart('statusChart');
-
       if (!window.Chart) return;
+
+      // Count statuses from latestUserPermits (normalize)
+      // Initialize with common statuses to ensure they always appear
+      const statusCounts = {
+        'Pending': 0,
+        'In Progress': 0,
+        'Approved': 0,
+        'Rejected': 0
+      };
+
+      (latestUserPermits || []).forEach(p => {
+        const s = (p && p.status) ? String(p.status) : 'Pending';
+        statusCounts[s] = (statusCounts[s] || 0) + 1;
+      });
+
+      // Filter out statuses with 0 count (optional: remove this filter to always show all statuses)
+      const labels = Object.keys(statusCounts).filter(key => statusCounts[key] > 0);
+      const data = labels.map(l => statusCounts[l]);
+
+      // Color mapping with sensible defaults
+      const colorMap = {
+        'Approved': '#10b981',
+        'Pending': '#f59e0b',
+        'Rejected': '#ef4444',
+        'In Review': '#3b82f6',
+        'In Progress': '#0ea5e9'
+      };
+      const palette = ['#06b6d4', '#8b5cf6', '#f43f5e', '#22c55e', '#eab308', '#3b82f6', '#f97316'];
+      const bgColors = labels.map((l, i) => colorMap[l] || palette[i % palette.length]);
 
       window.chartInstances.statusChart = new Chart(statusCtx, {
         type: 'doughnut',
-        data: {
-          labels: ['Approved', 'Pending', 'Rejected', 'In Review'],
-          datasets: [{
-            data: [12, 8, 3, 5],
-            backgroundColor: [
-              '#10b981', // green
-              '#f59e0b', // yellow
-              '#ef4444', // red
-              '#3b82f6'  // blue
-            ],
-            borderWidth: 2,
-            borderColor: '#ffffff'
-          }]
-        },
+        data: { labels, datasets: [{ data, backgroundColor: bgColors, borderWidth: 2, borderColor: '#ffffff' }] },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          aspectRatio: 1,
           plugins: {
             legend: {
               position: 'bottom',
-              labels: {
-                padding: 15,
-                usePointStyle: true,
-                font: {
-                  size: 12
-                }
-              }
-            }
+              labels: { padding: 15, usePointStyle: true, font: { size: 12 } }
+            },
+            tooltip: { enabled: true }
+          },
+          animation: { duration: 400 },
+          layout: {
+            padding: 0
           }
         }
       });
     }
 
-    // Monthly Trend Chart
-    const trendCtx = document.getElementById('monthlyTrendChart');
+    // Monthly Trends (live: submitted vs approved vs rejected counts per recent months)
     if (trendCtx) {
       destroyChart('trendChart');
-
       if (!window.Chart) return;
+
+      const monthsBack = 6; // show last 6 months including current
+      const now = new Date();
+      const monthKeys = [];
+      const labels = [];
+      for (let i = monthsBack - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        monthKeys.push(key);
+        labels.push(d.toLocaleString(undefined, { month: 'short' }));
+      }
+
+      const submittedCounts = monthKeys.map(() => 0);
+      const approvedCounts = monthKeys.map(() => 0);
+      const rejectedCounts = monthKeys.map(() => 0);
+
+      (latestUserPermits || []).forEach(p => {
+        if (!p) return;
+        // Submitted by createdAt
+        if (p.createdAt) {
+          const dc = new Date(p.createdAt);
+          if (!isNaN(dc)) {
+            const key = `${dc.getFullYear()}-${String(dc.getMonth() + 1).padStart(2, '0')}`;
+            const idx = monthKeys.indexOf(key);
+            if (idx !== -1) submittedCounts[idx] += 1;
+          }
+        }
+        // Approved by approvedAt
+        if (p.status === 'Approved' && p.approvedAt) {
+          const da = new Date(p.approvedAt);
+          if (!isNaN(da)) {
+            const keyA = `${da.getFullYear()}-${String(da.getMonth() + 1).padStart(2, '0')}`;
+            const idxA = monthKeys.indexOf(keyA);
+            if (idxA !== -1) approvedCounts[idxA] += 1;
+          }
+        }
+        // Rejected by rejectedAt or updatedAt if status is Rejected
+        if (p.status === 'Rejected') {
+          const dr = new Date(p.rejectedAt || p.updatedAt);
+          if (!isNaN(dr)) {
+            const keyR = `${dr.getFullYear()}-${String(dr.getMonth() + 1).padStart(2, '0')}`;
+            const idxR = monthKeys.indexOf(keyR);
+            if (idxR !== -1) rejectedCounts[idxR] += 1;
+          }
+        }
+      });
 
       window.chartInstances.trendChart = new Chart(trendCtx, {
         type: 'line',
         data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-          datasets: [{
-            label: 'Permits Submitted',
-            data: [5, 8, 12, 9, 15, 18],
-            borderColor: '#3b82f6',
-            backgroundColor: '#3b82f6',
-            fill: false,
-            tension: 0.4
-          }, {
-            label: 'Permits Approved',
-            data: [4, 7, 10, 8, 13, 16],
-            borderColor: '#10b981',
-            backgroundColor: '#10b981',
-            fill: false,
-            tension: 0.4
-          }]
+          labels,
+          datasets: [
+            {
+              label: 'Permits Submitted',
+              data: submittedCounts,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59,130,246,0.15)',
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#3b82f6',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'Permits Approved',
+              data: approvedCounts,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16,185,129,0.15)',
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#10b981',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'Permits Rejected',
+              data: rejectedCounts,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239,68,68,0.15)',
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#ef4444',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          aspectRatio: 2,
           scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                stepSize: 2
-              }
-            }
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.08)' } },
+            x: { grid: { display: false } }
           },
           plugins: {
             legend: {
               position: 'top',
-              labels: {
-                padding: 20,
-                usePointStyle: true,
-                font: {
-                  size: 11
-                }
-              }
+              labels: { padding: 20, usePointStyle: true, font: { size: 11 } }
             }
+          },
+          animation: { duration: 400 },
+          layout: {
+            padding: 0
           }
         }
       });
     }
   }
 
-  // Notification System
-  let notifications = [
-    {
-      id: 1,
-      title: 'Permit Approved',
-      message: 'Your PTW request #12345 has been approved by the safety officer.',
-      type: 'success',
-      timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 minutes ago
-      read: false,
-      details: {
-        permitId: '12345',
-        approvedBy: 'John Smith',
-        approvalDate: new Date().toISOString(),
-        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    },
-    {
-      id: 2,
-      title: 'Document Required',
-      message: 'Additional safety certificate required for permit #12344.',
-      type: 'warning',
-      timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
-      read: false,
-      details: {
-        permitId: '12344',
-        requiredDocument: 'Safety Certificate Level 2',
-        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      }
-    },
-    {
-      id: 3,
-      title: 'System Maintenance',
-      message: 'Scheduled maintenance tonight from 2:00 AM to 4:00 AM.',
-      type: 'info',
-      timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1 hour ago
-      read: true,
-      details: {
-        maintenanceWindow: '2:00 AM - 4:00 AM',
-        affectedServices: ['Permit Submission', 'Document Upload'],
-        contact: 'IT Support: +974-1234-5678'
-      }
-    }
-  ];
-
-  function loadNotifications() {
-    const notificationList = document.getElementById('notificationList');
-    if (!notificationList) return;
-
-    // Sort notifications by timestamp (newest first)
-    const sortedNotifications = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    notificationList.innerHTML = '';
-
-    if (sortedNotifications.length === 0) {
-      notificationList.innerHTML = `
-      <div class="text-center py-8 text-gray-500">
-        <i class="fas fa-bell-slash text-2xl mb-2"></i>
-        <p class="text-sm">No notifications</p>
-      </div>
-    `;
-      return;
-    }
-
-    sortedNotifications.forEach(notification => {
-      const timeAgo = getTimeAgo(new Date(notification.timestamp));
-      const typeIcon = getNotificationIcon(notification.type);
-      const typeColor = getNotificationColor(notification.type);
-
-      const notificationEl = document.createElement('div');
-      notificationEl.className = `p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${notification.read ? 'opacity-60' : ''}`;
-      notificationEl.onclick = () => showNotificationDetails(notification.id);
-
-      notificationEl.innerHTML = `
-      <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-full ${typeColor} flex items-center justify-center flex-shrink-0 mt-0.5">
-          <i class="${typeIcon} text-white text-sm"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between mb-1">
-            <h5 class="text-gray-800 font-semibold text-sm truncate">${notification.title}</h5>
-            ${!notification.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>' : ''}
-          </div>
-          <p class="text-gray-600 text-xs line-clamp-2 mb-1">${notification.message}</p>
-          <p class="text-gray-400 text-xs">${timeAgo}</p>
-        </div>
-      </div>
-    `;
-
-      notificationList.appendChild(notificationEl);
-    });
-
-    // Update notification count
-    updateNotificationCount();
-  }
-
-  function getNotificationIcon(type) {
-    switch (type) {
-      case 'success': return 'fas fa-check';
-      case 'warning': return 'fas fa-exclamation-triangle';
-      case 'error': return 'fas fa-times';
-      case 'info': return 'fas fa-info';
-      default: return 'fas fa-bell';
-    }
-  }
-
-  function getNotificationColor(type) {
-    switch (type) {
-      case 'success': return 'bg-green-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'error': return 'bg-red-500';
-      case 'info': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  }
-
-  function getTimeAgo(date) {
-    // Ensure we have a valid Date object
-    const dateObj = (date instanceof Date) ? date : new Date(date);
-
-    // Check if date is valid
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date passed to getTimeAgo:', date);
-      return 'Unknown time';
-    }
-
-    const now = new Date();
-    const diffMs = now - dateObj;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return dateObj.toLocaleDateString();
-  }
-
-  function showNotificationDetails(notificationId) {
-    const notification = notifications.find(n => n.id === notificationId);
-    if (!notification) return;
-
-    // Mark as read
-    notification.read = true;
-    updateNotificationCount();
-    loadNotifications();
-
-    // Create modal for notification details
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4';
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
-      }
-    };
-
-    const typeColor = getNotificationColor(notification.type);
-    const typeIcon = getNotificationIcon(notification.type);
-
-    modal.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md max-h-[80vh] overflow-y-auto">
-      <div class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full ${typeColor} flex items-center justify-center">
-              <i class="${typeIcon} text-white"></i>
-            </div>
-            <h3 class="text-gray-800 font-bold text-lg">${notification.title}</h3>
-          </div>
-          <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="p-6">
-        <p class="text-gray-700 mb-4">${notification.message}</p>
-        
-        <div class="text-sm text-gray-500 mb-4">
-          <i class="fas fa-clock mr-1"></i>
-          ${new Date(notification.timestamp).toLocaleString()}
-        </div>
-
-        ${notification.details ? `
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold text-gray-800 mb-3">Details</h4>
-            ${Object.entries(notification.details).map(([key, value]) => `
-              <div class="flex justify-between py-1">
-                <span class="text-gray-600 capitalize">${key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                <span class="text-gray-800 font-medium">${typeof value === 'string' && value.includes('T') ? new Date(value).toLocaleString() : value}</span>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
-      </div>
-
-      <div class="border-t border-gray-200 px-6 py-4">
-        <button onclick="this.closest('.fixed').remove()" 
-                class="w-full px-4 py-2 bg-hia-blue hover:bg-hia-light-blue text-white rounded-lg font-medium transition-colors">
-          Close
-        </button>
-      </div>
-    </div>
-  `;
-
-    document.body.appendChild(modal);
-
-    // notification viewed (no activity logging)
-  }
-
-  function markAllAsRead() {
-    notifications.forEach(n => n.read = true);
-    updateNotificationCount();
-    loadNotifications();
-
-    // notifications marked read
-  }
-
-  function showAllNotifications() {
-    // all notifications viewed
-
-    alert('Full notifications page feature coming soon!');
-  }
-
-  function updateNotificationCount() {
-    console.log('updateNotificationCount called');
-    const countEl = document.getElementById('notificationCount');
-    console.log('Notification count element:', countEl);
-    if (!countEl) {
-      console.warn('Notification count element not found');
-      return;
-    }
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-    console.log('Unread notifications count:', unreadCount);
-    console.log('Total notifications:', notifications.length);
-
-    if (unreadCount > 0) {
-      countEl.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
-      countEl.classList.remove('hidden');
-      console.log('Showing notification count:', countEl.textContent);
-    } else {
-      countEl.classList.add('hidden');
-      console.log('Hiding notification count (no unread)');
-    }
-  }
-
-  // Reset dropdown states function for debugging
-  function resetDropdownStates() {
-    console.log('Resetting all dropdown states...');
-    const profileDropdown = document.getElementById('profileDropdown');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-
-    if (profileDropdown) {
-      profileDropdown.classList.add('hidden');
-      profileDropdown.style.display = 'none';
-      profileDropdown.style.opacity = '0';
-      profileDropdown.style.transform = 'translateY(4px)';
-    }
-
-    if (notificationDropdown) {
-      notificationDropdown.classList.add('hidden');
-      notificationDropdown.style.display = 'none';
-      notificationDropdown.style.opacity = '0';
-      notificationDropdown.style.transform = 'translateY(4px)';
-    }
-
-    console.log('Dropdown states reset');
-  }
-
-  // Add keyboard shortcut to reset dropdowns (Ctrl+Shift+R)
-  document.addEventListener('keydown', function (e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-      e.preventDefault();
-      resetDropdownStates();
-    }
-  });
-
   // ========== GLOBAL FUNCTION EXPORTS ==========
-  window.toggleProfileDropdown = toggleProfileDropdown;
-  window.toggleNotifications = toggleNotifications;
-  window.setupDropdownCloseHandlers = setupDropdownCloseHandlers;
   window.showProfileSettings = showProfileSettings;
   window.hideProfileSettings = hideProfileSettings;
   window.showUpdatePasswordModal = showUpdatePasswordModal;
   window.hideUpdatePasswordModal = hideUpdatePasswordModal;
   window.toggleSection = toggleSection;
   window.submitNewRequest = submitNewRequest;
-  window.toggleTooltipTheme = toggleTooltipTheme;
-  window.markAllAsRead = markAllAsRead;
-  window.showAllNotifications = showAllNotifications;
-  window.resetDropdownStates = resetDropdownStates;
-  window.testDropdowns = testDropdowns;
   window.downloadActivity = downloadActivity;
   // expose some helpers used by inline onclicks
   window.logoutUser = (typeof logoutUser === 'function') ? logoutUser : window.logoutUser;
@@ -1454,26 +1148,5 @@ document.addEventListener('DOMContentLoaded', async function () {
   } catch (e) {
     console.warn('logoutUser not available to expose on window yet', e);
   }
-
-  // Attach a safe click handler to the Sign Out button in case inline onclick is unreliable
-  setTimeout(() => {
-    const logoutBtn = document.getElementById('hoverLogoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        try {
-          if (typeof window.logoutUser === 'function') {
-            window.logoutUser();
-          } else if (typeof logoutUser === 'function') {
-            logoutUser();
-          } else {
-            console.error('Logout function not found');
-          }
-        } catch (err) {
-          console.error('Error calling logoutUser:', err);
-        }
-      });
-    }
-  }, 100);
 
 });

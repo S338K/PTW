@@ -129,6 +129,48 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // ---- Single active-session enforcement ----
+    // Detect client info for context
+    const userAgent = req.headers['user-agent'] || '';
+    let clientIp = null;
+    try {
+      const xff = req.headers['x-forwarded-for'];
+      if (xff) clientIp = String(xff).split(',')[0].trim();
+      if (!clientIp && req.headers['cf-connecting-ip']) clientIp = req.headers['cf-connecting-ip'];
+      if (!clientIp && req.headers['x-real-ip']) clientIp = req.headers['x-real-ip'];
+      if (!clientIp && req.socket && req.socket.remoteAddress) clientIp = req.socket.remoteAddress;
+      if (!clientIp && req.ip) clientIp = req.ip;
+    } catch (_) { clientIp = req.ip || null; }
+
+    const displayName = account.fullName || account.username || account.email;
+
+    // If there's an existing active session for this account, and it's still live, block unless force=true
+    if (account.activeSessionId) {
+      try {
+        await new Promise((resolve) => {
+          req.sessionStore.get(account.activeSessionId, (_err, sess) => {
+            // If session exists and is not the same as current (new) session id, it's an active conflict
+            const hasConflict = !!sess && account.activeSessionId !== req.sessionID;
+            if (hasConflict && !req.body.force) {
+              return res.status(409).json({
+                code: 'ACTIVE_SESSION',
+                message: `You're already signed in as ${displayName} on another device or browser. Continue here to sign out there and use this device instead?`,
+                user: { displayName },
+              });
+            }
+            // If force requested and a prior session exists, destroy it
+            if (hasConflict && req.body.force) {
+              req.sessionStore.destroy(account.activeSessionId, () => resolve());
+              return;
+            }
+            resolve();
+          });
+        });
+      } catch (e) {
+        // ignore store errors; proceed with login
+      }
+    }
+
     // 🔑 Set session values
     req.session.userId = account._id;
     req.session.userRole = account.role;
@@ -144,10 +186,21 @@ router.post('/login', async (req, res) => {
     account.lastLogin = new Date();
     await account.save();
 
-    req.session.save((err) => {
+    req.session.save(async (err) => {
       if (err) {
         logger.error({ err }, 'Session save error');
         return res.status(500).json({ message: 'Failed to save session' });
+      }
+
+      // Record this session as the active one on the account
+      try {
+        account.activeSessionId = req.sessionID;
+        account.activeSessionCreatedAt = new Date();
+        account.activeSessionUserAgent = userAgent;
+        account.activeSessionIp = clientIp;
+        await account.save();
+      } catch (e) {
+        logger.warn({ e }, 'Failed to persist activeSession metadata');
       }
 
       res.json({
@@ -255,7 +308,10 @@ router.get('/profile', async (req, res) => {
 
 // ----- LOGOUT -----
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
+  const currentSessionId = req.sessionID;
+  const role = req.session && req.session.userRole;
+  const userId = req.session && req.session.userId;
+  req.session.destroy(async (err) => {
     if (err) {
       logger.error({ err }, 'Logout error');
       return res.status(500).json({ message: 'Logout failed' });
@@ -265,6 +321,22 @@ router.post('/logout', (req, res) => {
       sameSite: 'none',
       secure: process.env.NODE_ENV === 'production',
     });
+    // best-effort: clear activeSessionId on the account if it matches this session
+    try {
+      if (userId && role) {
+        if (role === 'Admin') {
+          const Admin = require('../models/admin');
+          await Admin.updateOne({ _id: userId, activeSessionId: currentSessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+        } else if (role === 'Approver' || role === 'PreApprover') {
+          const Approver = require('../models/approver');
+          await Approver.updateOne({ _id: userId, activeSessionId: currentSessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+        } else {
+          await User.updateOne({ _id: userId, activeSessionId: currentSessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+        }
+      }
+    } catch (e) {
+      logger.warn('Failed to clear activeSession on logout:', e && e.message);
+    }
     res.json({ message: 'Logged out successfully' });
   });
 });
@@ -337,6 +409,43 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// ----- CHECK CURRENT PASSWORD (authenticated users) -----
+router.post('/check-password', async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    const { currentPassword } = req.body || {};
+    if (!currentPassword) {
+      return res.status(400).json({ message: 'Current password is required' });
+    }
+
+    // Locate the account in the correct collection depending on role
+    let account = null;
+    const role = req.session.userRole;
+    if (role === 'Admin') {
+      const Admin = require('../models/admin');
+      account = await Admin.findById(req.session.userId);
+    } else if (role === 'Approver' || role === 'PreApprover') {
+      const Approver = require('../models/approver');
+      account = await Approver.findById(req.session.userId);
+    } else {
+      account = await User.findById(req.session.userId);
+    }
+
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    const ok = await account.comparePassword(currentPassword);
+    if (!ok) return res.status(400).json({ message: 'Current password is incorrect' });
+    return res.json({ valid: true });
+  } catch (err) {
+    logger.error({ err }, '[Check Password] Error');
+    res.status(500).json({ message: 'Error checking password', error: err.message });
+  }
+});
+
 // ----- UPDATE PASSWORD (authenticated users) -----
 router.put('/update-password', async (req, res) => {
   try {
@@ -350,11 +459,11 @@ router.put('/update-password', async (req, res) => {
       return res.status(400).json({ message: 'Current password and new password are required' });
     }
 
-    // Enhanced password validation
-    const passwordRegex = /^(?=.*[a-z].*[a-z])(?=.*[A-Z].*[A-Z])(?=.*\d.*\d)(?=.*[^A-Za-z\d].*[^A-Za-z\d]).{8,}$/;
+    // Password validation: 8+ chars, at least 1 upper, 1 lower, 1 digit, 1 special
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
-        message: 'Password must be at least 8 characters with 2+ uppercase, 2+ lowercase, 2+ numbers, and 2+ special characters'
+        message: 'Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character'
       });
     }
 

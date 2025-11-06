@@ -57,6 +57,12 @@ const userSchema = new mongoose.Schema(
       }
     ],
 
+    // Single active-session enforcement
+    activeSessionId: { type: String, index: true },
+    activeSessionCreatedAt: { type: Date },
+    activeSessionUserAgent: { type: String },
+    activeSessionIp: { type: String },
+
     // 🔹 New Office Address subdocument
     officeAddress: {
       buildingNo: { type: String, trim: true },

@@ -2,8 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+
 // ===== SYSTEM MESSAGE ROUTES =====
 const SystemMessage = require('../models/systemMessage');
+const { enforceActiveSession } = require('../middleware/authMiddleware');
 
 // Get current system message
 router.get('/system-message', async (req, res) => {
@@ -15,32 +17,203 @@ router.get('/system-message', async (req, res) => {
   }
 });
 
+// Get all active system messages for carousel
+router.get('/system-messages', async (req, res) => {
+  try {
+    const now = new Date();
+    // Only include messages that are active and within optional scheduling window
+    const messages = await SystemMessage.find({
+      isActive: { $ne: false },
+      $and: [
+        { $or: [{ startAt: null }, { startAt: { $lte: now } }] },
+        { $or: [{ endAt: null }, { endAt: { $gte: now } }] }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    const formattedMessages = messages.map(msg => {
+      // Prefer translations (English fallback) when present
+      let title = msg.title || 'Announcement';
+      let message = msg.message || '';
+      if (Array.isArray(msg.translations) && msg.translations.length > 0) {
+        const en = msg.translations.find(t => t.lang === 'en') || msg.translations[0];
+        if (en) {
+          title = en.title || title;
+          message = en.message || message;
+        }
+      }
+      return {
+        id: msg._id,
+        title,
+        message,
+        icon: msg.icon || 'fa-bullhorn',
+        isActive: msg.isActive !== false
+      };
+    });
+
+    res.json(formattedMessages);
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+    res.json([]); // Return empty array on error instead of 500
+  }
+});
+
 // Update system message (admin only)
 router.post('/system-message', async (req, res) => {
   try {
-    if (!req.session || !req.session.userId || req.session.role !== 'Admin') {
+    if (!req.session || !req.session.userId || req.session.userRole !== 'Admin') {
       return res.status(403).json({ message: 'Forbidden: Admins only' });
     }
-    const { message } = req.body;
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ message: 'Message is required' });
+    const { title, message, icon, isActive, translations, startAt, endAt } = req.body;
+    const errors = [];
+    // Accept translations array preferred; fallback to message/title
+    const tx = Array.isArray(translations) ? translations : (message ? [{ lang: 'en', title: title || 'Announcement', message }] : []);
+    if (!tx.length) errors.push({ field: 'message', message: 'Message or translations are required' });
+    // Validate lengths
+    tx.forEach((t, idx) => {
+      if (!t || typeof t.message !== 'string' || !t.message.trim()) errors.push({ field: `translations[${idx}].message`, message: 'Message is required' });
+      if (t.title && t.title.length > 200) errors.push({ field: `translations[${idx}].title`, message: 'Title is too long (max 200 chars)' });
+      if (t.message && t.message.length > 2000) errors.push({ field: `translations[${idx}].message`, message: 'Message is too long (max 2000 chars)' });
+      if (t.lang && typeof t.lang !== 'string') errors.push({ field: `translations[${idx}].lang`, message: 'Invalid language code' });
+    });
+    if (icon && icon.length > 100) errors.push({ field: 'icon', message: 'Icon value too long' });
+    // Validate dates
+    let s = null, e = null;
+    if (startAt) {
+      s = new Date(startAt);
+      if (Number.isNaN(s.getTime())) errors.push({ field: 'startAt', message: 'Invalid startAt datetime' });
     }
+    if (endAt) {
+      e = new Date(endAt);
+      if (Number.isNaN(e.getTime())) errors.push({ field: 'endAt', message: 'Invalid endAt datetime' });
+    }
+    if (s && e && s > e) errors.push({ field: 'startAt', message: 'startAt must be before endAt' });
+
+    if (errors.length) return res.status(400).json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
+
     const newMsg = new SystemMessage({
-      message,
+      title: title || (tx[0] && tx[0].title) || 'Announcement',
+      message: message || (tx[0] && tx[0].message) || '',
+      translations: tx,
+      icon: icon || 'fa-bullhorn',
+      isActive: typeof isActive === 'boolean' ? isActive : true,
+      startAt: s,
+      endAt: e,
       updatedBy: req.session.userId
     });
     await newMsg.save();
+    res.json({ message: 'System message created', id: newMsg._id });
+  } catch (err) {
+    console.error('Create system message error:', err);
+    res.status(500).json({ message: 'Unable to create system message', error: err.message });
+  }
+});
+
+// Admin: list all system messages (including inactive)
+router.get('/admin/system-messages', async (req, res) => {
+  try {
+    if (!req.session || !req.session.userId || req.session.userRole !== 'Admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    const messages = await SystemMessage.find({}).sort({ createdAt: -1 }).lean();
+    res.json(messages.map(m => ({
+      id: m._id,
+      title: m.title,
+      message: m.message,
+      icon: m.icon,
+      isActive: m.isActive,
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+      updatedBy: m.updatedBy
+    })));
+  } catch (err) {
+    console.error('Error fetching admin messages:', err);
+    res.status(500).json({ message: 'Unable to fetch messages' });
+  }
+});
+
+// Admin: update a system message
+router.put('/system-message/:id', async (req, res) => {
+  try {
+    if (!req.session || !req.session.userId || req.session.userRole !== 'Admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    const id = req.params.id;
+    const { title, message, icon, isActive, translations, startAt, endAt } = req.body;
+    const errors = [];
+    const update = {};
+    if (typeof title === 'string') update.title = title;
+    if (typeof message === 'string') update.message = message;
+    if (typeof icon === 'string') update.icon = icon;
+    if (typeof isActive === 'boolean') update.isActive = isActive;
+
+    // Accept translations and validate
+    if (Array.isArray(translations)) {
+      translations.forEach((t, idx) => {
+        if (!t || typeof t.message !== 'string' || !t.message.trim()) errors.push({ field: `translations[${idx}].message`, message: 'Message is required' });
+        if (t.title && t.title.length > 200) errors.push({ field: `translations[${idx}].title`, message: 'Title too long' });
+        if (t.message && t.message.length > 2000) errors.push({ field: `translations[${idx}].message`, message: 'Message too long' });
+      });
+      if (!errors.length) update.translations = translations;
+    }
+
+    if (icon && icon.length > 100) errors.push({ field: 'icon', message: 'Icon value too long' });
+
+    let s = null, e = null;
+    if (startAt) {
+      s = new Date(startAt);
+      if (Number.isNaN(s.getTime())) errors.push({ field: 'startAt', message: 'Invalid startAt datetime' });
+    }
+    if (endAt) {
+      e = new Date(endAt);
+      if (Number.isNaN(e.getTime())) errors.push({ field: 'endAt', message: 'Invalid endAt datetime' });
+    }
+    if (s && e && s > e) errors.push({ field: 'startAt', message: 'startAt must be before endAt' });
+    if (s) update.startAt = s;
+    if (e) update.endAt = e;
+
+    if (errors.length) return res.status(400).json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
+
+    update.updatedAt = new Date();
+    update.updatedBy = req.session.userId;
+
+    const updated = await SystemMessage.findByIdAndUpdate(id, update, { new: true });
+    if (!updated) return res.status(404).json({ message: 'Message not found' });
     res.json({ message: 'System message updated' });
   } catch (err) {
-    res.status(500).json({ message: 'Unable to update system message', error: err.message });
+    console.error('Error updating message:', err);
+    res.status(500).json({ message: 'Unable to update message' });
+  }
+});
+
+// Admin: delete a system message
+router.delete('/system-message/:id', async (req, res) => {
+  try {
+    if (!req.session || !req.session.userId || req.session.userRole !== 'Admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    const id = req.params.id;
+    const deleted = await SystemMessage.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'Message not found' });
+    res.json({ message: 'System message deleted' });
+  } catch (err) {
+    console.error('Error deleting message:', err);
+    res.status(500).json({ message: 'Unable to delete message' });
   }
 });
 
 // ✅ Mount new route modules
 router.use('/', require('./auth')); // /register, /login, /logout, /profile, /forgot-password, /reset-password
+
+// Enforce single active session after auth routes are mounted
+router.use(enforceActiveSession);
 router.use('/', require('./permit')); // /permit, /permit/:id, /permit (POST), /permit/:id/status, /permit/:id/pdf
 router.use('/', require('./api-permit-details')); // /api/permits/:id (admin/approver full details)
 router.use('/', require('./notifications'));
+router.use('/', require('./profile'));
+router.use('/', require('./lookups'));
 
 // ===== KEEP SESSION ALIVE =====
 router.get('/ping', (req, res) => {
@@ -268,4 +441,34 @@ router.get('/debug/session', (req, res) => {
   }
 });
 
+// GET /api/images - List available images for background carousel (excludes logos)
+router.get('/images', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+
+  try {
+    const imagesDir = path.join(__dirname, '../..', 'images');
+
+    if (!fs.existsSync(imagesDir)) {
+      return res.json([]);
+    }
+
+    const files = fs.readdirSync(imagesDir);
+
+    // Filter for image files and exclude logo images
+    const imageFiles = files.filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
+      const isNotLogo = !file.toLowerCase().includes('logo');
+      return isImage && isNotLogo;
+    });
+
+    res.json(imageFiles);
+  } catch (err) {
+    console.error('Error reading images directory:', err);
+    res.status(500).json({ error: 'Failed to read images directory' });
+  }
+});
+
 module.exports = router;
+

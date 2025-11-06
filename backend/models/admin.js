@@ -14,6 +14,12 @@ const adminSchema = new mongoose.Schema(
     status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
     lastLogin: { type: Date },
     prevLogin: { type: Date },
+
+    // Single active-session enforcement (optional metadata)
+    activeSessionId: { type: String, index: true },
+    activeSessionCreatedAt: { type: Date },
+    activeSessionUserAgent: { type: String },
+    activeSessionIp: { type: String },
   },
 
   {
@@ -21,7 +27,7 @@ const adminSchema = new mongoose.Schema(
     collection: 'Admin', // 👈 explicitly set collection name
   },
 
-  { timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } }
+  { timestamps: true }
 );
 
 // Note: email field is marked unique at the schema path; avoid duplicate explicit index creation here.

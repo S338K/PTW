@@ -1,47 +1,28 @@
-// ===== System Message (Carousel) Logic =====
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('systemMessageForm');
-    const textarea = document.getElementById('systemMessageInput');
-    const status = document.getElementById('systemMessageStatus');
-    if (form && textarea) {
-        // Fetch current message
-        fetch(`${API_BASE}/system-message`, { credentials: 'include' })
-            .then(res => res.json())
-            .then(data => { textarea.value = data.message || ''; })
-            .catch(() => { textarea.value = ''; });
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const msg = textarea.value.trim();
-            if (!msg) {
-                status.textContent = 'Message cannot be empty.';
-                status.style.color = 'red';
-                return;
-            }
-            status.textContent = 'Saving...';
-            status.style.color = '';
-            try {
-                const res = await fetch(`${API_BASE}/system-message`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: msg })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    status.textContent = 'Message updated!';
-                    status.style.color = 'green';
-                } else {
-                    status.textContent = data.message || 'Failed to update.';
-                    status.style.color = 'red';
-                }
-            } catch {
-                status.textContent = 'Network error.';
-                status.style.color = 'red';
-            }
-        });
+// Initialize admin page after shared layout is mounted.
+// The system message UI was removed from the page; instead initialize
+// admin-specific behaviors when the layout is available.
+function initAdmin() {
+    try {
+        if (typeof checkSession === 'function') checkSession();
+        if (typeof initIdleTimer === 'function') initIdleTimer();
+    } catch (err) {
+        console.warn('session/initIdleTimer error', err);
     }
-});
+
+    // Defer loading of page data — loadUsers and loadRolesIntoSelect are
+    // declared later in this file (function declarations are hoisted).
+    try { if (typeof loadUsers === 'function') loadUsers(); } catch (e) { console.warn('loadUsers failed', e); }
+    try { if (typeof loadRolesIntoSelect === 'function') loadRolesIntoSelect(); } catch (e) { console.warn('loadRolesIntoSelect failed', e); }
+    try { if (typeof setupAnnouncementHandlers === 'function') setupAnnouncementHandlers(); } catch (e) { console.warn('setupAnnouncementHandlers failed', e); }
+}
+
+if (document.querySelector('[data-layout-wrapper]')) {
+    // Layout already present (maybe pre-mounted) — run on next frame.
+    window.requestAnimationFrame(initAdmin);
+} else {
+    // Wait for the shared layout to be injected by layout.mount.js
+    window.addEventListener('layout:mounted', initAdmin, { once: true });
+}
 // ===== Skeleton loader helpers =====
 function showSkeleton(tableId, show = true) {
     const skeleton = document.getElementById(tableId + 'Skeleton');
@@ -81,10 +62,23 @@ const ROLE_MAP = {
 };
 
 /* ===== Toast ===== */
+/* ===== Toast ===== */
 function showToast(message, type = "success", duration = 3000) {
+    // Prefer shared global toast if available (signature: showToast(type, message, opts))
+    if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
+        try {
+            window.showToast(type, message, { timeout: duration });
+            return;
+        } catch (e) {
+            // fall through to local fallback
+            console.warn('shared showToast failed, falling back', e);
+        }
+    }
+
+    // Local fallback (simple inline element)
     let toast = document.getElementById("toast");
     if (!toast) toast = ensureToast();
-    // reset
+    // reset content and classes
     toast.textContent = message;
     toast.classList.remove("error", "success", "warning", "show");
     // force reflow to restart animation
@@ -95,6 +89,270 @@ function showToast(message, type = "success", duration = 3000) {
         toast.classList.remove("show");
     }, duration);
 }
+
+/* ===== Announcements (Admin UI) ===== */
+async function fetchAdminAnnouncements() {
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/system-messages`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch');
+        return await res.json();
+    } catch (err) {
+        console.warn('fetchAdminAnnouncements failed', err);
+        return [];
+    }
+}
+
+function renderAnnouncementList(items = []) {
+    const list = document.getElementById('announcementList');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!items || items.length === 0) {
+        list.innerHTML = '<div class="text-sm text-[var(--text-secondary)]">No announcements yet.</div>';
+        return;
+    }
+    items.forEach(it => {
+        const el = document.createElement('div');
+        el.className = 'p-3 border rounded hover-lite flex items-start gap-3';
+        el.innerHTML = `
+            <div class="flex-shrink-0"><i class="fas ${it.icon || 'fa-bullhorn'} text-xl"></i></div>
+            <div class="flex-1">
+                <div class="text-sm font-semibold">${(it.title || '').slice(0, 80)}</div>
+                <div class="text-sm text-[var(--text-secondary)] whitespace-pre-line">${(it.message || '').slice(0, 240)}</div>
+                <div class="mt-2 flex items-center gap-2">
+                    <button data-action="edit" data-id="${it.id}" class="text-xs text-[var(--link-color)]">Edit</button>
+                    <button data-action="delete" data-id="${it.id}" class="text-xs text-red-600">Delete</button>
+                    <button data-action="toggle" data-id="${it.id}" class="text-xs">${it.isActive ? 'Unpublish' : 'Publish'}</button>
+                    <span class="ml-auto text-xs text-[var(--text-secondary)]">${new Date(it.updatedAt || it.createdAt).toLocaleString()}</span>
+                </div>
+            </div>
+        `;
+        list.appendChild(el);
+    });
+}
+
+function openAnnouncementModal(data = null) {
+    const modal = document.getElementById('announcement-modal');
+    if (!modal) return;
+    const id = document.getElementById('announcement_id');
+    const title = document.getElementById('announcement_title');
+    const editor = document.getElementById('announcement_editor');
+    const hiddenMsg = document.getElementById('announcement_message');
+    const icon = document.getElementById('announcement_icon');
+    const active = document.getElementById('announcement_active');
+
+    if (data) {
+        id.value = data.id || '';
+        title.value = data.title || '';
+        if (editor) editor.innerHTML = data.message || '';
+        if (hiddenMsg) hiddenMsg.value = data.message || '';
+        icon.value = data.icon || 'fa-bullhorn';
+        active.checked = !!data.isActive;
+    } else {
+        id.value = '';
+        title.value = '';
+        if (editor) editor.innerHTML = '';
+        if (hiddenMsg) hiddenMsg.value = '';
+        icon.value = 'fa-bullhorn';
+        active.checked = true;
+    }
+    modal.classList.remove('hidden');
+}
+
+function closeAnnouncementModal() {
+    const modal = document.getElementById('announcement-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+}
+
+async function saveAnnouncement() {
+    const id = document.getElementById('announcement_id').value;
+    const title = document.getElementById('announcement_title').value.trim();
+    const message = (document.getElementById('announcement_editor')?.innerHTML || document.getElementById('announcement_message')?.value || '').trim();
+    // keep hidden textarea in sync (for progressive enhancement)
+    const hiddenMsgEl = document.getElementById('announcement_message');
+    if (hiddenMsgEl) hiddenMsgEl.value = message;
+    const icon = document.getElementById('announcement_icon').value.trim() || 'fa-bullhorn';
+    const isActive = document.getElementById('announcement_active').checked;
+    const lang = document.getElementById('announcement_lang') ? document.getElementById('announcement_lang').value : 'en';
+    const start = document.getElementById('announcement_start') ? document.getElementById('announcement_start').value.trim() : '';
+    const end = document.getElementById('announcement_end') ? document.getElementById('announcement_end').value.trim() : '';
+
+    if (!message) { showToast('Message is required', 'error'); return; }
+
+    try {
+        const payload = {
+            title,
+            icon,
+            isActive,
+            translations: [{ lang, title, message }]
+        };
+        if (start) payload.startAt = start;
+        if (end) payload.endAt = end;
+
+        if (id) {
+            const res = await fetch(`${API_BASE}/api/system-message/${id}`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Update failed');
+            showToast('Announcement updated', 'success');
+        } else {
+            const res = await fetch(`${API_BASE}/api/system-message`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Create failed');
+            showToast('Announcement created', 'success');
+        }
+        // refresh list
+        await loadAnnouncementsIntoModal();
+        closeAnnouncementModal();
+    } catch (err) {
+        console.error('saveAnnouncement error', err);
+        showToast('Failed to save announcement', 'error');
+    }
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/system-message/${id}`, { method: 'DELETE', credentials: 'include' });
+        if (!res.ok) throw new Error('Delete failed');
+        showToast('Announcement deleted', 'success');
+        await loadAnnouncementsIntoModal();
+    } catch (err) {
+        console.error('deleteAnnouncement error', err);
+        showToast('Failed to delete announcement', 'error');
+    }
+}
+
+async function toggleAnnouncement(id, publish) {
+    try {
+        const res = await fetch(`${API_BASE}/api/system-message/${id}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isActive: publish })
+        });
+        if (!res.ok) throw new Error('Toggle failed');
+        showToast(publish ? 'Announcement published' : 'Announcement unpublished', 'success');
+        await loadAnnouncementsIntoModal();
+    } catch (err) {
+        console.error('toggleAnnouncement error', err);
+        showToast('Failed to update status', 'error');
+    }
+}
+
+async function loadAnnouncementsIntoModal() {
+    const items = await fetchAdminAnnouncements();
+    renderAnnouncementList(items);
+}
+
+function setupAnnouncementHandlers() {
+    // navbar button
+    const btn = document.getElementById('announcement-button');
+    if (btn) btn.addEventListener('click', async (e) => {
+        // Admin page will open modal; non-admins will get 403 from API if they try to save
+        await loadAnnouncementsIntoModal();
+        openAnnouncementModal(null);
+    });
+
+    // modal close
+    const closeBtn = document.getElementById('announcementModalClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeAnnouncementModal);
+
+    // new button
+    const newBtn = document.getElementById('announcementNewBtn');
+    if (newBtn) newBtn.addEventListener('click', () => openAnnouncementModal(null));
+
+    // save
+    const saveBtn = document.getElementById('announcementSaveBtn');
+    if (saveBtn) saveBtn.addEventListener('click', saveAnnouncement);
+
+    // rich-text toolbar
+    try {
+        const toolbar = document.getElementById('announcement_toolbar');
+        const editor = document.getElementById('announcement_editor');
+        if (toolbar && editor) {
+            toolbar.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('button[data-cmd]');
+                if (!btn) return;
+                const cmd = btn.getAttribute('data-cmd');
+                try { document.execCommand(cmd); } catch (e) { /* ignore */ }
+                editor.focus();
+            });
+        }
+    } catch (e) { /* ignore */ }
+
+    // initialize flatpickr for schedule inputs if available
+    try {
+        if (window.flatpickr) {
+            const s = document.getElementById('announcement_start');
+            const e = document.getElementById('announcement_end');
+            if (s && !s._flatpickr) flatpickr(s, { enableTime: true, dateFormat: 'Y-m-d H:i' });
+            if (e && !e._flatpickr) flatpickr(e, { enableTime: true, dateFormat: 'Y-m-d H:i' });
+        }
+    } catch (e) { /* ignore */ }
+
+    // delegate list actions
+    const list = document.getElementById('announcementList');
+    if (list) {
+        // publish/unpublish confirmation flow
+        const publishModal = document.getElementById('publish-confirm-modal');
+        const publishConfirmBtn = document.getElementById('publishConfirmBtn');
+        const publishCancelBtn = document.getElementById('publishCancelBtn');
+        let pendingPublish = null;
+
+        if (publishConfirmBtn) publishConfirmBtn.addEventListener('click', async () => {
+            if (!pendingPublish) return;
+            const { id, publish } = pendingPublish;
+            pendingPublish = null;
+            if (publishModal) publishModal.classList.add('hidden');
+            await toggleAnnouncement(id, publish);
+        });
+        if (publishCancelBtn) publishCancelBtn.addEventListener('click', () => { if (publishModal) publishModal.classList.add('hidden'); pendingPublish = null; });
+
+        list.addEventListener('click', (ev) => {
+            const a = ev.target.closest('button[data-action]');
+            if (!a) return;
+            const action = a.getAttribute('data-action');
+            const id = a.getAttribute('data-id');
+            if (action === 'edit') {
+                // find item data from DOM by id via list of announcements
+                (async () => {
+                    try {
+                        const items = await fetchAdminAnnouncements();
+                        const it = items.find(x => String(x.id) === String(id));
+                        if (it) openAnnouncementModal(it);
+                    } catch (e) { console.warn(e); }
+                })();
+            } else if (action === 'delete') {
+                deleteAnnouncement(id);
+            } else if (action === 'toggle') {
+                (async () => {
+                    const items = await fetchAdminAnnouncements();
+                    const it = items.find(x => String(x.id) === String(id));
+                    if (!it) return;
+                    const publish = !it.isActive;
+                    pendingPublish = { id, publish };
+                    if (publishModal) {
+                        const msg = document.getElementById('publish-confirm-message');
+                        if (msg) msg.textContent = publish ? 'Publish this announcement and make it visible on the login carousel?' : 'Unpublish this announcement and hide it from the login carousel?';
+                        publishModal.classList.remove('hidden');
+                    } else {
+                        // fallback: act immediately
+                        await toggleAnnouncement(id, publish);
+                    }
+                })();
+            }
+        });
+    }
+}
+
 
 /* ===== Validation helpers ===== */
 function showFieldError(input, message) {
@@ -1504,18 +1762,12 @@ async function updatePermit() {
 window.openViewPermitModal = openViewPermitModal;
 window.closeViewPermitModal = closeViewPermitModal;
 
-/* ===== DOMContentLoaded init ===== */
-document.addEventListener("DOMContentLoaded", async () => {
+/* ===== Run main initialization after shared layout is mounted ===== */
+async function mainInit() {
     try {
-        // basic init
-        const user = await checkSession();
-        await loadRolesIntoSelect();
-
-        // attach header buttons
+        // header buttons and UI require the layout to be present; bind them now
         const addUserBtn = document.getElementById('addUserBtn');
-        if (addUserBtn) addUserBtn.addEventListener('click', () => {
-            openUserModal();
-        });
+        if (addUserBtn) addUserBtn.addEventListener('click', () => openUserModal());
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.addEventListener('click', () => logoutUser());
 
@@ -1526,20 +1778,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (theme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
                 if (themeIcon) { themeIcon.className = 'fa-solid fa-sun'; }
-                if (themeToggle) {
-                    themeToggle.setAttribute('aria-pressed', 'true');
-                    themeToggle.classList.remove('light');
-                }
-                // update charts to reflect new theme colors
+                if (themeToggle) { themeToggle.setAttribute('aria-pressed', 'true'); themeToggle.classList.remove('light'); }
                 updateChartTheme();
             } else {
                 document.documentElement.setAttribute('data-theme', 'light');
                 if (themeIcon) { themeIcon.className = 'fa-solid fa-moon'; }
-                if (themeToggle) {
-                    themeToggle.setAttribute('aria-pressed', 'false');
-                    themeToggle.classList.add('light');
-                }
-                // update charts to reflect new theme colors
+                if (themeToggle) { themeToggle.setAttribute('aria-pressed', 'false'); themeToggle.classList.add('light'); }
                 updateChartTheme();
             }
         }
@@ -1558,27 +1802,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // wire modal close handlers
         document.querySelectorAll('#userModal .close').forEach(b => b.addEventListener('click', closeUserModal));
-        // clicking backdrop closes modal
         const modal = document.getElementById('userModal');
         if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeUserModal(); });
 
-        // viewUserModal backdrop handling
         const viewModal = document.getElementById('viewUserModal');
         if (viewModal) viewModal.addEventListener('click', (e) => { if (e.target === viewModal) closeViewUserModal(); });
 
-        if (user) {
-            initIdleTimer();
-            if ((user.role || '').toLowerCase() !== 'admin') {
-                window.location.href = 'index.html';
-                return;
-            }
-        }
-
-        // initialize data
+        // initialize data (loadUsers, loadPermits, loadStats are function declarations below)
         await loadUsers();
         await loadPermits();
         await loadStats();
     } catch (err) {
         console.debug('Initialization error (non-fatal):', err?.message || err);
     }
-});
+}
+
+if (document.querySelector('[data-layout-wrapper]')) {
+    window.requestAnimationFrame(() => { mainInit(); });
+} else {
+    window.addEventListener('layout:mounted', mainInit, { once: true });
+}

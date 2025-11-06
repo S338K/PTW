@@ -6,6 +6,7 @@ const User = require('../models/user');
 const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 const { requireAuth } = require('../middleware/authMiddleware');
+const { createNotification } = require('./notifications');
 
 require('dotenv').config();
 
@@ -16,7 +17,23 @@ const upload = multer({ storage });
 // ----- GET all permits for current requester -----
 router.get('/permit', requireAuth, async (req, res) => {
   try {
-    const permits = await Permit.find({ requester: req.session.userId }).sort({ createdAt: -1 });
+    const permits = await Permit.find({ requester: req.session.userId })
+      .populate('requester', 'fullName username email')
+      .populate('preApprovedBy', 'fullName username email')
+      .populate('approvedBy', 'fullName username email')
+      .sort({ createdAt: -1 });
+
+    // Debug logging
+    console.log('Fetched permits:', permits.length);
+    if (permits.length > 0) {
+      console.log('Sample permit data:', {
+        id: permits[0]._id,
+        status: permits[0].status,
+        preApprovedBy: permits[0].preApprovedBy,
+        approvedBy: permits[0].approvedBy
+      });
+    }
+
     res.json(permits);
   } catch (err) {
     console.error('Permit fetch error:', err);
@@ -84,6 +101,25 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
     });
 
     await permit.save();
+
+    // Create notification for successful permit submission
+    try {
+      await createNotification(
+        req.session.userId,
+        'permit_submitted',
+        'Permit Submitted Successfully',
+        `Your permit "${permit.permitTitle || 'N/A'}" has been submitted and is awaiting review.`,
+        {
+          permitId: permit._id.toString(),
+          permitNumber: permit.permitNumber || '',
+          status: 'Pending'
+        }
+      );
+    } catch (notifErr) {
+      console.error('Failed to create submission notification:', notifErr);
+      // Don't fail the request if notification fails
+    }
+
     res.status(201).json({ message: 'Permit saved successfully', permit });
   } catch (err) {
     console.error('Permit save error:', err);
@@ -94,12 +130,14 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
 // ----- PATCH update permit status -----
 router.patch('/permit/:id/status', requireAuth, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, comments, approverName } = req.body;
     const permit = await Permit.findOne({
       _id: req.params.id,
       requester: req.session.userId,
     });
     if (!permit) return res.status(404).json({ message: 'Permit not found' });
+
+    const oldStatus = permit.status;
 
     if (status === 'Approved' && !permit.permitNumber) {
       const now = new Date();
@@ -128,6 +166,41 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
 
     permit.status = status;
     await permit.save();
+
+    // Create notification if status changed
+    if (oldStatus !== status) {
+      try {
+        let notifType = 'permit_updated';
+        let notifTitle = 'Permit Status Updated';
+        let notifMessage = `Your permit "${permit.permitTitle || permit.permitNumber || 'N/A'}" status has been updated to ${status}.`;
+
+        if (status === 'Approved') {
+          notifType = 'permit_approved';
+          notifTitle = 'Permit Approved';
+          notifMessage = `Your permit "${permit.permitTitle || permit.permitNumber || 'N/A'}" has been approved!`;
+        } else if (status === 'Rejected') {
+          notifType = 'permit_rejected';
+          notifTitle = 'Permit Rejected';
+          notifMessage = `Your permit "${permit.permitTitle || permit.permitNumber || 'N/A'}" has been rejected.`;
+        }
+
+        await createNotification(
+          permit.requester,
+          notifType,
+          notifTitle,
+          notifMessage,
+          {
+            permitId: permit._id.toString(),
+            permitNumber: permit.permitNumber,
+            status: status,
+            approverName: approverName || 'Approver',
+            comments: comments || ''
+          }
+        );
+      } catch (notifErr) {
+        console.error('Failed to create notification:', notifErr);
+      }
+    }
 
     res.json({ message: 'Status updated', permit });
   } catch (err) {

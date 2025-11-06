@@ -20,6 +20,12 @@ const approverSchema = new mongoose.Schema(
     status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
     lastLogin: { type: Date },
     prevLogin: { type: Date },
+
+    // Single active-session enforcement (optional metadata)
+    activeSessionId: { type: String, index: true },
+    activeSessionCreatedAt: { type: Date },
+    activeSessionUserAgent: { type: String },
+    activeSessionIp: { type: String },
   },
   { timestamps: true }
 );

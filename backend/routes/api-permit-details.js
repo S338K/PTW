@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const Permit = require('../models/permit');
 const mongoose = require('mongoose');
+const { createNotification } = require('./notifications');
 
 // GET /api/permits/:permitId/file/:fileId - Download a specific file attached to a permit
 router.get('/permits/:permitId/file/:fileId', async (req, res) => {
@@ -74,6 +75,7 @@ router.post('/permits/:id/action', async (req, res) => {
             permit.status = 'Approved';
             permit.approverComments = String(comments).trim();
             permit.approvedAt = new Date();
+            permit.approvedBy = req.session?.userId || req.user?._id;
             // generate permit number if not present (simple serial by date)
             if (!permit.permitNumber) {
                 const now = new Date();
@@ -93,9 +95,46 @@ router.post('/permits/:id/action', async (req, res) => {
             permit.status = 'Rejected';
             permit.approverComments = String(comments).trim();
             permit.approvedAt = new Date();
+            permit.approvedBy = req.session?.userId || req.user?._id;
         }
 
         await permit.save();
+
+        // Create notification for permit requester
+        try {
+            const approverUser = req.session?.userId ? await require('../models/user').findById(req.session.userId).select('fullName username') : null;
+            const approverName = approverUser ? (approverUser.fullName || approverUser.username) : 'Approver';
+
+            let notifType, notifTitle, notifMessage;
+
+            if (action === 'approve') {
+                notifType = 'permit_approved';
+                notifTitle = 'Permit Approved';
+                notifMessage = `Your permit "${permit.permitTitle || permit.permitNumber || 'N/A'}" has been approved by ${approverName}!`;
+            } else {
+                notifType = 'permit_rejected';
+                notifTitle = 'Permit Rejected';
+                notifMessage = `Your permit "${permit.permitTitle || permit.permitNumber || 'N/A'}" has been rejected by ${approverName}.`;
+            }
+
+            await createNotification(
+                permit.requester,
+                notifType,
+                notifTitle,
+                notifMessage,
+                {
+                    permitId: permit._id.toString(),
+                    permitNumber: permit.permitNumber || '',
+                    status: permit.status,
+                    approverName: approverName,
+                    comments: comments || ''
+                }
+            );
+        } catch (notifErr) {
+            console.error('Failed to create notification:', notifErr);
+            // Don't fail the request if notification fails
+        }
+
         return res.json({ message: 'Action applied', permit });
     } catch (err) {
         console.error('Error applying permit action:', err);

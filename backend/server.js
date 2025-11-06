@@ -111,6 +111,16 @@ app.use(
   })
 );
 
+// DEVELOPMENT: serve the top-level `admin` folder under /admin so local dev pages
+// are same-origin with the backend and will send session cookies correctly.
+// This is intentionally conservative: only the `admin` path is exposed here.
+const fs = require('fs');
+const adminStaticPath = path.join(__dirname, '../admin');
+if (fs.existsSync(adminStaticPath)) {
+  app.use('/admin', express.static(adminStaticPath));
+  logger.info('Serving admin static files from', adminStaticPath);
+}
+
 // 🔎 Debug middleware: log session on every request in non-production only
 if (!isProd) {
   app.use((req, res, next) => {
@@ -252,6 +262,14 @@ app.use('/admin', adminRoutes);
 //=========PRE APPROVER======= //
 const preApproverRoutes = require('./routes/preApprover');
 app.use('/preapprover', preApproverRoutes);
+
+//=========NOTIFICATIONS======= //
+const notificationRoutes = require('./routes/notifications');
+app.use(notificationRoutes);
+
+//=========REPORTS======= //
+const reportsRoutes = require('./routes/reports');
+app.use(reportsRoutes);
 
 // ===== ROUTES ===== //
 app.get('/', (req, res) => {

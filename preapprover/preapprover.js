@@ -7,150 +7,107 @@ let allActivities = [];
 let currentUser = null;
 let currentPermitId = null;
 
-// Update dashboard statistics
-function updateStats(permits) {
-    let pendingReview = 0, preApproved = 0, rejectedByMe = 0, inProgress = 0;
-
-    permits.forEach(p => {
-        const status = (p.status || '').toLowerCase();
-        if (status === 'pending') pendingReview++;
-        else if (status === 'in progress' || p.preApprovedBy) preApproved++;
-        else if (status === 'rejected' && p.preApprovedBy) rejectedByMe++;
-        else if (status === 'in progress') inProgress++;
-    });
-
-    const total = permits.length;
-    const approvalRate = total > 0 ? Math.round((preApproved / (preApproved + rejectedByMe)) * 100) : 0;
-
-    // Update dashboard cards
-    const totalElement = document.getElementById('totalPermitsCount');
-    const pendingElement = document.getElementById('pendingReviewCount');
-    const preApprovedElement = document.getElementById('preApprovedCount');
-    const rejectedElement = document.getElementById('rejectedByMeCount');
-    const approvalRateElement = document.getElementById('approvalRate');
-    const inProgressElement = document.getElementById('inProgressCount');
-
-    if (totalElement) totalElement.textContent = total;
-    if (pendingElement) pendingElement.textContent = pendingReview;
-    if (preApprovedElement) preApprovedElement.textContent = preApproved;
-    if (rejectedElement) rejectedElement.textContent = rejectedByMe;
-    if (approvalRateElement) approvalRateElement.textContent = `${approvalRate}%`;
-    if (inProgressElement) inProgressElement.textContent = inProgress;
-    // Defensive: some pages don't have preApproverLastLoginEl/message defined
+// Update dashboard statistics (cards only)
+function updateStats(permits = []) {
     try {
-        if (typeof preApproverLastLoginEl !== 'undefined' && preApproverLastLoginEl && typeof message !== 'undefined') {
-            preApproverLastLoginEl.textContent = message;
-        }
-    } catch (e) {
-        // ignore - not critical for permit rendering
-        // console.debug('preApproverLastLoginEl not present or message undefined');
-    }
-}
+        const userId = currentUser && (currentUser.id || currentUser._id);
 
-// 🔹 Load stats and render chart + counters
-async function loadStats() {
-    try {
-        const res = await fetch("/pre-approver/stats", { credentials: "include" });
-        const stats = await res.json();
+        const normalized = permits.map(p => ({
+            status: (p.status || '').toLowerCase(),
+            preApprovedBy: p.preApprovedBy,
+        }));
 
-        document.getElementById("statPending").textContent = stats.pending || 0;
-        document.getElementById("statInProgress").textContent = stats.inProgress || 0;
-        document.getElementById("statApproved").textContent = stats.approved || 0;
-        document.getElementById("statRejected").textContent = stats.rejected || 0;
+        const total = normalized.length;
+        const pending = normalized.filter(p => p.status === 'pending').length;
+        const inProgress = normalized.filter(p => p.status === 'in progress').length;
+        const rejected = normalized.filter(p => p.status === 'rejected').length;
 
-        const ctx = document.getElementById("permitStatusChart").getContext("2d");
-        if (window.permitChart) window.permitChart.destroy();
+        // Scoped to current user
+        const preApprovedByMe = normalized.filter(p => p.status === 'in progress' && p.preApprovedBy === userId).length;
+        const rejectedByMe = normalized.filter(p => p.status === 'rejected' && p.preApprovedBy === userId).length;
 
-        window.permitChart = new Chart(ctx, {
-            type: "doughnut",
-            data: {
-                labels: ["Pending", "In Progress", "Approved", "Rejected"],
-                datasets: [{
-                    data: [
-                        stats.pending || 0,
-                        stats.inProgress || 0,
-                        stats.approved || 0,
-                        stats.rejected || 0
-                    ],
-                    backgroundColor: ["#f1c40f", "#3498db", "#2ecc71", "#e74c3c"]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: "bottom" },
-                    title: { display: true, text: "Permit Status Overview" }
-                }
-            }
-        });
+        // Update DOM counters if present
+        const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+        setText('totalPermitsCount', total);
+        setText('pendingReviewCount', pending);
+        setText('preApprovedCount', preApprovedByMe);
+        setText('rejectedByMeCount', rejectedByMe);
+        setText('inProgressCount', inProgress);
+
+        const myDecisions = preApprovedByMe + rejectedByMe;
+        const rate = myDecisions ? Math.round((preApprovedByMe / myDecisions) * 100) : 0;
+        const rateEl = document.getElementById('approvalRate');
+        if (rateEl) rateEl.textContent = `${rate}%`;
     } catch (err) {
-        console.error("Failed to load stats", err);
+        console.error('Failed to update stats', err);
     }
 }
 
 // Fetch permits for pre-approver
 async function fetchPermits() {
-    let isUsingMockData = false;
     try {
-        const res = await fetch(`${API_BASE}/preapprover/permits`, { credentials: 'include' });
+        const res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to fetch permits');
         const data = await res.json();
-        allPermits = data.permits || data || [];
+        allPermits = Array.isArray(data) ? data : (data.permits || []);
     } catch (err) {
         console.error('Error fetching permits:', err);
-        console.warn('Using mock data for demonstration');
-        // Fallback: mock data for UI demo
-        allPermits = [
-            {
-                _id: 'P-001',
-                permitTitle: 'Electrical Maintenance Work',
-                requester: { username: 'alice.smith', email: 'alice@example.com' },
-                status: 'Pending',
-                priority: 'High',
-                createdAt: new Date(Date.now() - 86400000), // 1 day ago
-                workStartDateTime: new Date(),
-                workEndDateTime: new Date(Date.now() + 86400000),
-                description: 'Maintenance work on electrical systems in Building A'
-            },
-            {
-                _id: 'P-002',
-                permitTitle: 'HVAC System Inspection',
-                requester: { username: 'bob.jones', email: 'bob@example.com' },
-                status: 'Pending',
-                priority: 'Medium',
-                createdAt: new Date(Date.now() - 172800000), // 2 days ago
-                workStartDateTime: new Date(),
-                workEndDateTime: new Date(Date.now() + 86400000),
-                description: 'Regular inspection of HVAC systems'
-            },
-            {
-                _id: 'P-003',
-                permitTitle: 'Fire Safety Equipment Check',
-                requester: { username: 'carol.white', email: 'carol@example.com' },
-                status: 'In Progress',
-                priority: 'Low',
-                preApprovedBy: currentUser?.id || 'current-user',
-                preApprovedAt: new Date(Date.now() - 43200000), // 12 hours ago
-                preApproverComments: 'Safety protocols verified',
-                createdAt: new Date(Date.now() - 259200000), // 3 days ago
-                workStartDateTime: new Date(),
-                workEndDateTime: new Date(Date.now() + 86400000),
-                description: 'Routine check of fire safety equipment'
-            }
-        ];
-        isUsingMockData = true;
+        allPermits = [];
+        showNotification('Unable to load permits from server.', 'error');
     }
 
-    // Update statistics
-    if (!isUsingMockData) {
-        updateStats(allPermits);
-    }
-
-    // Update permit tables
+    // Update dashboard with latest data
+    updateStats(allPermits);
     updatePermitTables();
 }
+function initializeSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var trigger = document.getElementById('sidebarTrigger');
+    var body = document.body;
 
-// Update permit tables with real data
+    // No sidebar or trigger present: safely no-op
+    if (!sidebar || !trigger) {
+        return;
+    }
+
+    function openSidebar() {
+        try { sidebar.classList.add('active'); } catch (_) { }
+        try { body.classList.add('sidebar-open'); } catch (_) { }
+    }
+
+    function closeSidebar() {
+        try { sidebar.classList.remove('active'); } catch (_) { }
+        try { body.classList.remove('sidebar-open'); } catch (_) { }
+    }
+
+    trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (sidebar.classList.contains('active')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+    });
+
+    document.addEventListener('click', function (e) {
+        if (window.innerWidth <= 768 && sidebar.classList.contains('active')) {
+            if (!sidebar.contains(e.target) && !trigger.contains(e.target)) {
+                closeSidebar();
+            }
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 768) {
+            try { sidebar.classList.remove('active'); } catch (_) { }
+            try { body.classList.remove('sidebar-open'); } catch (_) { }
+        }
+    });
+}
 function updatePermitTables() {
     const pendingPermits = allPermits.filter(p => (p.status || '').toLowerCase() === 'pending');
     const preApprovedPermits = allPermits.filter(p =>
@@ -750,69 +707,7 @@ async function initializeDashboard() {
     }
 }
 
-// Initialize sidebar functionality - COPIED FROM APPROVER
-function initializeSidebar() {
-    var sidebar = document.getElementById('sidebar');
-    var trigger = document.getElementById('sidebarTrigger');
-    var body = document.body;
-
-    console.log('Sidebar element:', sidebar);
-    console.log('Trigger element:', trigger);
-
-    // Show sidebar
-    function openSidebar() {
-        console.log('Opening sidebar');
-        sidebar.classList.add('active');
-        body.classList.add('sidebar-open');
-        console.log('Sidebar classes:', sidebar.className);
-        console.log('Body classes:', body.className);
-    }
-
-    // Hide sidebar
-    function closeSidebar() {
-        console.log('Closing sidebar');
-        sidebar.classList.remove('active');
-        body.classList.remove('sidebar-open');
-        console.log('Sidebar classes:', sidebar.className);
-        console.log('Body classes:', body.className);
-    }
-
-    if (trigger) {
-        trigger.addEventListener('click', function (e) {
-            e.stopPropagation();
-            console.log('Trigger clicked!');
-            if (sidebar.classList.contains('active')) {
-                closeSidebar();
-            } else {
-                openSidebar();
-            }
-        });
-    } else {
-        console.error('Trigger button not found!');
-    }
-
-    // Hide sidebar on ESC
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeSidebar();
-    });
-
-    // Close sidebar when clicking outside (on mobile)
-    document.addEventListener('click', function (e) {
-        if (window.innerWidth <= 768 && sidebar.classList.contains('active')) {
-            if (!sidebar.contains(e.target) && !trigger.contains(e.target)) {
-                closeSidebar();
-            }
-        }
-    });
-
-    // Handle window resize
-    window.addEventListener('resize', function () {
-        if (window.innerWidth > 768) {
-            sidebar.classList.remove('active');
-            body.classList.remove('sidebar-open');
-        }
-    });
-}// Setup modal event handlers
+// Setup modal event handlers
 function setupModalHandlers() {
     // Approve modal confirm button
     const confirmApprove = document.getElementById('confirmApprove');

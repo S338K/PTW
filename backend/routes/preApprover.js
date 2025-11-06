@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Permit = require('../models/permit');
 const { requireAuth, requirePreApprover } = require('../middleware/authMiddleware');
+const { createNotification } = require('./notifications');
 
 // ----- GET /preapprover/stats -----
 router.get('/stats', requireAuth, requirePreApprover, async (req, res) => {
@@ -41,6 +42,8 @@ router.post('/approve/:id', requireAuth, requirePreApprover, async (req, res) =>
 
     // Use req.user._id if available, fallback to req.session.userId
     const preApproverId = req.user?._id || req.session.userId;
+    const preApproverName = req.user?.fullName || req.user?.username || 'Pre-Approver';
+
     const updated = await Permit.findByIdAndUpdate(
       req.params.id,
       {
@@ -58,6 +61,26 @@ router.post('/approve/:id', requireAuth, requirePreApprover, async (req, res) =>
       return res.status(404).json({ error: 'Permit not found' });
     }
 
+    // Create notification for permit requester
+    try {
+      await createNotification(
+        updated.requester,
+        'permit_approved',
+        'Permit Pre-Approved',
+        `Your permit "${updated.permitTitle || updated.permitNumber || 'N/A'}" has been pre-approved and moved to In Progress.`,
+        {
+          permitId: updated._id.toString(),
+          permitNumber: updated.permitNumber,
+          status: 'In Progress',
+          approverName: preApproverName,
+          comments: comments || ''
+        }
+      );
+    } catch (notifErr) {
+      console.error('Failed to create notification:', notifErr);
+      // Don't fail the request if notification fails
+    }
+
     res.json({ message: 'Permit moved to In Progress', permit: updated });
   } catch (err) {
     console.error('Approve error:', err);
@@ -72,6 +95,8 @@ router.post('/reject/:id', requireAuth, requirePreApprover, async (req, res) => 
 
     // Use req.user._id if available, fallback to req.session.userId
     const preApproverId = req.user?._id || req.session.userId;
+    const preApproverName = req.user?.fullName || req.user?.username || 'Pre-Approver';
+
     const updated = await Permit.findByIdAndUpdate(
       req.params.id,
       {
@@ -87,6 +112,25 @@ router.post('/reject/:id', requireAuth, requirePreApprover, async (req, res) => 
 
     if (!updated) {
       return res.status(404).json({ error: 'Permit not found' });
+    }
+
+    // Create notification for permit requester
+    try {
+      await createNotification(
+        updated.requester,
+        'permit_rejected',
+        'Permit Rejected',
+        `Your permit "${updated.permitTitle || updated.permitNumber || 'N/A'}" has been rejected.`,
+        {
+          permitId: updated._id.toString(),
+          permitNumber: updated.permitNumber,
+          status: 'Rejected',
+          approverName: preApproverName,
+          comments: comments || ''
+        }
+      );
+    } catch (notifErr) {
+      console.error('Failed to create notification:', notifErr);
     }
 
     res.json({ message: 'Permit rejected successfully', permit: updated });

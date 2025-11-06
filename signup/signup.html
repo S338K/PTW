@@ -6,70 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign Up - HIA Baggage Handling System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary-bg': '#f8fafc',
-                        'surface-bg': '#ffffff',
-                        'text-primary': '#1e293b',
-                        'text-secondary': '#64748b',
-                        'text-muted': '#94a3b8',
-                        'button-bg': '#3b82f6',
-                        'button-hover': '#d97706',
-                        'input-border': '#d1d5db',
-                        'input-focus': '#3b82f6',
-                        'error-color': '#dc2626',
-                        'success-color': '#16a34a'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Custom styles for validation states and animations */
-        input.invalid {
-            border-color: #dc2626 !important;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
-        }
-
-        input.valid {
-            border-color: #16a34a !important;
-            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1) !important;
-        }
-
-        .error-message:not(:empty) {
-            opacity: 1 !important;
-            transform: translateY(0) !important;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            #officeAddressSection {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 1rem 1.25rem !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #officeAddressSection {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 1rem 1.25rem !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../theme.css" />
 </head>
 
 <body class="bg-primary-bg font-sans m-0 p-0 w-full">
-
-    <div
-        class="relative top-0 left-0 right-0 bg-surface-bg text-text-primary font-medium text-center p-4 z-50 shadow-lg mb-2 rounded border-b-4 border-blue-200">
-        <h2 class="text-xl md:text-2xl font-semibold">
-            Welcome to HIA Baggage Handling System
-            <span class="text-sm block mt-1 text-text-secondary">- A gateway to access the BHS</span>
-        </h2>
-    </div>
 
     <main>
         <div class="w-[90%] md:w-[80%] lg:w-[70%] xl:w-[60%] bg-surface-bg p-8 rounded shadow-xl mx-auto">
@@ -282,8 +222,6 @@
         </div>
     </main>
 
-    <!-- Scripts -->
-    <script src="../theme.js"></script>
     <script type="module" src="signup.js"></script>
 </body>
 

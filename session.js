@@ -4,8 +4,8 @@
 import { API_BASE } from './config.js';
 
 /* ===== Check if session is valid ===== */
-// session/session.js
 
+// session/session.js
 function getLoginUrl() {
     // Handle GitHub Pages project sites (e.g., https://<user>.github.io/<repo>/...)
     // by prefixing the repo segment to the login path. Locally, this stays root-relative.
@@ -50,7 +50,7 @@ export async function checkSession() {
 
 
 /* ===== Idle Timeout Auto‑Logout ===== */
-const IDLE_LIMIT = 15 * 60 * 1000; // 15 minutes total
+const IDLE_LIMIT = 10 * 60 * 1000; // 10 minutes total
 // Show warning when 3 minutes remain
 const WARNING_TIME = 3 * 60 * 1000; // 3 minutes warning
 let idleTimer;
@@ -63,10 +63,11 @@ export function initIdleTimer() {
         clearTimeout(warningTimer);
         clearInterval(countdownInterval);
         hideIdleWarning();
-        // schedule warning 5 minutes before logout
-        const warningDelay = IDLE_LIMIT - WARNING_TIME; // 10 minutes of activity before warning
+        // Schedule warning when WARNING_TIME remains
+        const warningDelay = IDLE_LIMIT - WARNING_TIME; // e.g., 7 minutes of activity before a 3-minute warning
         warningTimer = setTimeout(showIdleWarning, warningDelay);
-        idleTimer = setTimeout(logoutUser, IDLE_LIMIT);
+        // Auto-logout will be triggered if the countdown reaches zero without user action
+        idleTimer = null;
     }
 
     // Track user activity to reset timers. When the warning modal is showing we ignore activity
@@ -97,6 +98,9 @@ function showIdleWarning() {
 
     // remaining time starts at WARNING_TIME (3 minutes)
     let remainingMs = WARNING_TIME;
+
+    // Prevent any scheduled auto-logout while modal is visible
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
 
     // show modal and blur background
     modal.classList.remove('hidden');
@@ -139,9 +143,9 @@ function showIdleWarning() {
 
     function update() {
         if (remainingMs <= 0) {
-            countdownEl.textContent = 'Session Expired';
+            // Auto-logout immediately when timer reaches zero
+            countdownEl.textContent = '0:00';
             clearInterval(countdownInterval);
-            cleanup();
             logoutUser();
             return;
         }

@@ -1,21 +1,218 @@
+/* Main Content */
+#main-content {
+    padding-top: 96px;
+}
+
+/* Hamburger Menu Animation */
+#sidebar-hamburger {
+    transition: color 0.2s ease;
+}
+
+#sidebar-hamburger .hamburger-icon {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 24px;
+    height: 20px;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+#sidebar-hamburger .hamburger-line {
+    width: 100%;
+    height: 2px;
+    background-color: currentColor;
+    border-radius: 9999px;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+#sidebar-hamburger.is-open .hamburger-line:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+#sidebar-hamburger.is-open .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+#sidebar-hamburger.is-open .hamburger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Make page background follow theme variable */
+body {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Global default: ensure all text (including links) inherits theme font color */
+body,
+body * {
+    color: var(--text-primary);
+}
+
+/* Links default to theme text color; specific sections can override if needed */
+a {
+    color: var(--text-primary);
+}
+
+#sidebar-hamburger:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Sidebar */
+#global-sidebar {
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+    background: #fff;
+    transition: width 0.3s;
+}
+
+#global-sidebar .sidebar-logo {
+    background: #f8fafc;
+}
+
+#global-sidebar .avatar-circle {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#global-sidebar .card {
+    background: #f9f9fb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+#global-sidebar h6 {
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+}
+
+#global-sidebar .btn {
+    font-size: 0.95rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+#global-sidebar .btn-primary {
+    background: #2563eb;
+    border: none;
+}
+
+#global-sidebar .btn-danger {
+    background: #dc2626;
+    border: none;
+}
+
+#global-sidebar .btn-light {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Header */
+#global-header {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    background: #fff;
+}
+
+#global-header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+#notifBtn {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#notifBadge {
+    font-size: 0.75rem;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+}
+
+/* Sidebar Toggle (three lines) */
+#sidebarToggle span {
+    transition: background 0.2s;
+}
+
+#sidebarToggle:hover span {
+    background: #2563eb;
+}
+
+/* Main Content */
+#layout-main {
+    background: #f3f4f6;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    min-height: 80vh;
+}
+
+/* Quick Actions Grid */
+.sidebar-actions .row {
+    margin-top: 0.5rem;
+}
+
+.sidebar-actions .btn {
+    min-height: 70px;
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-actions .btn i {
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #global-sidebar {
+        width: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    #global-sidebar.open {
+        width: 220px;
+        min-width: 220px;
+        overflow: visible;
+    }
+}
+
 /* Light mode defaults */
 :root {
     --bg-surface: #ffffff;
     --text-primary: #273172;
-    /* Page/accent color for selected states (light theme) */
     --page-color: #273172;
-    /* requested light theme primary text */
     --text-secondary: #6b7280;
-    /* Section background: light grey card background for sections */
-    --section-bg: #f3f4f8;
+    --link-color: #273172;
+    --link-hover: #3a449e;
+    --section-bg: #ffffff;
+    /* unify with bg-surface */
     --button-bg: #273172;
     --button-text: #ffffff;
-    --button-hover-bg: #1a245a;
     --button-border: #ccc;
+    /* Primary button hover */
+    --button-hover-bg: #3a449e;
     --input-border: #ccc;
+    --input-bg: rgba(39, 49, 114, 0.05);
     --input-focus-border: #273172;
     --error-color: #d9534f;
     --success-color: #008000;
+    /* Overlay color for modals */
+    --overlay-bg: rgba(17, 24, 39, 0.6);
+    /* Danger buttons */
+    --danger-bg: #dc2626;
+    /* red-600 */
+    --danger-hover-bg: #b91c1c;
+    /* red-700 */
+    --danger-text: #ffffff;
+    --danger-border: #dc2626;
 }
 
 /* System dark mode */
@@ -23,56 +220,135 @@
     :root {
         --bg-surface: #1c1c28;
         --text-primary: #ffffff;
+        --link-color: #7a86ff;
+        --link-hover: #ffffff;
+        --text-secondary: #9ca3af;
+        --section-bg: #1c1c28;
+        /* unify with bg-surface */
         --button-bg: #3f4b9a;
         --button-text: #ffffff;
         --button-hover-bg: #5a66c5;
         --button-border: #555;
         --input-border: #555;
+        --input-bg: rgba(255, 255, 255, 0.07);
         --input-focus-border: #7a86ff;
         --error-color: #ff6b6b;
         --success-color: #008000;
+        /* Overlay color for modals */
+        --overlay-bg: rgba(17, 24, 39, 0.6);
+        /* Danger buttons */
+        --danger-bg: #ef4444;
+        /* red-500 */
+        --danger-hover-bg: #f87171;
+        /* red-400 */
+        --danger-text: #1f2937;
+        /* gray-800 for contrast on lighter red */
+        --danger-border: #ef4444;
     }
 }
 
-/* Manual overrides */
-:root[data-theme="light"] {
-    --bg-surface: #ffffff;
-    --text-primary: #273172;
-    --button-bg: #273172;
-    --button-text: #ffffff;
-    --button-hover-bg: #1a245a;
-    --button-border: #ccc;
-    --input-border: #ccc;
-    --input-focus-border: #273172;
-    --error-color: #d9534f;
-    --success-color: #008000;
+/* Profile sidebar slide and page push */
+#profile-sidebar {
+    transform: translateX(-120%);
+    transition: transform 320ms cubic-bezier(.2, .9, .2, 1);
 }
 
-:root[data-theme="dark"] {
+#profile-sidebar.open {
+    transform: translateX(0);
+}
+
+/* When sidebar is open, push main content to the right so page appears moved */
+/* Do not push main content when sidebar opens; keep overlay behavior only */
+body.sidebar-open main {
+    margin-left: 0;
+    transition: margin-left 320ms cubic-bezier(.2, .9, .2, 1);
+}
+
+
+/* Manual overrides */
+:root[data-theme="dark"],
+html.dark,
+html.dark:root {
     --bg-surface: #1c1c28;
     --text-primary: #ffffff;
-    /* Page/accent color for selected states (dark theme) */
-    --page-color: #ffffff;
-    --text-secondary: #9aa4d6;
-    /* In dark theme keep sections the same as the surface color */
-    --section-bg: var(--bg-surface);
+    --text-secondary: #9ca3af;
+    --link-color: #7a86ff;
+    --link-hover: #ffffff;
+    --section-bg: #222436;
     --button-bg: #3f4b9a;
     --button-text: #ffffff;
     --button-hover-bg: #5a66c5;
     --button-border: #555;
     --input-border: #555;
+    --input-bg: rgba(255, 255, 255, 0.07);
     --input-focus-border: #7a86ff;
     --error-color: #ff6b6b;
     --success-color: #008000;
+    /* Overlay color for modals */
+    --overlay-bg: rgba(17, 24, 39, 0.6);
+    /* Danger buttons */
+    --danger-bg: #ef4444;
+    --danger-hover-bg: #f87171;
+    --danger-text: #1f2937;
+    --danger-border: #ef4444;
 }
 
-/* Smooth transitions */
-body,
-.form-container,
-.header-container,
-input,
-button {
-    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+/* Manual LIGHT override: wins over system dark preference when user selects light */
+:root[data-theme="light"] {
+    --bg-surface: #ffffff;
+    --text-primary: #273172;
+    --link-color: #273172;
+    --link-hover: #3a449e;
+    --button-bg: #273172;
+    --button-text: #ffffff;
+    --button-hover-bg: #3a449e;
+    --button-border: #ccc;
+    --input-border: #ccc;
+    --input-bg: rgba(39, 49, 114, 0.05);
+    --input-focus-border: #273172;
+    --error-color: #d9534f;
+    --success-color: #008000;
+    --section-bg: #ffffff;
+    /* unify with bg-surface */
+    /* Overlay color for modals */
+    --overlay-bg: rgba(17, 24, 39, 0.6);
+    /* Danger buttons */
+    --danger-bg: #dc2626;
+    --danger-hover-bg: #b91c1c;
+    --danger-text: #ffffff;
+    --danger-border: #dc2626;
+}
+
+:root[data-theme="dark"] {
+
+    /* Sidebar slide-in and overlay styles */
+    #profile-sidebar {
+        transform: translateX(-120%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: none;
+    }
+
+    #profile-sidebar.open {
+        transform: translateX(0);
+        display: block;
+    }
+
+    body.sidebar-open main {
+        margin-left: 0;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #sidebar-overlay {
+        display: none;
+    }
+
+    body.sidebar-open #sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 40;
+    }
 }
 
 /* Theme toggle button & icon animations */
@@ -101,6 +377,572 @@ button {
 
 .rotate-icon {
     transform: rotate(360deg);
+}
+
+/* Rotate chevron when accordion-toggle is expanded */
+.accordion-toggle[aria-expanded="true"] .accordion-icon {
+    transform: rotate(180deg);
+}
+
+/* Theme toggle icon styling and rotation animation */
+[data-theme-toggle] i.fas.icon-toggle,
+[data-theme-toggle] i.fas {
+    color: var(--text-primary);
+    display: inline-block;
+    transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), color 180ms ease-in-out;
+}
+
+/* rotation helper applied briefly by JS */
+.rotating {
+    /* Keep translate-centering and rotate for the animation. JS toggles this briefly. */
+    transform: translate(-50%, -50%) rotate(360deg) !important;
+}
+
+/* Show/hide sun/moon icons based on the html.dark class (JS toggles `dark` on <html>). 
+   Use opacity/visibility and absolute positioning so both icons remain in the DOM
+   and can be animated (rotate/fade) smoothly. */
+[data-theme-toggle] {
+    position: relative;
+    /* anchor absolute-positioned icons */
+}
+
+[data-theme-toggle] .icon-sun,
+[data-theme-toggle] .icon-moon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    display: inline-block;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 260ms ease-in-out, transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), color 180ms ease-in-out;
+    pointer-events: none;
+}
+
+/* Light mode: show sun */
+[data-theme-toggle] .icon-sun {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dark mode: show moon */
+html.dark [data-theme-toggle] .icon-sun {
+    opacity: 0;
+    visibility: hidden;
+}
+
+html.dark [data-theme-toggle] .icon-moon {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Ensure both icon elements inherit theme color */
+[data-theme-toggle] .icon-sun,
+[data-theme-toggle] .icon-moon {
+    color: var(--text-primary);
+}
+
+/* Make the sun icon gold in the navbar toggle */
+[data-theme-toggle] .icon-sun {
+    color: #FFD700 !important;
+}
+
+/* Ensure navbar, desktop sidebar and mobile menu follow the active theme surface color */
+nav,
+#desktop-sidebar,
+#mobile-menu {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Ensure logout icon is always red across themes */
+[data-logout-trigger],
+[data-logout-trigger] i {
+    color: var(--danger-bg) !important;
+}
+
+/* Icon buttons (theme, notif, logout) should have a light hover in both themes */
+.icon-btn {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Light hover tint per theme */
+:root[data-theme="light"] .hover-lite:hover,
+html:not(.dark) .hover-lite:hover {
+    background: rgba(39, 49, 114, 0.06) !important;
+    /* subtle light tint of page color */
+}
+
+:root[data-theme="dark"] .hover-lite:hover,
+html.dark .hover-lite:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    /* light surface on dark */
+}
+
+/* Explicit hamburger color per theme */
+:root[data-theme="light"] #sidebar-hamburger,
+html:not(.dark) #sidebar-hamburger {
+    color: #273172 !important;
+}
+
+:root[data-theme="dark"] #sidebar-hamburger,
+html.dark #sidebar-hamburger {
+    color: #ffffff !important;
+}
+
+/* Ensure sidebar section cards and item cards follow theme variables */
+#desktop-sidebar .rounded-lg.border,
+#mobile-menu .rounded-lg.border {
+    background: var(--bg-surface) !important;
+    border-color: var(--button-border) !important;
+}
+
+/* ================= Permit Modal Modern Styles (scoped) ================= */
+/* Scope styles to the modal so other pages/cards are unaffected */
+#permit-form-modal .permit-modal-panel {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--button-border) !important;
+}
+
+#permit-form-modal .permit-modal-header,
+#permit-form-modal .permit-modal-footer {
+    border-color: var(--button-border) !important;
+}
+
+/* Ensure all modal sections follow theme colors and uniform sizing */
+#permit-form-modal .grid {
+    align-items: stretch;
+}
+
+#permit-form-modal .grid>section {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--button-border) !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Typography inside modal body follows theme */
+#permit-modal-body h3,
+#permit-modal-body p,
+#permit-modal-body label,
+#permit-modal-body legend,
+#permit-modal-body li {
+    color: var(--text-primary) !important;
+}
+
+#permit-form-modal section.card {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--input-border);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+#permit-form-modal section.card legend h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+#permit-form-modal .form-group {
+    margin-bottom: 12px;
+}
+
+/* Modern inputs */
+#permit-form-modal .md-input input,
+#permit-form-modal .md-input select,
+#permit-form-modal .md-input textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+#permit-form-modal .md-input input::placeholder,
+#permit-form-modal .md-input textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+#permit-form-modal .md-input input:focus,
+#permit-form-modal .md-input select:focus,
+#permit-form-modal .md-input textarea:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* Dropdown menu item colors (browser support varies) */
+#permit-form-modal .md-input select option {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+#permit-form-modal .md-input label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+    order: -1;
+    /* force label above input even if DOM places it after */
+    position: static;
+    /* neutralize any floating-label absolute positioning */
+}
+
+/* Ensure labels are placed above the inputs */
+#permit-form-modal .md-input {
+    display: flex;
+    flex-direction: column;
+}
+
+/* File upload area */
+#permit-form-modal .file-upload {
+    border: 1px dashed var(--input-border);
+    border-radius: 12px;
+    padding: 12px;
+    background: transparent;
+}
+
+#permit-form-modal .file-upload .upload-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+#permit-form-modal .file-upload .upload-msg {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+#permit-form-modal #uploadedFiles {
+    margin-top: 8px;
+    list-style: disc;
+    padding-left: 20px;
+}
+
+/* Date/time pickers inherit input styles */
+#permit-form-modal .flatpickr-input {
+    width: 100%;
+}
+
+/* ===== Flatpickr theme (uses CSS variables for light/dark) ===== */
+.flatpickr-calendar {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--button-border) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18) !important;
+}
+
+.flatpickr-calendar.arrowTop:before,
+.flatpickr-calendar.arrowTop:after,
+.flatpickr-calendar.arrowBottom:before,
+.flatpickr-calendar.arrowBottom:after {
+    border-color: var(--button-border) !important;
+}
+
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month,
+.flatpickr-weekdays,
+.flatpickr-weekday {
+    color: var(--text-primary) !important;
+    fill: var(--text-primary) !important;
+}
+
+.flatpickr-prev-month svg,
+.flatpickr-next-month svg {
+    fill: var(--text-primary) !important;
+}
+
+.flatpickr-day {
+    color: var(--text-primary) !important;
+    border-radius: 8px !important;
+}
+
+.flatpickr-day:hover {
+    background: color-mix(in srgb, var(--button-bg) 12%, transparent) !important;
+    color: var(--text-primary) !important;
+}
+
+.flatpickr-day.today {
+    border-color: var(--button-bg) !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+    background: var(--button-bg) !important;
+    border-color: var(--button-bg) !important;
+    color: var(--button-text) !important;
+}
+
+.flatpickr-time,
+.flatpickr-time input,
+.flatpickr-time .numInput,
+.flatpickr-time .flatpickr-am-pm {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+}
+
+.flatpickr-time .arrowUp:after,
+.flatpickr-time .arrowDown:after {
+    border-bottom-color: var(--text-primary) !important;
+    border-top-color: var(--text-primary) !important;
+}
+
+/* Radios and checkboxes spacing */
+#permit-form-modal input[type="radio"],
+#permit-form-modal input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+/* ===== Update Password Modal: ensure text follows theme color ===== */
+#update-password-modal h1,
+#update-password-modal h2,
+#update-password-modal h3,
+#update-password-modal p,
+#update-password-modal label,
+#update-password-modal span,
+#update-password-modal legend {
+    color: var(--text-primary) !important;
+}
+
+#update-password-modal input,
+#update-password-modal textarea,
+#update-password-modal select {
+    color: var(--text-primary) !important;
+}
+
+#update-password-modal ::placeholder {
+    color: color-mix(in srgb, var(--text-primary) 65%, transparent);
+}
+
+
+/* --- Global Toasts (shared) --- */
+#toastContainer {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    /* container ignores clicks; child toasts are clickable */
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--button-border);
+    border-left: 4px solid var(--page-color);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.10), 0 6px 6px rgba(0, 0, 0, 0.08);
+    pointer-events: auto;
+    /* allow clicking close button */
+    min-width: 260px;
+    max-width: min(92vw, 420px);
+    animation: toast-in 160ms ease-out;
+}
+
+.toast--success {
+    border-left-color: var(--success-color);
+}
+
+.toast--error {
+    border-left-color: var(--error-color);
+}
+
+.toast--info {
+    border-left-color: #3b82f6;
+}
+
+.toast-icon {
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.toast-body {
+    flex: 1;
+    font-size: 0.925rem;
+}
+
+.toast-close {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 4px;
+    margin-left: 6px;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+#desktop-sidebar .rounded-xl.border,
+#mobile-menu .rounded-xl.border {
+    background: var(--section-bg) !important;
+    border-color: var(--button-border) !important;
+}
+
+/* Sidebar accordion headers and contents */
+#desktop-sidebar .accordion-toggle,
+#mobile-menu .accordion-toggle {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--button-border) !important;
+}
+
+/* Do not force icon colors; allow their own classes to control */
+
+#desktop-sidebar .accordion-content,
+#mobile-menu .accordion-content {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+/* Links/items inside Quick Actions, Account etc. */
+#desktop-sidebar a,
+#mobile-menu a {
+    color: var(--text-primary) !important;
+}
+
+#desktop-sidebar a:hover,
+#mobile-menu a:hover {
+    background: var(--bg-surface) !important;
+    /* keep uniform */
+}
+
+/* Borders should use a theme-aware variable */
+#desktop-sidebar {
+    border-right-color: var(--button-border) !important;
+}
+
+#mobile-menu {
+    border-top-color: var(--button-border) !important;
+}
+
+/* Normalize text color across main content and sidebars */
+#main-content,
+#main-content *,
+#desktop-sidebar,
+#desktop-sidebar *,
+#mobile-menu,
+#mobile-menu * {
+    color: var(--text-primary) !important;
+}
+
+/* Ensure input values are visible in both themes */
+input,
+textarea,
+select {
+    color: var(--text-primary) !important;
+    caret-color: var(--text-primary);
+    -webkit-text-fill-color: var(--text-primary);
+}
+
+/* Placeholder color tuned per theme */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+    color: color-mix(in srgb, var(--text-primary) 60%, transparent);
+    opacity: 0.85;
+}
+
+/* Autofill text color (Chromium/WebKit) */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    box-shadow: 0 0 0 1000px var(--bg-surface) inset !important;
+    transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Normalize icons only in main content; keep sidebar icon original colors */
+#main-content i {
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar typography: make all sidebar text bold */
+#desktop-sidebar,
+#desktop-sidebar *,
+#mobile-menu,
+#mobile-menu * {
+    font-weight: 600 !important;
+}
+
+/* Mobile menu fade/slide transitions
+   We use a `.mobile-open` class to control visibility so we can animate opacity
+   and transform. The JS will add/remove `.mobile-open` and only toggle display
+   (Tailwind `hidden`) after the transition completes. */
+#mobile-menu {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 260ms ease-in-out, transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: opacity, transform;
+    pointer-events: none;
+}
+
+#mobile-menu.mobile-open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Overlay that fades in behind the mobile/desktop sidebar */
+#sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 260ms ease-in-out;
+    z-index: 36;
+    /* below sidebars (z-40) but above page content */
+}
+
+#sidebar-overlay.overlay-open {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* ===== Floating Theme Toggle Slider (top-left under header) ===== */
@@ -261,6 +1103,80 @@ button {
     color: var(--button-text) !important;
 }
 
+/* Navbar icon interactions (eye-catching micro-interactions) */
+.nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.18s ease, color 0.18s ease, filter 0.18s ease;
+    will-change: transform;
+}
+
+.nav-icon:hover {
+    transform: translateY(-3px) scale(1.06);
+    filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.12));
+}
+
+.nav-icon:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Notification badge bounce + pulse */
+.notif-badge {
+    animation: pulse 2s infinite ease-in-out;
+    transform-origin: center;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Small attention bounce used when new notification arrives */
+@keyframes bounce-in {
+    0% {
+        transform: translateY(-6px) scale(0.95);
+        opacity: 0;
+    }
+
+    60% {
+        transform: translateY(2px) scale(1.05);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.notif-attention {
+    animation: bounce-in 480ms cubic-bezier(.2, .9, .2, 1);
+}
+
+/* Theme toggle ring and focus */
+#theme-toggle:focus {
+    outline: none;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12), 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+/* Mobile menu visible state */
+#mobile-menu.show {
+    display: block !important;
+}
+
 .selected-border {
     border-color: var(--page-color) !important;
 }
@@ -285,4 +1201,1163 @@ select:focus {
 .nav-item.selected {
     color: var(--page-color);
     font-weight: 700;
+}
+
+/* Source: approver/approver.css */
+/* Desktop sidebar: fixed width, light background, shadow, slides in from left */
+#desktop-sidebar {
+    width: 350px;
+    max-width: 90vw;
+    background: #fff;
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
+    transform: translateX(-100%);
+    /* Smooth slide + fade for a gentler entrance/exit */
+    transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 260ms ease-in-out;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+/* Hide sidebar on mobile screens */
+@media (max-width: 767px) {
+    #desktop-sidebar {
+        display: none;
+    }
+}
+
+#desktop-sidebar.active {
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+}
+
+/* Shared layout main content behavior
+   - Desktop (>=768px): push content right and shrink width so it remains fully visible
+   - Mobile (<768px): overlay sidebar; content stays full width */
+@media (min-width: 768px) {
+    body.sidebar-open #main-content {
+        margin-left: 350px;
+        width: calc(100% - 350px);
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body:not(.sidebar-open) #main-content {
+        margin-left: 0;
+        width: 100%;
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+.dasher-user-avatar {
+    cursor: pointer;
+}
+
+/* Accessible Login Carousel Styles */
+#loginCarousel {
+    margin-bottom: 0.5rem;
+}
+
+/* Vertical Carousel Styles */
+.header-carousel {
+    min-height: 3.5rem;
+    background: transparent;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    height: 3.5rem;
+}
+
+.carousel-slide {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    pointer-events: none;
+    z-index: 1;
+    will-change: transform, opacity;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-slide[aria-hidden="false"] {
+    pointer-events: auto;
+    z-index: 2;
+}
+
+/* Ensure overlay controls don't block carousel text on very small screens */
+.header-carousel .absolute img#logo {
+    display: block;
+}
+
+.header-carousel .absolute #themeToggle {
+    display: inline-flex;
+}
+
+@media (max-width: 420px) {
+
+    .header-carousel .absolute.left-4,
+    .header-carousel .absolute.right-4 {
+        display: none;
+    }
+
+    /* Hide the carousel completely on very small screens to avoid crowding */
+    .header-carousel {
+        display: none !important;
+    }
+
+    #loginCarousel {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+}
+
+.carousel-control {
+    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    backface-visibility: hidden;
+    position: absolute;
+    opacity: 0;
+    transform: translateX(40px) scale(0.96);
+    z-index: 1;
+    color: var(--text-primary);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+
+    .carousel-control:focus {
+        outline: 2px solid #2563eb;
+        opacity: 1 !important;
+        transform: translateX(0) scale(1) !important;
+        z-index: 2;
+        transform: translateY(0) !important;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        transform: translateY(10px);
+    }
+
+    .carousel-dot.active {
+        opacity: 1 !important;
+        background: #2563eb !important;
+    }
+
+    @media (max-width: 768px) {
+        .header-carousel {
+            /* increase height on smaller screens to allow multi-line messages */
+            min-height: 4.2rem;
+            height: auto;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+
+        /* Force-hide individual carousel slide elements (extra safety) */
+        .carousel-slide,
+        .carousel-slide * {
+            display: none !important;
+        }
+
+        /* Ensure overlay logo and theme toggle inside #loginCarousel remain visible */
+        #loginCarousel .absolute {
+            display: block !important;
+            pointer-events: auto !important;
+        }
+
+        #loginCarousel .absolute img#logo {
+            height: 40px !important;
+        }
+
+        #loginCarousel #themeToggle {
+            display: inline-flex !important;
+        }
+
+        .carousel-slide span {
+            font-size: 0.95rem;
+            white-space: normal;
+            /* allow wrapping */
+            line-height: 1.2;
+            padding: 0 8px;
+        }
+
+        .carousel-control {
+            font-size: 0.95rem;
+            padding: 0.5rem;
+        }
+    }
+
+    /* Dynamic Background Image Carousel */
+    #backgroundCarousel {
+        min-height: calc(100vh - 140px);
+        /* Adjust based on header height */
+    }
+
+    .bg-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        min-height: calc(100vh - 140px);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0;
+        transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: opacity;
+    }
+
+    .bg-slide::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+    }
+
+    .bg-slide.active {
+        opacity: 1;
+    }
+
+    /* Smooth transition states for dynamic background changes */
+    .bg-slide.entering {
+        opacity: 0;
+        animation: fadeIn 1.5s ease-in-out forwards;
+    }
+
+    .bg-slide.leaving {
+        opacity: 1;
+        animation: fadeOut 1.5s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+
+        to {
+            opacity: 0;
+        }
+    }
+
+    /* Custom utility classes for theme integration */
+    .bg-hia-surface {
+        background-color: var(--bg-surface);
+    }
+
+    .text-hia-primary {
+        color: var(--text-primary);
+    }
+
+    .border-hia-input {
+        border-color: var(--input-border);
+    }
+
+    #loginCarousel a,
+    .forgot-password-link a,
+    .sign-up-link a,
+    .nav-item,
+    .login-card a:not(button):not(button *),
+    footer a,
+    .container a:not(button):not(button *) {
+        color: var(--page-color) !important;
+    }
+
+    /* Ensure link hover/active states stay readable */
+    #loginCarousel a:hover,
+    .forgot-password-link a:hover,
+    .sign-up-link a:hover,
+    footer a:hover {
+        text-decoration: underline;
+        opacity: 0.95;
+    }
+
+    /* Dark mode specific enhancements */
+    [data-theme="dark"] .gradient-bg {
+        background: linear-gradient(135deg, rgba(30, 36, 94, 0.2) 0%, rgba(45, 55, 110, 0.3) 100%);
+    }
+
+    [data-theme="light"] .gradient-bg {
+        background: linear-gradient(135deg, rgba(219, 234, 254, 0.3) 0%, rgba(199, 210, 254, 0.3) 100%);
+    }
+
+    /* Dynamic Background Image Layer */
+    #backgroundLayer {
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+        pointer-events: none;
+    }
+
+    /* Theme toggle button styles */
+    #themeToggle {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #themeToggle:hover {
+        transform: translateY(-1px) scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme="dark"] #themeToggle {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #e2e8f0;
+    }
+
+    [data-theme="light"] #themeToggle {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(0, 0, 0, 0.1);
+        color: #1e293b;
+    }
+
+    /* Enhanced card shadows for both themes */
+    [data-theme="dark"] .login-card {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        background: rgba(30, 41, 59, 0.8);
+    }
+
+    [data-theme="light"] .login-card {
+        box-shadow: 0 25px 50px -12px rgb(240, 241, 243), 0 0 0 1px rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Ensure login primary button text is always readable */
+    button#loginBtn,
+    button#loginBtn *,
+    button#loginBtn span,
+    button#loginBtn i {
+        color: #ffffff !important;
+    }
+
+    button#loginBtn:disabled,
+    button#loginBtn:disabled *,
+    button#loginBtn:disabled span,
+    button#loginBtn:disabled i {
+        color: #ffffff !important;
+        opacity: 0.95;
+    }
+
+    button#loginBtn:hover,
+    button#loginBtn:hover *,
+    button#loginBtn:focus,
+    button#loginBtn:focus * {
+        color: #ffffff !important;
+    }
+
+    /* Form input enhancements for dark mode */
+    [data-theme="dark"] input:focus {
+        border-color: #60a5fa !important;
+        box-shadow: 0 0 0 3px rgb(240, 241, 243) !important;
+    }
+
+    [data-theme="light"] input:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgb(224, 242, 254) !important;
+    }
+
+    /* Button hover states for both themes */
+    [data-theme="dark"] .btn-primary:hover {
+        background: linear-gradient(135deg, #1e3a8a, #1e40af) !important;
+    }
+
+    [data-theme="light"] .btn-primary:hover {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+    }
+
+    /* Enhanced Header Carousel Animations */
+
+    .carousel-item {
+        transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        backface-visibility: hidden;
+        position: absolute;
+        opacity: 0;
+        transform: translateX(40px) scale(0.96);
+        z-index: 1;
+    }
+
+    .carousel-item.active {
+        opacity: 1 !important;
+        transform: translateX(0) scale(1) !important;
+        z-index: 2;
+    }
+
+    .carousel-item.entering {
+        animation: slideFadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        z-index: 3;
+    }
+
+    .carousel-item.exiting {
+        animation: slideFadeOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        z-index: 1;
+    }
+
+    @keyframes slideFadeIn {
+        0% {
+            opacity: 0;
+            transform: translateX(40px) scale(0.96);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+    }
+
+    @keyframes slideFadeOut {
+        0% {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateX(-40px) scale(0.96);
+        }
+    }
+
+    /* Ultra-sleek carousel animations with enhanced transitions */
+    @keyframes fadeSlideInUp {
+        0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.8) rotateX(15deg);
+            filter: blur(2px);
+        }
+
+        30% {
+            opacity: 0.4;
+            transform: translateY(15px) scale(0.9) rotateX(8deg);
+            filter: blur(1px);
+        }
+
+        70% {
+            opacity: 0.8;
+            transform: translateY(3px) scale(0.98) rotateX(2deg);
+            filter: blur(0.5px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0deg);
+            filter: blur(0px);
+        }
+    }
+
+    @keyframes fadeSlideOutUp {
+        0% {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0deg);
+            filter: blur(0px);
+            z-index: 2;
+        }
+
+        30% {
+            opacity: 0.7;
+            transform: translateY(-5px) scale(0.98) rotateX(-2deg);
+            filter: blur(0.5px);
+        }
+
+        70% {
+            opacity: 0.3;
+            transform: translateY(-15px) scale(0.9) rotateX(-8deg);
+            filter: blur(1px);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.8) rotateX(-15deg);
+            filter: blur(2px);
+            z-index: 1;
+        }
+    }
+
+    @keyframes glowPulse {
+
+        0%,
+        100% {
+            box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+        }
+
+        50% {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+        }
+    }
+
+    .carousel-item.entering {
+        animation: fadeSlideInUp 1.2s cubic-bezier(0.22, 0.68, 0.12, 0.95) forwards;
+        z-index: 3;
+    }
+
+    .carousel-item.exiting {
+        animation: fadeSlideOutUp 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        z-index: 1;
+    }
+
+    .carousel-item.active:not(.entering):not(.exiting) {
+        animation: glowPulse 5s ease-in-out infinite;
+        z-index: 2;
+    }
+
+    /* Enhanced text sliding effect */
+    .carousel-text {
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform-origin: center;
+    }
+
+    .carousel-item.entering .carousel-text {
+        animation: textSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    .carousel-item.exiting .carousel-text {
+        animation: textSlideOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+    }
+
+    @keyframes textSlideIn {
+        0% {
+            opacity: 0;
+            transform: translateX(-20px) scale(0.9);
+            letter-spacing: 2px;
+        }
+
+        50% {
+            opacity: 0.7;
+            transform: translateX(-5px) scale(0.95);
+            letter-spacing: 1px;
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            letter-spacing: normal;
+        }
+    }
+
+    @keyframes textSlideOut {
+        0% {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            letter-spacing: normal;
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateX(20px) scale(0.9);
+            letter-spacing: 2px;
+        }
+    }
+
+    /* Enhanced icon animations */
+    .carousel-item i {
+        transition: all 0.3s ease;
+        transform-origin: center;
+    }
+
+    .carousel-item.active i {
+        animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+
+        50% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    }
+
+    /* Carousel text shimmer effect */
+    .carousel-text {
+        position: relative;
+        background: linear-gradient(90deg, var(--text-primary) 0%, var(--text-primary) 40%, rgba(255, 255, 255, 0.8) 50%, var(--text-primary) 60%, var(--text-primary) 100%);
+        background-size: 200% 100%;
+        background-clip: text;
+        -webkit-background-clip: text;
+        animation: shimmerText 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmerText {
+
+        0%,
+        100% {
+            background-position: 200% 0;
+        }
+
+        50% {
+            background-position: -200% 0;
+        }
+    }
+
+    /* Theme-specific carousel enhancements */
+    [data-theme="dark"] .carousel-item i {
+        color: #60a5fa !important;
+    }
+
+    [data-theme="light"] .carousel-item i {
+        color: #3b82f6 !important;
+    }
+
+    [data-theme="dark"] .carousel-text {
+        background: linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 40%, rgba(96, 165, 250, 0.8) 50%, #e2e8f0 60%, #e2e8f0 100%);
+        background-size: 200% 100%;
+        background-clip: text;
+        -webkit-background-clip: text;
+    }
+
+    /* Carousel indicators */
+    .carousel-dot {
+        transition: all 0.3s ease;
+    }
+
+    .carousel-dot.active-dot {
+        opacity: 0.8 !important;
+        transform: scale(1.2);
+        background-color: var(--text-primary) !important;
+    }
+
+    .carousel-dot:not(.active-dot) {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    /* Mobile responsive enhancements */
+    @media (max-width: 640px) {
+        .header-carousel {
+            height: 2.5rem;
+        }
+
+        .carousel-item {
+            font-size: 0.75rem;
+        }
+
+        .carousel-item i {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Hover effects for carousel */
+    .header-carousel:hover .carousel-item.active {
+        transform: scale(1.05);
+    }
+
+    .header-carousel:hover .carousel-dot.active-dot {
+        opacity: 1 !important;
+        transform: scale(1.4);
+    }
+
+    /* Enhanced animations and effects */
+    @keyframes shimmer {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    @keyframes pulse-success {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        }
+
+        50% {
+            box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
+        }
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-5px);
+        }
+    }
+
+    /* Custom shadow utilities */
+    .shadow-3xl {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Success state animation */
+    .success-animation {
+        animation: pulse-success 1.2s 3;
+    }
+
+    /* Floating animation for logo */
+    #logo {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    /* Input validation states */
+    .input-valid {
+        border-color: var(--success-color) !important;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1) !important;
+    }
+
+    .input-invalid {
+        border-color: var(--error-color) !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    }
+
+    /* Enhanced Carousel with Tailwind */
+    .carousel-item {
+        color: var(--text-primary);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    /* ===== Custom UI Utilities ===== */
+    /* Circular icon used for avatars and navbar icons */
+    .icon-circle {
+        width: 2.5rem;
+        /* 40px */
+        height: 2.5rem;
+        /* 40px */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+    }
+
+    .avatar-initial {
+        background: #2563eb;
+        /* blue-600 */
+        color: #ffffff;
+        font-weight: 700;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+        border: 3px solid rgba(37, 99, 235, 0.12);
+    }
+
+    .quick-action {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0.9rem;
+        border-radius: 0.75rem;
+        background: var(--section-bg);
+        color: var(--text-primary);
+        transition: background-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .quick-action:hover {
+        transform: translateY(-2px);
+        background: color-mix(in srgb, var(--section-bg) 85%, transparent);
+    }
+
+    .quick-action .qa-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+    }
+
+    /* Logout variant */
+    .quick-action.logout {
+        color: var(--error-color);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .quick-action {
+            background: #0f1724;
+            /* darker surface */
+            color: var(--text-primary);
+        }
+    }
+
+    .carousel-item.active {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+
+    .carousel-item:not(.active) {
+        transform: translateY(10px);
+    }
+
+    /* Input validation states enhanced */
+    .form-group input.valid {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
+    }
+
+    .form-group input.invalid {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
+    }
+
+    /* Password toggle button enhancement */
+    #togglePassword:hover {
+        transform: scale(1.1);
+    }
+
+    /* Login button spacing and positioning */
+    #loginBtn {
+        margin-top: 2rem;
+        /* 24px - Increased spacing above login button */
+    }
+
+    /* Login button enhanced states */
+    #loginBtn:disabled {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        transform: scale(1) !important;
+    }
+
+    #loginBtn.success {
+        animation: pulse-success 1.2s 3;
+    }
+
+    /* Enhanced Button States */
+    #loginBtn.loading {
+        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+        cursor: not-allowed;
+    }
+
+    #loginBtn.loading::after {
+        content: '';
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Theme transition enhancements */
+    * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Custom focus styles for accessibility */
+    .focus-visible\:ring-2:focus-visible {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px var(--input-focus-border);
+    }
+
+    /* Responsive enhancements for mobile */
+    @media (max-width: 640px) {
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+
+    /* Toast styles for login page */
+    #toastContainer {
+        max-width: 360px;
+        width: auto;
+        pointer-events: none;
+        /* container ignores pointer events; toasts opt-in */
+    }
+
+    .toast {
+        pointer-events: auto;
+        /* allow clicks on the toast itself */
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        padding: 0.625rem 0.875rem;
+        border-radius: 0.6rem;
+        box-shadow: 0 12px 30px rgba(2, 6, 23, 0.25);
+        background: rgba(255, 255, 255, 0.96);
+        color: var(--text-primary);
+        border-left: 4px solid var(--page-color);
+        font-size: 0.95rem;
+        line-height: 1.2;
+        min-width: 220px;
+        max-width: 360px;
+        overflow-wrap: anywhere;
+        transform: translateY(-8px);
+        animation: toast-in 260ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+    }
+
+    .toast .toast-icon {
+        margin-top: 2px;
+        width: 18px;
+        flex: 0 0 18px;
+        text-align: center;
+    }
+
+    .toast .toast-body {
+        flex: 1 1 auto;
+    }
+
+    .toast--success {
+        background: rgba(15, 166, 103, 0.08);
+    }
+
+    .toast--error {
+        background: rgba(239, 68, 68, 0.06);
+    }
+
+    .toast .toast-close {
+        margin-left: 0.5rem;
+        opacity: 0.7;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: inherit;
+    }
+
+    @keyframes toast-in {
+        from {
+            opacity: 0;
+            transform: translateY(-12px) scale(0.995);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes toast-out {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.995);
+        }
+    }
+
+    /* Dark-mode tweaks for toast */
+    [data-theme="dark"] .toast {
+        background: rgba(16, 24, 40, 0.9);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .toast--success {
+        background: rgba(34, 197, 94, 0.08);
+    }
+
+    [data-theme="dark"] .toast--error {
+        background: rgba(239, 68, 68, 0.06);
+    }
+}
+
+/* Explicit dark theme variables (in case user toggles mode manually) */
+:root[data-theme="dark"] {
+    --bg-surface: #1c1c28;
+    --text-primary: #ffffff;
+    --section-bg: #222436;
+    --button-bg: #3f4b9a;
+    --button-text: #ffffff;
+    --button-hover-bg: #5a66c5;
+    --button-border: #555;
+    --input-border: #555;
+    --input-bg: rgba(255, 255, 255, 0.07);
+    --input-focus-border: #7a86ff;
+    --error-color: #ff6b6b;
+    --success-color: #008000;
+    /* Danger buttons */
+    --danger-bg: #ef4444;
+    --danger-hover-bg: #f87171;
+    --danger-text: #1f2937;
+    --danger-border: #ef4444;
+}
+
+/* Status Badge Styling */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.status-badge.approved {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.in-progress {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* Dark mode status badges */
+[data-theme="dark"] .status-badge.approved {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+}
+
+[data-theme="dark"] .status-badge.pending {
+    background-color: rgba(251, 191, 36, 0.2);
+    color: #fde047;
+}
+
+[data-theme="dark"] .status-badge.rejected {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+
+[data-theme="dark"] .status-badge.in-progress {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+}
+
+/* Permit Table Styling */
+#permitTable {
+    border-collapse: collapse;
+    border: 1px solid var(--input-border);
+    width: auto;
+    table-layout: auto;
+}
+
+#permitTable thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#permitTable thead th {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--input-border);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+    white-space: nowrap;
+}
+
+#permitTable tbody tr {
+    background-color: var(--bg-surface);
+    transition: background-color 0.15s ease;
+}
+
+#permitTable tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+[data-theme="dark"] #permitTable tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.08);
+}
+
+#permitTable tbody td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    color: var(--text-primary);
+    border: 1px solid var(--input-border);
+    text-align: center;
+    white-space: nowrap;
+}
+
+#permitTable tbody td a {
+    color: #2563eb;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+#permitTable tbody td a:hover {
+    color: #1d4ed8;
+}
+
+[data-theme="dark"] #permitTable tbody td a {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] #permitTable tbody td a:hover {
+    color: #93c5fd;
+}
+
+/* Login Page Carousel Messages */
+#carouselContainer {
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-slide {
+    min-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+}
+
+#carouselDots button {
+    cursor: pointer;
+    border: none;
+    background: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+}
+
+#carouselDots button:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: scale(1.2);
+}
+
+#carouselDots button:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* Marquee Animation for Mobile Messages */
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.animate-marquee {
+    display: inline-block;
+    animation: marquee 20s linear infinite;
+}
+
+.animate-marquee:hover {
+    animation-play-state: paused;
 }
