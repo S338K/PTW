@@ -110,10 +110,16 @@ router.get('/api/reports', async (req, res) => {
             sheet.columns.forEach((col, i) => { col.width = widths[i] || 20; });
             sheet.views = [{ state: 'frozen', ySplit: 1 }];
 
-            res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.attachment('PTW_Permit_Report.xlsx');
-            await workbook.xlsx.write(res);
-            return res.end();
+            try {
+                const buffer = await workbook.xlsx.writeBuffer();
+                res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                res.attachment('PTW_Permit_Report.xlsx');
+                res.setHeader('Content-Length', buffer.length);
+                return res.send(Buffer.from(buffer));
+            } catch (e) {
+                console.error('Failed to generate XLSX:', e && e.stack ? e.stack : e);
+                return res.status(500).json({ message: 'Failed to generate XLSX', error: e && e.message ? e.message : String(e) });
+            }
         }
 
         if (format === 'pdf') {
