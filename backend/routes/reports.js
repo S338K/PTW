@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Permit = require('../models/permit');
-const { Parser } = require('json2csv');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const path = require('path');
@@ -63,6 +62,17 @@ router.get('/api/reports', async (req, res) => {
                 preApprovedOn: r.preApprovedOn ? new Date(r.preApprovedOn).toLocaleString() : '',
                 approvedOn: r.approvedOn ? new Date(r.approvedOn).toLocaleString() : ''
             }));
+
+            // Require json2csv lazily so the server won't crash at startup if the package
+            // is missing in the deployed environment. If it's unavailable, return a
+            // clear error to the client explaining the missing dependency.
+            let Parser;
+            try {
+                ({ Parser } = require('json2csv'));
+            } catch (e) {
+                console.error('json2csv not available. Please run `npm install` in the backend directory.', e && e.message ? e.message : e);
+                return res.status(500).json({ message: 'CSV export not available on this server (missing dependency)' });
+            }
 
             const parser = new Parser({ fields: fieldDefs.map(f => ({ label: f.label, value: f.key })) });
             const csv = parser.parse(csvRows);

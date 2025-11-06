@@ -74,12 +74,48 @@
   // Compute API base URL depending on where the page is served from (dev vs prod)
   function getApiBase() {
     try {
-      const { protocol, hostname, port } = window.location;
-      // Live Server default port is 5500; backend runs on 5000
-      if (port === '5500') {
-        return `${protocol}//${hostname}:5000`;
+      // Allow an explicit override (set by server or inline script)
+      if (window.__API_BASE__ && typeof window.__API_BASE__ === 'string' && window.__API_BASE__.trim()) {
+        return window.__API_BASE__.trim();
       }
-      return '';
+      // Allow local override via localStorage
+      try {
+        const ls = localStorage.getItem('API_BASE');
+        if (ls && ls.trim()) return ls.trim();
+      } catch (_) { }
+      // Allow a meta tag to be used by server-side templating to inject API base
+      try {
+        const meta = document.querySelector('meta[name="api-base"]');
+        if (meta && meta.content && meta.content.trim()) return meta.content.trim();
+      } catch (_) { }
+
+      const DEFAULT_PROD = 'https://ptw-yu8u.onrender.com';
+      const { protocol, hostname, port } = window.location;
+
+      // Live Server default port is 5500; many dev setups use 3000, 8080, etc.
+      // Map common static dev ports back to the backend port 5000 so fetches work
+      // when front-end is served separately in development.
+      if (hostname === '127.0.0.1' || hostname === 'localhost') {
+        const devToBackend = new Set(['5500', '3000', '8080']);
+        if (port && devToBackend.has(port)) return `${protocol}//${hostname}:5000`;
+        // If front-end and backend are intentionally same-origin (no mapping),
+        // return same-origin so relative paths work.
+        return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+      }
+
+      // If served via file:// (local file open), fall back to production backend
+      if (!hostname || window.location.protocol === 'file:') return DEFAULT_PROD;
+
+      // For non-localhost hosts, prefer same-origin if the backend is hosted on the
+      // same origin (i.e., reverse-proxy), otherwise fall back to configured prod.
+      // We can't reliably detect reverse-proxy from client JS, so prefer a safe
+      // default: if the current origin equals DEFAULT_PROD use same-origin, else
+      // return DEFAULT_PROD so API calls go to the dedicated backend.
+      try {
+        const origin = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+        if (origin === DEFAULT_PROD) return origin;
+      } catch (_) { }
+      return DEFAULT_PROD;
     } catch (_) {
       return '';
     }

@@ -9,6 +9,15 @@
     // Configure Tailwind to use class-based dark mode (must be defined before CDN script)
     window.tailwind = { config: { darkMode: 'class' } };
   </script>
+  <script>
+    // Ensure front-end fetches target the correct backend in production when not
+    // explicitly overridden. This can be overridden by setting window.__API_BASE__
+    // (e.g. injected by server) or localStorage.API_BASE in dev/debug scenarios.
+    if (!window.__API_BASE__ && !localStorage.getItem('API_BASE')) {
+      // Default production backend URL — change if your production backend differs.
+      window.__API_BASE__ = 'https://ptw-yu8u.onrender.com';
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="../theme.css">
