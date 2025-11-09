@@ -175,6 +175,11 @@ function hideIdleWarning() {
 /* ===== Logout Helper ===== */
 export async function logoutUser() {
     try {
+        // prefer shared helper if present (it clears per-tab token and broadcasts)
+        if (window.ptwLogout) {
+            await window.ptwLogout();
+            return;
+        }
         await fetch(`${API_BASE}/api/logout`, {
             method: "POST",
             credentials: "include"
@@ -182,6 +187,8 @@ export async function logoutUser() {
     } catch (err) {
         console.error("Logout request failed:", err);
     } finally {
+        try { sessionStorage.removeItem('accessToken'); } catch (_) { }
+        try { if (window.__ptw_broadcastSession) window.__ptw_broadcastSession({ type: 'logout' }); } catch (_) { }
         window.location.assign(getLoginUrl());
     }
 }

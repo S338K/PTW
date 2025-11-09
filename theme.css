@@ -398,6 +398,214 @@ html.dark:root {
     transform: translate(-50%, -50%) rotate(360deg) !important;
 }
 
+/* Announcement / marquee shared styles */
+.announcement-item {
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.announcement-title {
+    font-weight: 600;
+    margin-right: 0.35rem;
+}
+
+/* Marquee keyframes and container styles moved from login/index.html */
+#header-announcement {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+#announcement-marquee {
+    white-space: nowrap;
+    overflow: hidden;
+    flex: 1;
+    position: relative;
+}
+
+.marquee-inner {
+    display: inline-block;
+    will-change: transform;
+    margin-right: 2rem;
+    white-space: nowrap;
+}
+
+@keyframes marquee-rtl {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+@keyframes marquee-ltr {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* pause on hover */
+#announcement-marquee:hover .marquee-inner {
+    animation-play-state: paused;
+}
+
+@media (max-width:640px) {
+    #announcement-marquee { font-size: 14px; padding-left: 6px; padding-right: 6px; }
+    #header-announcement { padding-top: 4px; padding-bottom: 4px; }
+}
+
+/* Sticky header and footer for login page */
+#page-header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background: var(--bg-surface);
+}
+
+/* Fixed footer so it's always visible; add body padding to avoid overlap */
+#page-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 55;
+    background: var(--bg-surface);
+    border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Reserve space at the bottom so fixed footer doesn't cover content */
+body.has-sticky-footer {
+    padding-bottom: 56px; /* matches footer visual height (py-4) */
+}
+
+/* Announcement modal: ensure language dropdown and Save button follow theme colors */
+/* Note: native select dropdown styling can be limited by the OS/browser, but
+   setting option colors helps in most browsers and ensures closed control
+   matches the theme. */
+#announcement_lang {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--input-border) !important;
+    padding-right: 0.5rem !important;
+}
+
+#announcement_lang option {
+    /* Options: some browsers respect option styles, others may not. */
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Save button: ensure it uses theme variables (works even if Tailwind classes are not applied) */
+#announcementSaveBtn {
+    background: var(--button-bg) !important;
+    color: var(--button-text) !important;
+    border: 1px solid var(--button-border) !important;
+}
+
+#announcementSaveBtn:hover {
+    background: var(--button-hover-bg) !important;
+}
+
+/* Stronger reset for the announcement Save button to avoid unexpected overrides */
+#announcementSaveBtn {
+    background-color: var(--button-bg) !important;
+    background-image: none !important;
+    color: var(--button-text) !important;
+    border: 1px solid var(--button-border) !important;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    padding: .5rem .75rem !important;
+    border-radius: .5rem !important;
+}
+
+#announcementSaveBtn:focus {
+    outline: 2px solid rgba(0, 0, 0, 0.08);
+    outline-offset: 2px;
+}
+
+#announcementSaveBtn:disabled {
+    opacity: 0.65 !important;
+    cursor: not-allowed !important;
+    filter: none !important;
+    background-color: var(--button-bg) !important;
+    color: var(--button-text) !important;
+}
+
+/* Theme-specific button colors requested by user:
+   - Light theme: button font color #273172 (dark blue), light/transparent background
+   - Dark theme: button background #273172 with white text
+*/
+/* Light theme (explicit) */
+:root[data-theme="light"] #announcementSaveBtn,
+html:not([data-theme]) #announcementSaveBtn {
+    background-color: transparent !important;
+    color: #273172 !important;
+    border: 1px solid #273172 !important;
+}
+
+/* Dark theme: solid blue background with white text */
+:root[data-theme="dark"] #announcementSaveBtn,
+html.dark #announcementSaveBtn {
+    background-color: #273172 !important;
+    color: #ffffff !important;
+    border-color: #273172 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    /* system dark preference fallback */
+    #announcementSaveBtn {
+        background-color: #273172 !important;
+        color: #ffffff !important;
+        border-color: #273172 !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+
+    /* Reinforce option background in dark mode where supported */
+    #announcement_lang option {
+        background: var(--input-bg) !important;
+        color: var(--text-primary) !important;
+    }
+}
+
+/* Flatpickr calendar theming: style dropdowns (month/year) and calendar background
+   to follow the page theme. Note: some select/option styling is browser-limited
+   but this improves appearance in most modern browsers. */
+.flatpickr-calendar {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--input-border) !important;
+}
+
+.flatpickr-calendar .flatpickr-months,
+.flatpickr-calendar .flatpickr-month {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+.flatpickr-calendar select,
+.flatpickr-calendar .flatpickr-monthDropdown-month,
+.flatpickr-calendar .flatpickr-yearInput,
+.flatpickr-calendar .flatpickr-current-month .numInputWrapper input {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--input-border) !important;
+}
+
+.flatpickr-calendar select option,
+.flatpickr-calendar .flatpickr-monthDropdown-month option {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Tweak selected day / hover colors to use theme accents */
+.flatpickr-day.selected,
+.flatpickr-day:hover {
+    background: var(--button-bg) !important;
+    color: var(--button-text) !important;
+}
+
 /* Show/hide sun/moon icons based on the html.dark class (JS toggles `dark` on <html>). 
    Use opacity/visibility and absolute positioning so both icons remain in the DOM
    and can be animated (rotate/fade) smoothly. */
@@ -1251,926 +1459,441 @@ select:focus {
     cursor: pointer;
 }
 
-/* Accessible Login Carousel Styles */
-#loginCarousel {
-    margin-bottom: 0.5rem;
+/* Dynamic Background Image Carousel */
+#backgroundCarousel {
+    min-height: calc(100vh - 140px);
+    /* Adjust based on header height */
 }
 
-/* Vertical Carousel Styles */
-.header-carousel {
-    min-height: 3.5rem;
-    background: transparent;
-    outline: none;
-    position: relative;
-    overflow: hidden;
-    height: 3.5rem;
-}
-
-.carousel-slide {
+.bg-slide {
     position: absolute;
+    top: 0;
     left: 0;
-    right: 0;
     width: 100%;
     height: 100%;
-    opacity: 1;
+    min-height: calc(100vh - 140px);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity;
+}
+
+.bg-slide::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.25);
     pointer-events: none;
-    z-index: 1;
-    will-change: transform, opacity;
-    display: flex;
+}
+
+.bg-slide.active {
+    opacity: 1;
+}
+
+/* Smooth transition states for dynamic background changes */
+.bg-slide.entering {
+    opacity: 0;
+    animation: fadeIn 1.5s ease-in-out forwards;
+}
+
+.bg-slide.leaving {
+    opacity: 1;
+    animation: fadeOut 1.5s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* Custom utility classes for theme integration */
+.bg-hia-surface {
+    background-color: var(--bg-surface);
+}
+
+.text-hia-primary {
+    color: var(--text-primary);
+}
+
+.border-hia-input {
+    border-color: var(--input-border);
+}
+
+#loginCarousel a,
+.forgot-password-link a,
+.sign-up-link a,
+.nav-item,
+.login-card a:not(button):not(button *),
+footer a,
+.container a:not(button):not(button *) {
+    color: var(--page-color) !important;
+}
+
+/* Ensure link hover/active states stay readable */
+#loginCarousel a:hover,
+.forgot-password-link a:hover,
+.sign-up-link a:hover,
+footer a:hover {
+    text-decoration: underline;
+    opacity: 0.95;
+}
+
+/* Dark mode specific enhancements */
+[data-theme="dark"] .gradient-bg {
+    background: linear-gradient(135deg, rgba(30, 36, 94, 0.2) 0%, rgba(45, 55, 110, 0.3) 100%);
+}
+
+[data-theme="light"] .gradient-bg {
+    background: linear-gradient(135deg, rgba(219, 234, 254, 0.3) 0%, rgba(199, 210, 254, 0.3) 100%);
+}
+
+/* Dynamic Background Image Layer */
+#backgroundLayer {
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    pointer-events: none;
+}
+
+/* Theme toggle button styles */
+#themeToggle {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#themeToggle:hover {
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] #themeToggle {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+}
+
+[data-theme="light"] #themeToggle {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1e293b;
+}
+
+/* Enhanced card shadows for both themes */
+[data-theme="dark"] .login-card {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    background: rgba(30, 41, 59, 0.8);
+}
+
+[data-theme="light"] .login-card {
+    box-shadow: 0 25px 50px -12px rgb(240, 241, 243), 0 0 0 1px rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Ensure login primary button text is always readable */
+button#loginBtn,
+button#loginBtn *,
+button#loginBtn span,
+button#loginBtn i {
+    color: #ffffff !important;
+}
+
+button#loginBtn:disabled,
+button#loginBtn:disabled *,
+button#loginBtn:disabled span,
+button#loginBtn:disabled i {
+    color: #ffffff !important;
+    opacity: 0.95;
+}
+
+button#loginBtn:hover,
+button#loginBtn:hover *,
+button#loginBtn:focus,
+button#loginBtn:focus * {
+    color: #ffffff !important;
+}
+
+/* Form input enhancements for dark mode */
+[data-theme="dark"] input:focus {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 3px rgb(240, 241, 243) !important;
+}
+
+[data-theme="light"] input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgb(224, 242, 254) !important;
+}
+
+/* Button hover states for both themes */
+[data-theme="dark"] .btn-primary:hover {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af) !important;
+}
+
+[data-theme="light"] .btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+}
+
+/* ===== Custom UI Utilities ===== */
+/* Circular icon used for avatars and navbar icons */
+.icon-circle {
+    width: 2.5rem;
+    /* 40px */
+    height: 2.5rem;
+    /* 40px */
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    border-radius: 9999px;
 }
 
-.carousel-slide[aria-hidden="false"] {
-    pointer-events: auto;
-    z-index: 2;
+.avatar-initial {
+    background: #2563eb;
+    /* blue-600 */
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+    border: 3px solid rgba(37, 99, 235, 0.12);
 }
 
-/* Ensure overlay controls don't block carousel text on very small screens */
-.header-carousel .absolute img#logo {
-    display: block;
-}
-
-.header-carousel .absolute #themeToggle {
-    display: inline-flex;
-}
-
-@media (max-width: 420px) {
-
-    .header-carousel .absolute.left-4,
-    .header-carousel .absolute.right-4 {
-        display: none;
-    }
-
-    /* Hide the carousel completely on very small screens to avoid crowding */
-    .header-carousel {
-        display: none !important;
-    }
-
-    #loginCarousel {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-    }
-}
-
-.carousel-control {
-    transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    backface-visibility: hidden;
-    position: absolute;
-    opacity: 0;
-    transform: translateX(40px) scale(0.96);
-    z-index: 1;
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 0.75rem;
+    background: var(--section-bg);
     color: var(--text-primary);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-
-    .carousel-control:focus {
-        outline: 2px solid #2563eb;
-        opacity: 1 !important;
-        transform: translateX(0) scale(1) !important;
-        z-index: 2;
-        transform: translateY(0) !important;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        transform: translateY(10px);
-    }
-
-    .carousel-dot.active {
-        opacity: 1 !important;
-        background: #2563eb !important;
-    }
-
-    @media (max-width: 768px) {
-        .header-carousel {
-            /* increase height on smaller screens to allow multi-line messages */
-            min-height: 4.2rem;
-            height: auto;
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-
-
-        /* Force-hide individual carousel slide elements (extra safety) */
-        .carousel-slide,
-        .carousel-slide * {
-            display: none !important;
-        }
-
-        /* Ensure overlay logo and theme toggle inside #loginCarousel remain visible */
-        #loginCarousel .absolute {
-            display: block !important;
-            pointer-events: auto !important;
-        }
-
-        #loginCarousel .absolute img#logo {
-            height: 40px !important;
-        }
-
-        #loginCarousel #themeToggle {
-            display: inline-flex !important;
-        }
-
-        .carousel-slide span {
-            font-size: 0.95rem;
-            white-space: normal;
-            /* allow wrapping */
-            line-height: 1.2;
-            padding: 0 8px;
-        }
-
-        .carousel-control {
-            font-size: 0.95rem;
-            padding: 0.5rem;
-        }
-    }
-
-    /* Dynamic Background Image Carousel */
-    #backgroundCarousel {
-        min-height: calc(100vh - 140px);
-        /* Adjust based on header height */
-    }
-
-    .bg-slide {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        min-height: calc(100vh - 140px);
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        opacity: 0;
-        transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-        will-change: opacity;
-    }
-
-    .bg-slide::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.25);
-        pointer-events: none;
-    }
-
-    .bg-slide.active {
-        opacity: 1;
-    }
-
-    /* Smooth transition states for dynamic background changes */
-    .bg-slide.entering {
-        opacity: 0;
-        animation: fadeIn 1.5s ease-in-out forwards;
-    }
-
-    .bg-slide.leaving {
-        opacity: 1;
-        animation: fadeOut 1.5s ease-in-out forwards;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes fadeOut {
-        from {
-            opacity: 1;
-        }
-
-        to {
-            opacity: 0;
-        }
-    }
-
-    /* Custom utility classes for theme integration */
-    .bg-hia-surface {
-        background-color: var(--bg-surface);
-    }
-
-    .text-hia-primary {
-        color: var(--text-primary);
-    }
-
-    .border-hia-input {
-        border-color: var(--input-border);
-    }
-
-    #loginCarousel a,
-    .forgot-password-link a,
-    .sign-up-link a,
-    .nav-item,
-    .login-card a:not(button):not(button *),
-    footer a,
-    .container a:not(button):not(button *) {
-        color: var(--page-color) !important;
-    }
-
-    /* Ensure link hover/active states stay readable */
-    #loginCarousel a:hover,
-    .forgot-password-link a:hover,
-    .sign-up-link a:hover,
-    footer a:hover {
-        text-decoration: underline;
-        opacity: 0.95;
-    }
-
-    /* Dark mode specific enhancements */
-    [data-theme="dark"] .gradient-bg {
-        background: linear-gradient(135deg, rgba(30, 36, 94, 0.2) 0%, rgba(45, 55, 110, 0.3) 100%);
-    }
-
-    [data-theme="light"] .gradient-bg {
-        background: linear-gradient(135deg, rgba(219, 234, 254, 0.3) 0%, rgba(199, 210, 254, 0.3) 100%);
-    }
-
-    /* Dynamic Background Image Layer */
-    #backgroundLayer {
-        background-position: center;
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-        pointer-events: none;
-    }
-
-    /* Theme toggle button styles */
-    #themeToggle {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    #themeToggle:hover {
-        transform: translateY(-1px) scale(1.05);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    [data-theme="dark"] #themeToggle {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #e2e8f0;
-    }
-
-    [data-theme="light"] #themeToggle {
-        background: rgba(255, 255, 255, 0.8);
-        border-color: rgba(0, 0, 0, 0.1);
-        color: #1e293b;
-    }
-
-    /* Enhanced card shadows for both themes */
-    [data-theme="dark"] .login-card {
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
-        background: rgba(30, 41, 59, 0.8);
-    }
-
-    [data-theme="light"] .login-card {
-        box-shadow: 0 25px 50px -12px rgb(240, 241, 243), 0 0 0 1px rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.8);
-    }
-
-    /* Ensure login primary button text is always readable */
-    button#loginBtn,
-    button#loginBtn *,
-    button#loginBtn span,
-    button#loginBtn i {
-        color: #ffffff !important;
-    }
-
-    button#loginBtn:disabled,
-    button#loginBtn:disabled *,
-    button#loginBtn:disabled span,
-    button#loginBtn:disabled i {
-        color: #ffffff !important;
-        opacity: 0.95;
-    }
-
-    button#loginBtn:hover,
-    button#loginBtn:hover *,
-    button#loginBtn:focus,
-    button#loginBtn:focus * {
-        color: #ffffff !important;
-    }
-
-    /* Form input enhancements for dark mode */
-    [data-theme="dark"] input:focus {
-        border-color: #60a5fa !important;
-        box-shadow: 0 0 0 3px rgb(240, 241, 243) !important;
-    }
-
-    [data-theme="light"] input:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 3px rgb(224, 242, 254) !important;
-    }
-
-    /* Button hover states for both themes */
-    [data-theme="dark"] .btn-primary:hover {
-        background: linear-gradient(135deg, #1e3a8a, #1e40af) !important;
-    }
-
-    [data-theme="light"] .btn-primary:hover {
-        background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
-    }
-
-    /* Enhanced Header Carousel Animations */
-
-    .carousel-item {
-        transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-        backface-visibility: hidden;
-        position: absolute;
-        opacity: 0;
-        transform: translateX(40px) scale(0.96);
-        z-index: 1;
-    }
-
-    .carousel-item.active {
-        opacity: 1 !important;
-        transform: translateX(0) scale(1) !important;
-        z-index: 2;
-    }
-
-    .carousel-item.entering {
-        animation: slideFadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        z-index: 3;
-    }
-
-    .carousel-item.exiting {
-        animation: slideFadeOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        z-index: 1;
-    }
-
-    @keyframes slideFadeIn {
-        0% {
-            opacity: 0;
-            transform: translateX(40px) scale(0.96);
-        }
-
-        100% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-        }
-    }
-
-    @keyframes slideFadeOut {
-        0% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-        }
-
-        100% {
-            opacity: 0;
-            transform: translateX(-40px) scale(0.96);
-        }
-    }
-
-    /* Ultra-sleek carousel animations with enhanced transitions */
-    @keyframes fadeSlideInUp {
-        0% {
-            opacity: 0;
-            transform: translateY(30px) scale(0.8) rotateX(15deg);
-            filter: blur(2px);
-        }
-
-        30% {
-            opacity: 0.4;
-            transform: translateY(15px) scale(0.9) rotateX(8deg);
-            filter: blur(1px);
-        }
-
-        70% {
-            opacity: 0.8;
-            transform: translateY(3px) scale(0.98) rotateX(2deg);
-            filter: blur(0.5px);
-        }
-
-        100% {
-            opacity: 1;
-            transform: translateY(0) scale(1) rotateX(0deg);
-            filter: blur(0px);
-        }
-    }
-
-    @keyframes fadeSlideOutUp {
-        0% {
-            opacity: 1;
-            transform: translateY(0) scale(1) rotateX(0deg);
-            filter: blur(0px);
-            z-index: 2;
-        }
-
-        30% {
-            opacity: 0.7;
-            transform: translateY(-5px) scale(0.98) rotateX(-2deg);
-            filter: blur(0.5px);
-        }
-
-        70% {
-            opacity: 0.3;
-            transform: translateY(-15px) scale(0.9) rotateX(-8deg);
-            filter: blur(1px);
-        }
-
-        100% {
-            opacity: 0;
-            transform: translateY(-30px) scale(0.8) rotateX(-15deg);
-            filter: blur(2px);
-            z-index: 1;
-        }
-    }
-
-    @keyframes glowPulse {
-
-        0%,
-        100% {
-            box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
-        }
-
-        50% {
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
-        }
-    }
-
-    .carousel-item.entering {
-        animation: fadeSlideInUp 1.2s cubic-bezier(0.22, 0.68, 0.12, 0.95) forwards;
-        z-index: 3;
-    }
-
-    .carousel-item.exiting {
-        animation: fadeSlideOutUp 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        z-index: 1;
-    }
-
-    .carousel-item.active:not(.entering):not(.exiting) {
-        animation: glowPulse 5s ease-in-out infinite;
-        z-index: 2;
-    }
-
-    /* Enhanced text sliding effect */
-    .carousel-text {
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        transform-origin: center;
-    }
-
-    .carousel-item.entering .carousel-text {
-        animation: textSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    }
-
-    .carousel-item.exiting .carousel-text {
-        animation: textSlideOut 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
-    }
-
-    @keyframes textSlideIn {
-        0% {
-            opacity: 0;
-            transform: translateX(-20px) scale(0.9);
-            letter-spacing: 2px;
-        }
-
-        50% {
-            opacity: 0.7;
-            transform: translateX(-5px) scale(0.95);
-            letter-spacing: 1px;
-        }
-
-        100% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-            letter-spacing: normal;
-        }
-    }
-
-    @keyframes textSlideOut {
-        0% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-            letter-spacing: normal;
-        }
-
-        100% {
-            opacity: 0;
-            transform: translateX(20px) scale(0.9);
-            letter-spacing: 2px;
-        }
-    }
-
-    /* Enhanced icon animations */
-    .carousel-item i {
-        transition: all 0.3s ease;
-        transform-origin: center;
-    }
-
-    .carousel-item.active i {
-        animation: iconPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes iconPulse {
-
-        0%,
-        100% {
-            transform: scale(1);
-            opacity: 0.8;
-        }
-
-        50% {
-            transform: scale(1.1);
-            opacity: 1;
-        }
-    }
-
-    /* Carousel text shimmer effect */
-    .carousel-text {
-        position: relative;
-        background: linear-gradient(90deg, var(--text-primary) 0%, var(--text-primary) 40%, rgba(255, 255, 255, 0.8) 50%, var(--text-primary) 60%, var(--text-primary) 100%);
-        background-size: 200% 100%;
-        background-clip: text;
-        -webkit-background-clip: text;
-        animation: shimmerText 3s ease-in-out infinite;
-    }
-
-    @keyframes shimmerText {
-
-        0%,
-        100% {
-            background-position: 200% 0;
-        }
-
-        50% {
-            background-position: -200% 0;
-        }
-    }
-
-    /* Theme-specific carousel enhancements */
-    [data-theme="dark"] .carousel-item i {
-        color: #60a5fa !important;
-    }
-
-    [data-theme="light"] .carousel-item i {
-        color: #3b82f6 !important;
-    }
-
-    [data-theme="dark"] .carousel-text {
-        background: linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 40%, rgba(96, 165, 250, 0.8) 50%, #e2e8f0 60%, #e2e8f0 100%);
-        background-size: 200% 100%;
-        background-clip: text;
-        -webkit-background-clip: text;
-    }
-
-    /* Carousel indicators */
-    .carousel-dot {
-        transition: all 0.3s ease;
-    }
-
-    .carousel-dot.active-dot {
-        opacity: 0.8 !important;
-        transform: scale(1.2);
-        background-color: var(--text-primary) !important;
-    }
-
-    .carousel-dot:not(.active-dot) {
-        opacity: 0.3;
-        transform: scale(1);
-    }
-
-    /* Mobile responsive enhancements */
-    @media (max-width: 640px) {
-        .header-carousel {
-            height: 2.5rem;
-        }
-
-        .carousel-item {
-            font-size: 0.75rem;
-        }
-
-        .carousel-item i {
-            font-size: 0.75rem;
-        }
-    }
-
-    /* Hover effects for carousel */
-    .header-carousel:hover .carousel-item.active {
-        transform: scale(1.05);
-    }
-
-    .header-carousel:hover .carousel-dot.active-dot {
-        opacity: 1 !important;
-        transform: scale(1.4);
-    }
-
-    /* Enhanced animations and effects */
-    @keyframes shimmer {
-        0% {
-            transform: translateX(-100%);
-        }
-
-        100% {
-            transform: translateX(100%);
-        }
-    }
-
-    @keyframes pulse-success {
-
-        0%,
-        100% {
-            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-        }
-
-        50% {
-            box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
-        }
-    }
-
-    @keyframes float {
-
-        0%,
-        100% {
-            transform: translateY(0px);
-        }
-
-        50% {
-            transform: translateY(-5px);
-        }
-    }
-
-    /* Custom shadow utilities */
-    .shadow-3xl {
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-
-    /* Success state animation */
-    .success-animation {
-        animation: pulse-success 1.2s 3;
-    }
-
-    /* Floating animation for logo */
-    #logo {
-        animation: float 6s ease-in-out infinite;
-    }
-
-    /* Input validation states */
-    .input-valid {
-        border-color: var(--success-color) !important;
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1) !important;
-    }
-
-    .input-invalid {
-        border-color: var(--error-color) !important;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
-    }
-
-    /* Enhanced Carousel with Tailwind */
-    .carousel-item {
-        color: var(--text-primary);
-        transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-
-    /* ===== Custom UI Utilities ===== */
-    /* Circular icon used for avatars and navbar icons */
-    .icon-circle {
-        width: 2.5rem;
-        /* 40px */
-        height: 2.5rem;
-        /* 40px */
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 9999px;
-    }
-
-    .avatar-initial {
-        background: #2563eb;
-        /* blue-600 */
-        color: #ffffff;
-        font-weight: 700;
-        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
-        border: 3px solid rgba(37, 99, 235, 0.12);
-    }
-
+    transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.quick-action:hover {
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--section-bg) 85%, transparent);
+}
+
+.quick-action .qa-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+}
+
+/* Logout variant */
+.quick-action.logout {
+    color: var(--error-color);
+}
+
+@media (prefers-color-scheme: dark) {
     .quick-action {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.6rem 0.9rem;
-        border-radius: 0.75rem;
-        background: var(--section-bg);
-        color: var(--text-primary);
-        transition: background-color 0.18s ease, transform 0.18s ease;
-    }
-
-    .quick-action:hover {
-        transform: translateY(-2px);
-        background: color-mix(in srgb, var(--section-bg) 85%, transparent);
-    }
-
-    .quick-action .qa-icon {
-        width: 2.5rem;
-        height: 2.5rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.5rem;
-    }
-
-    /* Logout variant */
-    .quick-action.logout {
-        color: var(--error-color);
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .quick-action {
-            background: #0f1724;
-            /* darker surface */
-            color: var(--text-primary);
-        }
-    }
-
-    .carousel-item.active {
-        opacity: 1 !important;
-        transform: translateY(0) !important;
-    }
-
-    .carousel-item:not(.active) {
-        transform: translateY(10px);
-    }
-
-    /* Input validation states enhanced */
-    .form-group input.valid {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
-    }
-
-    .form-group input.invalid {
-        border-color: #ef4444 !important;
-        box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
-    }
-
-    /* Password toggle button enhancement */
-    #togglePassword:hover {
-        transform: scale(1.1);
-    }
-
-    /* Login button spacing and positioning */
-    #loginBtn {
-        margin-top: 2rem;
-        /* 24px - Increased spacing above login button */
-    }
-
-    /* Login button enhanced states */
-    #loginBtn:disabled {
-        background: linear-gradient(135deg, #10b981, #059669) !important;
-        transform: scale(1) !important;
-    }
-
-    #loginBtn.success {
-        animation: pulse-success 1.2s 3;
-    }
-
-    /* Enhanced Button States */
-    #loginBtn.loading {
-        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
-        cursor: not-allowed;
-    }
-
-    #loginBtn.loading::after {
-        content: '';
-        width: 16px;
-        height: 16px;
-        border: 2px solid #ffffff;
-        border-top: 2px solid transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Theme transition enhancements */
-    * {
-        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-
-    /* Custom focus styles for accessibility */
-    .focus-visible\:ring-2:focus-visible {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-        box-shadow: 0 0 0 2px var(--input-focus-border);
-    }
-
-    /* Responsive enhancements for mobile */
-    @media (max-width: 640px) {
-        .container {
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-    }
-
-    /* Toast styles for login page */
-    #toastContainer {
-        max-width: 360px;
-        width: auto;
-        pointer-events: none;
-        /* container ignores pointer events; toasts opt-in */
-    }
-
-    .toast {
-        pointer-events: auto;
-        /* allow clicks on the toast itself */
-        display: flex;
-        gap: 0.75rem;
-        align-items: flex-start;
-        padding: 0.625rem 0.875rem;
-        border-radius: 0.6rem;
-        box-shadow: 0 12px 30px rgba(2, 6, 23, 0.25);
-        background: rgba(255, 255, 255, 0.96);
-        color: var(--text-primary);
-        border-left: 4px solid var(--page-color);
-        font-size: 0.95rem;
-        line-height: 1.2;
-        min-width: 220px;
-        max-width: 360px;
-        overflow-wrap: anywhere;
-        transform: translateY(-8px);
-        animation: toast-in 260ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
-    }
-
-    .toast .toast-icon {
-        margin-top: 2px;
-        width: 18px;
-        flex: 0 0 18px;
-        text-align: center;
-    }
-
-    .toast .toast-body {
-        flex: 1 1 auto;
-    }
-
-    .toast--success {
-        background: rgba(15, 166, 103, 0.08);
-    }
-
-    .toast--error {
-        background: rgba(239, 68, 68, 0.06);
-    }
-
-    .toast .toast-close {
-        margin-left: 0.5rem;
-        opacity: 0.7;
-        cursor: pointer;
-        border: none;
-        background: transparent;
-        color: inherit;
-    }
-
-    @keyframes toast-in {
-        from {
-            opacity: 0;
-            transform: translateY(-12px) scale(0.995);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    @keyframes toast-out {
-        from {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        to {
-            opacity: 0;
-            transform: translateY(-8px) scale(0.995);
-        }
-    }
-
-    /* Dark-mode tweaks for toast */
-    [data-theme="dark"] .toast {
-        background: rgba(16, 24, 40, 0.9);
+        background: #0f1724;
+        /* darker surface */
         color: var(--text-primary);
     }
+}
 
-    [data-theme="dark"] .toast--success {
-        background: rgba(34, 197, 94, 0.08);
+.carousel-item.active {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+.carousel-item:not(.active) {
+    transform: translateY(10px);
+}
+
+/* Input validation states enhanced */
+.form-group input.valid {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
+}
+
+.form-group input.invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(240, 241, 243, 0.2) !important;
+}
+
+/* Password toggle button enhancement */
+#togglePassword:hover {
+    transform: scale(1.1);
+}
+
+/* Login button spacing and positioning */
+#loginBtn {
+    margin-top: 2rem;
+    /* 24px - Increased spacing above login button */
+}
+
+/* Login button enhanced states */
+#loginBtn:disabled {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    transform: scale(1) !important;
+}
+
+#loginBtn.success {
+    animation: pulse-success 1.2s 3;
+}
+
+/* Enhanced Button States */
+#loginBtn.loading {
+    background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+    cursor: not-allowed;
+}
+
+#loginBtn.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
     }
 
-    [data-theme="dark"] .toast--error {
-        background: rgba(239, 68, 68, 0.06);
+    100% {
+        transform: rotate(360deg);
     }
+}
+
+/* Theme transition enhancements */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Custom focus styles for accessibility */
+.focus-visible\:ring-2:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--input-focus-border);
+}
+
+/* Responsive enhancements for mobile */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Toast styles for login page */
+#toastContainer {
+    max-width: 360px;
+    width: auto;
+    pointer-events: none;
+    /* container ignores pointer events; toasts opt-in */
+}
+
+.toast {
+    pointer-events: auto;
+    /* allow clicks on the toast itself */
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.6rem;
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.25);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--text-primary);
+    border-left: 4px solid var(--page-color);
+    font-size: 0.95rem;
+    line-height: 1.2;
+    min-width: 220px;
+    max-width: 360px;
+    overflow-wrap: anywhere;
+    transform: translateY(-8px);
+    animation: toast-in 260ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+
+.toast .toast-icon {
+    margin-top: 2px;
+    width: 18px;
+    flex: 0 0 18px;
+    text-align: center;
+}
+
+.toast .toast-body {
+    flex: 1 1 auto;
+}
+
+.toast--success {
+    background: rgba(15, 166, 103, 0.08);
+}
+
+.toast--error {
+    background: rgba(239, 68, 68, 0.06);
+}
+
+.toast .toast-close {
+    margin-left: 0.5rem;
+    opacity: 0.7;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: inherit;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.995);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toast-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.995);
+    }
+}
+
+/* Dark-mode tweaks for toast */
+[data-theme="dark"] .toast {
+    background: rgba(16, 24, 40, 0.9);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .toast--success {
+    background: rgba(34, 197, 94, 0.08);
+}
+
+[data-theme="dark"] .toast--error {
+    background: rgba(239, 68, 68, 0.06);
 }
 
 /* Explicit dark theme variables (in case user toggles mode manually) */
@@ -2311,53 +2034,4 @@ select:focus {
     color: #93c5fd;
 }
 
-/* Login Page Carousel Messages */
-#carouselContainer {
-    display: flex;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.carousel-slide {
-    min-width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 1rem;
-}
-
-#carouselDots button {
-    cursor: pointer;
-    border: none;
-    background: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-}
-
-#carouselDots button:hover {
-    background: rgba(255, 255, 255, 0.8);
-    transform: scale(1.2);
-}
-
-#carouselDots button:focus {
-    outline: 2px solid white;
-    outline-offset: 2px;
-}
-
-/* Marquee Animation for Mobile Messages */
-@keyframes marquee {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-.animate-marquee {
-    display: inline-block;
-    animation: marquee 20s linear infinite;
-}
-
-.animate-marquee:hover {
-    animation-play-state: paused;
-}
+/* Carousel rules removed */

@@ -14,530 +14,765 @@
     <link rel="stylesheet" href="../theme.css" />
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Small helpers to mimic profile page expand/collapse chevron animation */
+        .expandBtn i {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .expandBtn.active i {
+            transform: rotate(180deg);
+        }
+
+        /* Panels are transitioned via inline styles in JS; ensure basic overflow hidden */
+        .panel {
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+        }
+
+        /* Zebra striping and hover for admin tables */
+        #usersTable tbody tr:nth-child(odd),
+        #permitsTable tbody tr:nth-child(odd) {
+            background-color: rgba(15, 23, 42, 0.02);
+        }
+
+        #usersTable tbody tr:hover,
+        #permitsTable tbody tr:hover {
+            background-color: rgba(15, 23, 42, 0.04);
+        }
+
+        @media (prefers-color-scheme: dark) {
+
+            #usersTable tbody tr:nth-child(odd),
+            #permitsTable tbody tr:nth-child(odd) {
+                background-color: rgba(255, 255, 255, 0.02);
+            }
+
+            #usersTable tbody tr:hover,
+            #permitsTable tbody tr:hover {
+                background-color: rgba(255, 255, 255, 0.03);
+            }
+        }
+
+        /* Table grid lines and header/row-title styling */
+        #usersTable,
+        #permitsTable {
+            border-collapse: collapse;
+        }
+
+        /* horizontal line under the header */
+        #usersTable thead th,
+        #permitsTable thead th {
+            border-bottom: 1px solid var(--input-border);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        /* subtle vertical separators between columns */
+        #usersTable th,
+        #usersTable td,
+        #permitsTable th,
+        #permitsTable td {
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        #usersTable tr th:last-child,
+        #usersTable tr td:last-child,
+        #permitsTable tr th:last-child,
+        #permitsTable tr td:last-child {
+            border-right: none;
+        }
+
+        /* left-column header look (row titles) */
+        #usersTable tbody td:first-child,
+        #permitsTable tbody td:first-child {
+            background-color: var(--bg-surface);
+            font-weight: 600;
+            padding-left: 1rem;
+            border-right: 1px solid var(--input-border);
+            color: var(--text-primary);
+        }
+
+        /* Stats tiles: show metric title as a small header inside each tile */
+        .stats-grid .text-center {
+            position: relative;
+            padding-top: 1.75rem;
+        }
+
+        .stats-grid .text-center .text-sm {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.75rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .stats-grid .text-center .w-12,
+        .stats-grid .text-center .text-2xl {
+            margin-top: 0.5rem;
+        }
+
+        /* Show full grid lines around every cell (all sides) */
+        #usersTable th,
+        #usersTable td,
+        #permitsTable th,
+        #permitsTable td {
+            border: 1px solid var(--input-border) !important;
+        }
+
+        /* Ensure table outer border is visible */
+        #usersTable,
+        #permitsTable {
+            border: 1px solid var(--input-border);
+            border-collapse: collapse;
+        }
+
+        /* When a section is collapsed remove its panel area entirely so only
+           the header bar remains visible (no empty space). JS toggles
+           the .collapsed class on the card. */
+        .section-card.collapsed .panel {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body class="bg-[var(--bg-surface)] text-[var(--text-primary)] font-system min-h-screen transition-all duration-300">
     <!-- Use shared layout via layout.mount for navbar/sidebar/toasts/etc. -->
     <!-- Shared layout will provide navbar, sidebar, modals and toast container -->
 
-    <main class="container mx-auto px-4 py-8">
-        <!-- Keep users table with expected ID -->
+    <main class="w-full mx-auto px-0 sm:px-2 md:px-4 lg:px-6 xl:px-8 py-8 max-w-none space-y-6">
         <section>
-            <div class="section-header flex items-center justify-between">
-                <h2 class="text-lg font-bold text-[var(--text-primary)]">User Details & Role Management</h2>
-                <button class="expandBtn icon-only" aria-label="Toggle user list" aria-expanded="false"
-                    onclick="toggleDetails('usersSection', this)">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-            </div>
-            <div id="usersSection" class="panel">
-                <div class="table-responsive">
-                    <table id="usersTable" class="w-full">
-                        <thead>
-                            <tr>
-                                <th data-key="name" class="text-[var(--text-primary)]">Name</th>
-                                <th data-key="email" class="text-[var(--text-primary)]">Email</th>
-                                <th data-key="phone" class="text-[var(--text-primary)]">Phone</th>
-                                <th data-key="role" class="text-[var(--text-primary)]">Role</th>
-                                <th data-key="status" class="text-[var(--text-primary)]">Status</th>
-                                <th data-key="registered" class="text-[var(--text-primary)]">Registered</th>
-                                <th data-key="last-login" class="text-[var(--text-primary)]">Last Login</th>
-                                <th data-key="actions" class="text-[var(--text-primary)]">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableSkeleton">
-                            <!-- Skeleton loading row -->
-                            <tr>
-                                <td>
-                                    <div class="skeleton h-4 w-24"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-32"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-20"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-20"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-16"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-28"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-32"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-8 w-32"></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="skeleton h-4 w-24"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-32"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-20"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-20"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-16"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-28"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-32"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-8 w-32"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tbody id="usersTableBody" style="display:none"></tbody>
-                    </table>
+            <div
+                class="section-card bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
+                <div
+                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)] rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <h2
+                            class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2 whitespace-nowrap">
+                            <i class="fas fa-users text-hia-blue"></i>
+                            User Details
+                        </h2>
+                        <button class="expandBtn icon-only" aria-label="Toggle user list" aria-expanded="false"
+                            data-action="toggleSection" data-section="users" aria-controls="usersContent">
+                            <i id="usersIcon" class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="usersSection" class="panel">
+                    <div id="usersContent" class="p-6 hidden max-h-[60vh] overflow-y-auto">
+                        <div class="table-responsive overflow-x-auto">
+                            <table id="usersTable" class="w-full">
+                                <thead>
+                                    <tr class="border-b border-[var(--input-border)]">
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Name</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Email</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Phone</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Role</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Status</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Registered</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Last Login</th>
+                                        <th class="px-6 py-4 text-[var(--text-primary)]">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="divide-y divide-[var(--input-border)]">
+                                    <!-- Data will be populated dynamically by admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- small stats grid removed from here and moved below Submitted Permit Details -->
-
-        <!-- Permits table expected ID -->
+        <!-- Submitted Permit Details section -->
         <section class="mt-6">
-            <div class="section-header flex items-center justify-between">
-                <h2 class="text-lg font-bold text-[var(--text-primary)]">Permit Details</h2>
-                <button class="expandBtn icon-only" aria-label="Toggle permits list" aria-expanded="false"
-                    onclick="toggleDetails('permitsSection', this)">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-            </div>
-            <div id="permitsSection" class="panel">
-                <div class="table-responsive">
-                    <table id="permitsTable" class="w-full min-w-full divide-y divide-gray-200 table-auto">
-                        <thead class="bg-[var(--bg-surface)]">
-                            <tr>
-                                <th data-key="serial"
-                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
-                                    Serial No.</th>
-                                <th data-key="submitted"
-                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
-                                    Submitted Date &amp; Time</th>
-                                <th data-key="title"
-                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
-                                    Permit Title</th>
-                                <th data-key="status"
-                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
-                                    Status</th>
-                                <th data-key="permit-number"
-                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
-                                    Permit Number</th>
-                                <th data-key="actions"
-                                    class="px-4 py-2 text-left text-sm font-semibold text-[var(--text-secondary)]">
-                                    Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="permitsTableSkeleton">
-                            <tr class="placeholder-row">
-                                <td colspan="6">Loading…</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="skeleton h-4 w-12"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-32"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-40"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-20"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-24"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-8 w-32"></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="skeleton h-4 w-12"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-32"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-40"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-20"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-4 w-24"></div>
-                                </td>
-                                <td>
-                                    <div class="skeleton h-8 w-32"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tbody id="permitsTableBody" style="display:none"></tbody>
-                    </table>
+            <div
+                class="section-card bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
+                <div
+                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)] rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <h2
+                            class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2 whitespace-nowrap">
+                            <i class="fas fa-file-alt text-hia-blue"></i>
+                            Permit Details
+                        </h2>
+                        <button class="expandBtn icon-only" aria-label="Toggle permits list" aria-expanded="false"
+                            data-action="toggleSection" data-section="permits" aria-controls="permitsContent">
+                            <i id="permitsIcon" class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="permitsSection" class="panel">
+                    <div id="permitsContent" class="p-6 hidden max-h-[60vh] overflow-y-auto">
+                        <div class="table-responsive overflow-x-auto">
+                            <table id="permitsTable" class="w-full min-w-full table-auto">
+                                <thead class="bg-[var(--bg-surface)]">
+                                    <tr class="border-b border-[var(--input-border)]">
+                                        <th data-key="serial"
+                                            class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                            Serial No.</th>
+                                        <th data-key="submitted"
+                                            class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                            Submitted Date &amp; Time</th>
+                                        <th data-key="title"
+                                            class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                            Permit Title</th>
+                                        <th data-key="status"
+                                            class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                            Status</th>
+                                        <th data-key="permit-number"
+                                            class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                            Permit Number</th>
+                                        <th data-key="actions"
+                                            class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-secondary)]">
+                                            Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="permitsTableSkeleton">
+                                    <tr class="placeholder-row">
+                                        <td colspan="6">Loading…</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="skeleton h-4 w-12"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-32"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-40"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-20"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-24"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-8 w-32"></div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="skeleton h-4 w-12"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-32"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-40"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-20"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-4 w-24"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton h-8 w-32"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tbody id="permitsTableBody" class="divide-y divide-[var(--input-border)]"
+                                    style="display:none"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Statistics & Visuals section -->
+        <!-- Statistics section: split into two collapsible panels -->
         <section class="mt-10">
-            <div class="section-header flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-[var(--text-primary)]">Statistics & Visuals</h2>
-            </div>
-            <!-- Statistics row (Users) -->
-            <div class="bg-[var(--bg-surface)] rounded-2xl p-6 mb-8">
-                <div class="mt-4 stats-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Total Users</h3>
-                        <div id="statUsers" class="value">&nbsp;</div>
+            <!-- User Statistics header -->
+            <div
+                class="section-card bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
+                <div
+                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)] rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                            <i class="fas fa-chart-line text-hia-blue"></i>
+                            User Statistics
+                        </h2>
+                        <button class="expandBtn icon-only" aria-label="Toggle user statistics" aria-expanded="false"
+                            data-action="toggleSection" data-section="userStats" aria-controls="userStatsContent">
+                            <i id="userStatsIcon" class="fas fa-chevron-down"></i>
+                        </button>
                     </div>
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Active Users</h3>
-                        <div id="statActiveUsers" class="value">&nbsp;</div>
-                    </div>
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Inactive Users</h3>
-                        <div id="statInactiveUsers" class="value">&nbsp;</div>
-                    </div>
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Admins</h3>
-                        <div id="statAdmins" class="value">&nbsp;</div>
-                    </div>
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Approvers</h3>
-                        <div id="statApprovers" class="value">&nbsp;</div>
-                    </div>
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Pre-Approvers</h3>
-                        <div id="statPreApprovers" class="value">&nbsp;</div>
-                    </div>
-                    <div class="card stat-card">
-                        <h3 class="text-sm font-medium">Requesters</h3>
-                        <div id="statRequesters" class="value">&nbsp;</div>
-                    </div>
-                </div>
-            </div>
-            <!-- Visuals row (Users) -->
-            <section class="mt-8">
-                <h3 class="font-bold mb-4 text-[var(--text-primary)]">User Visuals</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div
-                        class="bg-[var(--bg-surface)] rounded-xl p-4 flex flex-col h-full min-h-[64px] shadow border border-[var(--input-border)]">
-                        <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">User Status</h4>
-                        <div class="flex-1 flex items-center justify-center">
-                            <canvas id="userStatusChart" class="w-full aspect-[16/9] max-h-[150px]"></canvas>
-                        </div>
-                    </div>
-                    <div
-                        class="bg-[var(--bg-surface)] rounded-xl p-4 flex flex-col h-full min-h-[64px] shadow border border-[var(--input-border)]">
-                        <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">User Roles</h4>
-                        <div class="flex-1 flex items-center justify-center">
-                            <canvas id="userRoleChart" class="w-full aspect-[16/9] max-h-[150px]"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Permits Statistics & Visuals -->
-            <section class="mt-10">
-                <div class="section-header flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-bold text-[var(--text-primary)]">Permit Statistics & Visuals</h2>
-                </div>
-                <div class="bg-[var(--bg-surface)] rounded-2xl p-6 mb-8">
-                    <!-- Use shared layout via layout.mount for navbar/sidebar/toasts/etc. -->
-                </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Last Login</label>
-                    <div id="view_lastLogin"
-                        class="px-3 py-2 border rounded-md bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)]">
-                    </div>
-                </div>
                 </div>
 
-                <div class="modal-action-row pt-4">
-                    <!-- Visible trigger to enter edit mode; Save still commits changes -->
-                    <button id="viewUpdateProfileBtn" class="modal-action-btn">Update Profile</button>
-                    <button id="viewResetBtn" class="modal-action-btn">Reset Password</button>
-                    <div id="viewStatusWrap" class="tooltip">
-                        <button id="viewToggleBtn" class="modal-action-btn" aria-live="polite">Status</button>
-                        <span class="tooltiptext" id="viewToggleTooltip">&nbsp;</span>
-                    </div>
-                    <button id="viewDeleteBtn" class="modal-action-btn delete">Delete</button>
-                </div>
-                </div>
-                </div>
-                </div>
-
-                <!-- View Permit Details Modal (Admin) -->
-                <div id="viewPermitModal"
-                    class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-                    <div
-                        class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                <div id="userStatsSection" class="panel">
+                    <div id="userStatsContent" class="p-6 mb-6 hidden">
                         <div
-                            class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-xl font-bold">Permit Details</h3>
-                                <button id="viewPermitClose" class="close">&times;</button>
-                            </div>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            <input type="hidden" id="permit_id" />
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Permit
-                                        Title</label>
-                                    <div id="permit_title" class="font-semibold"></div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Permit
-                                        Number</label>
-                                    <div id="permit_number"></div>
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Status</label>
-                                    <div id="permit_status"></div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Submitted
-                                        Date &
-                                        Time</label>
-                                    <div id="permit_submitted"></div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <h4 class="font-bold mb-2">Requester Details</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label
-                                            class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
-                                        <div id="permit_requester_name"></div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date
-                                            &
-                                            Time</label>
-                                        <div id="permit_requester_time"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <h4 class="font-bold mb-2">Pre-Approver Details</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label
-                                            class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
-                                        <div id="permit_preapprover_name"></div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date
-                                            &
-                                            Time</label>
-                                        <div id="permit_preapprover_time"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Comments</label>
-                                    <div id="permit_preapprover_comments" class="whitespace-pre-line"></div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <h4 class="font-bold mb-2">Approver Details</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label
-                                            class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
-                                        <div id="permit_approver_name"></div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date
-                                            &
-                                            Time</label>
-                                        <div id="permit_approver_time"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Comments</label>
-                                    <div id="permit_approver_comments" class="whitespace-pre-line"></div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <h4 class="font-bold mb-2">Attached Files</h4>
-                                <div id="permit_files" class="flex flex-wrap gap-2"></div>
-                            </div>
-
-                            <div class="modal-action-row pt-4">
-                                <button id="permitApproveBtn"
-                                    class="modal-action-btn bg-green-600 text-white">Approve</button>
-                                <button id="permitRejectBtn"
-                                    class="modal-action-btn bg-red-600 text-white">Reject</button>
-                                <button id="permitUpdateBtn" class="modal-action-btn">Update Permit</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chart.js -->
-                <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
-
-                <!-- Announcement Modal (Admin) -->
-                <div id="announcement-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true"
-                    aria-labelledby="announcement-modal-title">
-                    <div class="absolute inset-0 bg-[var(--overlay-bg)] backdrop-blur-sm"></div>
-                    <div
-                        class="relative mx-auto mt-16 w-[min(96vw,720px)] rounded-2xl bg-[var(--bg-surface)] shadow-2xl border border-[var(--input-border)] p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 id="announcement-modal-title" class="text-lg font-semibold text-[var(--text-primary)]">
-                                Manage Announcements</h2>
-                            <button type="button" id="announcementModalClose"
-                                class="text-[var(--text-primary)] hover:text-[var(--button-bg)]"><i
-                                    class="fas fa-times text-xl"></i></button>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div>
-                                <form id="announcementForm" class="space-y-3">
-                                    <input type="hidden" id="announcement_id" />
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1">Title</label>
-                                        <input id="announcement_title" type="text"
-                                            class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
-                                            placeholder="Short title (optional)" />
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1">Message</label>
-                                        <div class="flex gap-2 mb-2 items-center">
-                                            <label class="text-xs text-[var(--text-secondary)]">Language</label>
-                                            <select id="announcement_lang"
-                                                class="text-sm px-2 py-1 rounded bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)]">
-                                                <option value="en">English (en)</option>
-                                                <option value="hi">Hindi (hi)</option>
-                                                <option value="ar">Arabic (ar)</option>
-                                            </select>
-                                        </div>
-                                        <div id="announcement_toolbar" class="mb-2 flex gap-2">
-                                            <button type="button" data-cmd="bold"
-                                                class="px-2 py-1 rounded text-sm bg-[var(--button-bg)] text-[var(--button-text)] hover:opacity-90">B</button>
-                                            <button type="button" data-cmd="italic"
-                                                class="px-2 py-1 rounded text-sm bg-[var(--button-bg)] text-[var(--button-text)] hover:opacity-90">I</button>
-                                        </div>
-                                        <div id="announcement_editor" contenteditable="true"
-                                            class="w-full min-h-[96px] px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
-                                            aria-multiline="true">
-                                        </div>
-                                        <textarea id="announcement_message" rows="4" class="hidden"></textarea>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1">Start (optional)</label>
-                                            <input id="announcement_start" type="text"
-                                                class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded flatpickr-input text-[var(--text-primary)]"
-                                                placeholder="YYYY-MM-DD HH:mm" />
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1">End (optional)</label>
-                                            <input id="announcement_end" type="text"
-                                                class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded flatpickr-input text-[var(--text-primary)]"
-                                                placeholder="YYYY-MM-DD HH:mm" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1">Icon (FontAwesome class)</label>
-                                        <input id="announcement_icon" type="text"
-                                            class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
-                                            placeholder="fa-bullhorn" />
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <label class="inline-flex items-center gap-2"><input id="announcement_active"
-                                                type="checkbox" checked /> Publish</label>
-                                        <button id="announcementSaveBtn" type="button"
-                                            class="ml-auto px-4 py-2 rounded bg-[var(--button-bg)] text-[var(--button-text)]">Save</button>
-                                    </div>
-                                </form>
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <h3 class="text-sm font-medium">Existing Announcements</h3>
-                                    <button id="announcementNewBtn"
-                                        class="text-sm text-[var(--link-color)]">New</button>
-                                </div>
-                                <div id="announcementList" class="space-y-2 max-h-[42vh] overflow-y-auto">
-                                    <!-- admin messages will be listed here -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Shared idle timeout modal (consistent with shared layout) -->
-                <div id="idle-timeout-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true"
-                    aria-labelledby="idle-timeout-title">
-                    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" data-idle-overlay></div>
-                    <div
-                        class="relative mx-auto mt-32 w-[min(92vw,420px)] rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col gap-4">
-                        <div class="flex items-start gap-3">
+                            class="mt-4 stats-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                            <!-- Total Users -->
                             <div
-                                class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10">
-                                <i class="fas fa-hourglass-half text-xl"></i>
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-users text-blue-600 dark:text-blue-400 text-xl"></i>
+                                </div>
+                                <div id="statUsers" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                                    &nbsp;
+                                </div>
+                                <div class="text-sm text-blue-700 dark:text-blue-300 font-medium">Total Users</div>
                             </div>
 
-                            <div class="flex-1 space-y-2">
-                                <h2 id="idle-timeout-title" class="text-lg font-semibold text-gray-800 dark:text-white">
-                                    Session is
-                                    about to
-                                    expire</h2>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">
-                                    For your security, your session will end soon due to inactivity. Do you want to
-                                    continue your
-                                    session?
-                                </p>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">
-                                    Time remaining: <span data-idle-countdown class="font-semibold">120</span> seconds
-                                </p>
-                                <p data-idle-status class="hidden text-sm text-red-500"></p>
+                            <!-- Active Users -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-green-100 dark:bg-green-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-user-check text-green-600 dark:text-green-400 text-xl"></i>
+                                </div>
+                                <div id="statActiveUsers"
+                                    class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+                                    &nbsp;</div>
+                                <div class="text-sm text-green-700 dark:text-green-300 font-medium">Active Users</div>
+                            </div>
+
+                            <!-- Inactive Users -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-user-slash text-yellow-600 dark:text-yellow-400 text-xl"></i>
+                                </div>
+                                <div id="statInactiveUsers"
+                                    class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">&nbsp;</div>
+                                <div class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">Inactive Users
+                                </div>
+                            </div>
+
+                            <!-- Admins -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-sky-100 dark:bg-sky-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-user-shield text-sky-600 dark:text-sky-400 text-xl"></i>
+                                </div>
+                                <div id="statAdmins" class="text-2xl font-bold text-sky-600 dark:text-sky-400 mb-1">
+                                    &nbsp;
+                                </div>
+                                <div class="text-sm text-sky-700 dark:text-sky-300 font-medium">Admins</div>
+                            </div>
+
+                            <!-- Approvers -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-purple-100 dark:bg-purple-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-user-tie text-purple-600 dark:text-purple-400 text-xl"></i>
+                                </div>
+                                <div id="statApprovers"
+                                    class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+                                    &nbsp;</div>
+                                <div class="text-sm text-purple-700 dark:text-purple-300 font-medium">Approvers</div>
+                            </div>
+
+                            <!-- Pre-Approvers -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-indigo-100 dark:bg-indigo-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-user-clock text-indigo-600 dark:text-indigo-400 text-xl"></i>
+                                </div>
+                                <div id="statPreApprovers"
+                                    class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-1">
+                                    &nbsp;</div>
+                                <div class="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Pre-Approvers
+                                </div>
+                            </div>
+
+                            <!-- Requesters -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-rose-100 dark:bg-rose-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-paper-plane text-rose-600 dark:text-rose-400 text-xl"></i>
+                                </div>
+                                <div id="statRequesters"
+                                    class="text-2xl font-bold text-rose-600 dark:text-rose-400 mb-1">
+                                    &nbsp;
+                                </div>
+                                <div class="text-sm text-rose-700 dark:text-rose-300 font-medium">Requesters</div>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-end gap-3">
-                            <button type="button" data-idle-stay
-                                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
-                                Continue Session
-                            </button>
-                            <button type="button" data-idle-logout
-                                class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 transition-colors">
-                                Log Out
-                            </button>
+                        <!-- User charts: Roles, Status, Type -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div
+                                class="bg-[var(--bg-surface)] rounded-xl p-4 shadow border border-[var(--input-border)] md:col-span-1">
+                                <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">User Roles</h4>
+                                <div style="position: relative; height: 250px; max-height: 250px;"
+                                    class="flex items-center justify-center">
+                                    <canvas id="userRoleChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div
+                                class="bg-[var(--bg-surface)] rounded-xl p-4 shadow border border-[var(--input-border)]">
+                                <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">User Status</h4>
+                                <div style="position: relative; height: 250px; max-height: 250px;"
+                                    class="flex items-center justify-center">
+                                    <canvas id="userStatusChart"></canvas>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
+        </section>
 
-                <!-- Charts (required by admin scripts) -->
-                <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
-                <script type="module" src="admin.js"></script>
-                <!-- Mount shared layout shell and move this page's content into it -->
-                <script defer src="../shared/layout.mount.js" data-layout="../shared/layout.html"></script>
+        <section class="mt-6">
+            <!-- Permit Statistics header -->
+            <div
+                class="section-card bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden">
+                <div
+                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)] rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                            <i class="fas fa-file-signature text-hia-blue"></i>
+                            Permit Statistics
+                        </h2>
+                        <button class="expandBtn icon-only" aria-label="Toggle permit statistics" aria-expanded="false"
+                            data-action="toggleSection" data-section="permitStats" aria-controls="permitStatsContent">
+                            <i id="permitStatsIcon" class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="permitStatsSection" class="panel">
+                    <div id="permitStatsContent" class="p-6 mb-8 hidden">
+                        <div
+                            class="mt-4 stats-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                            <!-- Pending -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-clock text-yellow-600 dark:text-yellow-400 text-xl"></i>
+                                </div>
+                                <div id="statPending"
+                                    class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
+                                    &nbsp;</div>
+                                <div class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">Pending</div>
+                            </div>
+
+                            <!-- In Progress -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-sky-100 dark:bg-sky-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-spinner text-sky-600 dark:text-sky-400 text-xl"></i>
+                                </div>
+                                <div id="statInProgress" class="text-2xl font-bold text-sky-600 dark:text-sky-400 mb-1">
+                                    &nbsp;
+                                </div>
+                                <div class="text-sm text-sky-700 dark:text-sky-300 font-medium">In Progress</div>
+                            </div>
+
+                            <!-- Approved -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-green-100 dark:bg-green-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-check-circle text-green-600 dark:text-green-400 text-xl"></i>
+                                </div>
+                                <div id="statApproved"
+                                    class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
+                                    &nbsp;
+                                </div>
+                                <div class="text-sm text-green-700 dark:text-green-300 font-medium">Approved</div>
+                            </div>
+
+                            <!-- Rejected -->
+                            <div
+                                class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
+                                <div
+                                    class="w-12 h-12 bg-red-100 dark:bg-red-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-times-circle text-red-600 dark:text-red-400 text-xl"></i>
+                                </div>
+                                <div id="statRejected" class="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
+                                    &nbsp;
+                                </div>
+                                <div class="text-sm text-red-700 dark:text-red-300 font-medium">Rejected</div>
+                            </div>
+                        </div>
+
+                        <!-- Permit charts: Monthly/Permit status -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div
+                                class="bg-[var(--bg-surface)] rounded-xl p-4 shadow border border-[var(--input-border)]">
+                                <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">Monthly Trend</h4>
+                                <div style="position: relative; height: 250px; max-height: 250px;">
+                                    <canvas id="monthlyTrendChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div
+                                class="bg-[var(--bg-surface)] rounded-xl p-4 shadow border border-[var(--input-border)]">
+                                <h4 class="text-sm font-semibold mb-3 text-[var(--text-primary)]">Permit Status</h4>
+                                <div style="position: relative; height: 250px; max-height: 250px;">
+                                    <canvas id="permitStatusChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View Permit Details Modal (Admin) -->
+        <div id="viewPermitModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+            <div
+                class="bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--input-border)] w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                <div
+                    class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold">Permit Details</h3>
+                        <button id="viewPermitClose" class="close">&times;</button>
+                    </div>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="permit_id" />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Permit
+                                Title</label>
+                            <div id="permit_title" class="font-semibold"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Permit
+                                Number</label>
+                            <div id="permit_number"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Status</label>
+                            <div id="permit_status"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Submitted
+                                Date &amp; Time</label>
+                            <div id="permit_submitted"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="font-bold mb-2">Requester Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
+                                <div id="permit_requester_name"></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date
+                                    &amp; Time</label>
+                                <div id="permit_requester_time"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="font-bold mb-2">Pre-Approver Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
+                                <div id="permit_preapprover_name"></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date
+                                    &amp; Time</label>
+                                <div id="permit_preapprover_time"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Comments</label>
+                            <div id="permit_preapprover_comments" class="whitespace-pre-line"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="font-bold mb-2">Approver Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Name</label>
+                                <div id="permit_approver_name"></div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Date
+                                    &amp; Time</label>
+                                <div id="permit_approver_time"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-[var(--text-secondary)]">Comments</label>
+                            <div id="permit_approver_comments" class="whitespace-pre-line"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="font-bold mb-2">Attached Files</h4>
+                        <div id="permit_files" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="modal-action-row pt-4">
+                        <button id="permitApproveBtn" class="modal-action-btn bg-green-600 text-white">Approve</button>
+                        <button id="permitRejectBtn" class="modal-action-btn bg-red-600 text-white">Reject</button>
+                        <button id="permitUpdateBtn" class="modal-action-btn">Update Permit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcement Modal (Admin) -->
+        <div id="announcement-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true"
+            aria-labelledby="announcement-modal-title">
+            <div class="absolute inset-0 bg-[var(--overlay-bg)] backdrop-blur-sm"></div>
+            <div
+                class="relative mx-auto mt-16 w-[min(96vw,720px)] rounded-2xl bg-[var(--bg-surface)] shadow-2xl border border-[var(--input-border)] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 id="announcement-modal-title" class="text-lg font-semibold text-[var(--text-primary)]">
+                        Manage Announcements</h2>
+                    <button type="button" id="announcementModalClose"
+                        class="text-[var(--text-primary)] hover:text-[var(--button-bg)]"><i
+                            class="fas fa-times text-xl"></i></button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 announcement-modal">
+                    <div>
+                        <form id="announcementForm" class="space-y-3">
+                            <input type="hidden" id="announcement_id" />
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Title</label>
+                                <input id="announcement_title" type="text"
+                                    class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
+                                    placeholder="Short title (optional)" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Message</label>
+                                <div class="flex gap-2 mb-2 items-center">
+                                    <label class="text-xs text-[var(--text-secondary)]">Language</label>
+                                    <select id="announcement_lang"
+                                        class="text-sm px-2 py-1 rounded bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)]">
+                                        <option value="en">English (en)</option>
+                                        <option value="ar">Arabic (ar)</option>
+                                    </select>
+                                    <div class="ml-auto"></div>
+                                </div>
+                                <div id="announcement_editor" contenteditable="true"
+                                    class="w-full min-h-[96px] px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
+                                    aria-multiline="true"></div>
+                                <textarea id="announcement_message" rows="4" class="hidden"></textarea>
+                                <!-- translation UI removed -->
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Start (optional)</label>
+                                    <input id="announcement_start" type="text"
+                                        class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded flatpickr-input text-[var(--text-primary)]"
+                                        placeholder="YYYY-MM-DD HH:mm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">End (optional)</label>
+                                    <input id="announcement_end" type="text"
+                                        class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded flatpickr-input text-[var(--text-primary)]"
+                                        placeholder="YYYY-MM-DD HH:mm" />
+                                </div>
+                            </div>
+                            <!-- Icons removed per updated UX -->
+                            <div class="flex items-center gap-3">
+                                <label class="inline-flex items-center gap-2"><input id="announcement_active"
+                                        type="checkbox" checked /> Publish</label>
+                                <button id="announcementSaveBtn" type="button"
+                                    class="ml-auto px-4 py-2 rounded bg-[var(--button-bg)] text-[var(--button-text)]">Save</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="pl-4 border-l border-[var(--input-border)]">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-medium">Existing Announcements</h3>
+                            <button id="announcementNewBtn" class="text-sm text-[var(--link-color)]">New</button>
+                        </div>
+                        <div id="announcementList" class="space-y-2 max-h-[42vh] overflow-y-auto">
+                            <!-- admin messages will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared idle timeout modal (consistent with shared layout) -->
+        <div id="idle-timeout-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true"
+            aria-labelledby="idle-timeout-title">
+            <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" data-idle-overlay></div>
+            <div
+                class="relative mx-auto mt-32 w-[min(92vw,420px)] rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 p-6 flex flex-col gap-4">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10">
+                        <i class="fas fa-hourglass-half text-xl"></i>
+                    </div>
+
+                    <div class="flex-1 space-y-2">
+                        <h2 id="idle-timeout-title" class="text-lg font-semibold text-gray-800 dark:text-white">
+                            Session is
+                            about to
+                            expire</h2>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">
+                            For your security, your session will end soon due to inactivity. Do you want to
+                            continue your
+                            session?
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                            Time remaining: <span data-idle-countdown class="font-semibold">120</span>
+                            seconds
+                        </p>
+                        <p data-idle-status class="hidden text-sm text-red-500"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3">
+                    <button type="button" data-idle-stay
+                        class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+                        Continue Session
+                    </button>
+                    <button type="button" data-idle-logout
+                        class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100 transition-colors">
+                        Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts (required by admin scripts) -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
+        <script type="module" src="admin.js"></script>
+    </main>
+
+    <!-- Mount shared layout shell and move this page's content into it -->
+    <script defer src="../shared/layout.mount.js" data-layout="../shared/layout.html"></script>
+
+    <!-- Make this page use full-width like profile.html by overriding layout container after mount -->
+    <script>
+        (function () {
+            function applyFullWidth() {
+                var wrapper = document.querySelector('[data-layout-wrapper]');
+                if (!wrapper) return;
+                // Remove Tailwind container constraint if present
+                wrapper.classList.remove('container');
+                // Ensure full-bleed width with responsive padding controlled by this page
+                wrapper.classList.add('w-full', 'max-w-none');
+            }
+
+            // Run once now (in case layout already mounted) and also after mount event
+            applyFullWidth();
+            window.addEventListener('layout:mounted', applyFullWidth, { once: true });
+        })();
+    </script>
 </body>
 
 </html>

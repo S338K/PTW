@@ -5,6 +5,7 @@ const logger = require('./logger');
 // If you need to verify env vars during development, use a local-only debug flag.
 
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -21,6 +22,8 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// parse cookies so routes that check refreshToken can read the cookie
+app.use(cookieParser());
 // Serve frontend folder
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -110,6 +113,35 @@ app.use(
     },
   })
 );
+
+// Token middleware: accept Authorization: Bearer <accessToken> and map to
+// req.session.userId / req.session.userRole for backward compatibility with
+// handlers that expect session data. tokenAuth requests are marked with
+// req.tokenAuth = true so other middleware can skip single-session enforcement.
+app.use((req, res, next) => {
+  try {
+    const authHeader = req.headers && req.headers.authorization;
+    if (authHeader && typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+      const token = authHeader.slice(7).trim();
+      if (token) {
+        const jwt = require('jsonwebtoken');
+        const secret = process.env.JWT_SECRET || sessionSecret || 'dev-jwt-secret';
+        try {
+          const payload = jwt.verify(token, secret);
+          req.session = req.session || {};
+          req.session.userId = payload.sub || payload.id || null;
+          req.session.userRole = payload.role || payload.r || null;
+          req.tokenAuth = true;
+        } catch (e) {
+          // invalid token: ignore and continue without setting session
+        }
+      }
+    }
+  } catch (e) {
+    // ignore and proceed
+  }
+  return next();
+});
 
 // DEVELOPMENT: serve the top-level `admin` folder under /admin so local dev pages
 // are same-origin with the backend and will send session cookies correctly.

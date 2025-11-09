@@ -20,6 +20,8 @@ const adminSchema = new mongoose.Schema(
     activeSessionCreatedAt: { type: Date },
     activeSessionUserAgent: { type: String },
     activeSessionIp: { type: String },
+    // Refresh token id for JWT refresh token rotation/revocation
+    refreshTokenId: { type: String, index: true },
   },
 
   {

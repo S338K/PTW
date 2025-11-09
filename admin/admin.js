@@ -1,5 +1,4 @@
 // Initialize admin page after shared layout is mounted.
-// The system message UI was removed from the page; instead initialize
 // admin-specific behaviors when the layout is available.
 function initAdmin() {
     try {
@@ -15,6 +14,20 @@ function initAdmin() {
     try { if (typeof loadRolesIntoSelect === 'function') loadRolesIntoSelect(); } catch (e) { console.warn('loadRolesIntoSelect failed', e); }
     try { if (typeof setupAnnouncementHandlers === 'function') setupAnnouncementHandlers(); } catch (e) { console.warn('setupAnnouncementHandlers failed', e); }
 }
+
+// Ensure cards start collapsed when their content is hidden (runs once)
+(function applyInitialCollapsedState() {
+    try {
+        document.querySelectorAll('[data-action="toggleSection"]').forEach(btn => {
+            try {
+                const section = btn.dataset.section;
+                const card = btn.closest('.section-card');
+                const content = document.getElementById(`${section}Content`);
+                if (card) card.classList.toggle('collapsed', !!(content && content.classList.contains('hidden')));
+            } catch (e) { /* ignore per-item */ }
+        });
+    } catch (e) { /* ignore */ }
+})();
 
 if (document.querySelector('[data-layout-wrapper]')) {
     // Layout already present (maybe pre-mounted) — run on next frame.
@@ -62,7 +75,6 @@ const ROLE_MAP = {
 };
 
 /* ===== Toast ===== */
-/* ===== Toast ===== */
 function showToast(message, type = "success", duration = 3000) {
     // Prefer shared global toast if available (signature: showToast(type, message, opts))
     if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
@@ -76,18 +88,115 @@ function showToast(message, type = "success", duration = 3000) {
     }
 
     // Local fallback (simple inline element)
-    let toast = document.getElementById("toast");
-    if (!toast) toast = ensureToast();
-    // reset content and classes
-    toast.textContent = message;
-    toast.classList.remove("error", "success", "warning", "show");
-    // force reflow to restart animation
-    void toast.offsetWidth;
-    toast.classList.add("show", type);
-    // remove show after duration
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, duration);
+    // Create a lightweight toast container and element similar to shared/toast.js
+    const ensureContainer = () => {
+        let c = document.getElementById('toastContainer');
+        if (!c) {
+            c = document.createElement('div');
+            c.id = 'toastContainer';
+            c.setAttribute('aria-live', 'polite');
+            Object.assign(c.style, {
+                position: 'fixed', top: '16px', right: '16px', zIndex: '9999', display: 'flex',
+                flexDirection: 'column', gap: '8px', pointerEvents: 'none'
+            });
+            document.body.appendChild(c);
+        }
+        return c;
+    };
+
+    const container = ensureContainer();
+    // remove existing toasts
+    Array.from(container.querySelectorAll('.toast')).forEach(el => { try { el.remove(); } catch (_) { } });
+
+    const t = document.createElement('div');
+    t.className = `toast toast--${type}`;
+    t.setAttribute('role', 'status');
+    t.setAttribute('aria-live', 'polite');
+    Object.assign(t.style, {
+        padding: '12px 14px', borderRadius: '10px', boxShadow: '0 6px 18px rgba(0,0,0,0.12)',
+        display: 'flex', gap: '10px', alignItems: 'center', pointerEvents: 'auto', minWidth: '220px',
+        maxWidth: '420px', opacity: '0', transition: 'opacity 160ms ease, transform 200ms cubic-bezier(.2,.9,.2,1)', transform: 'translateY(-6px)'
+    });
+    t.innerHTML = `
+        <div style="flex:0 0 auto; font-size:18px;line-height:1">${type === 'success' ? '<i class="fas fa-check-circle"></i>' : (type === 'info' ? '<i class="fas fa-info-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>')}</div>
+        <div style="flex:1 1 auto; font-size:14px; line-height:1.2">${String(message)}</div>
+        <button style="flex:0 0 auto; background:transparent; border:none; color:inherit; font-size:18px; cursor:pointer;" class="toast-close" aria-label="Dismiss">&times;</button>
+    `;
+    const closeBtn = t.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => { try { t.remove(); } catch (_) { } });
+    container.insertBefore(t, container.firstChild);
+    requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+    const timeout = duration || (type === 'success' ? 2200 : 4800);
+    let to = setTimeout(() => { try { t.remove(); } catch (_) { } }, timeout);
+    t.addEventListener('mouseenter', () => { if (to) { clearTimeout(to); to = null; } });
+    t.addEventListener('mouseleave', () => { if (!to) { to = setTimeout(() => { try { t.remove(); } catch (_) { } }, 1600); } });
+}
+
+/* ===== Shared confirmation modal helper =====
+   Uses the existing `publish-confirm-modal` element (shared in layout)
+   to show a title/message and optional input. Returns a Promise that
+   resolves to an object: { confirmed: boolean, value?: string }
+*/
+function showConfirmModal({ title = 'Confirm', message = '', confirmText = 'Confirm', cancelText = 'Cancel', input = null } = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('publish-confirm-modal');
+        if (!modal) {
+            // No shared modal available — do not use native confirm; resolve as not confirmed
+            return resolve({ confirmed: false });
+        }
+
+        const titleEl = modal.querySelector('#publish-confirm-title');
+        const msgEl = modal.querySelector('#publish-confirm-message');
+        const confirmBtn = modal.querySelector('#publishConfirmBtn');
+        const cancelBtn = modal.querySelector('#publishCancelBtn');
+
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) {
+            msgEl.textContent = '';
+            if (message) msgEl.appendChild(document.createTextNode(message));
+        }
+
+        // If an input is requested, insert it into the message area
+        let inputEl = null;
+        if (input && msgEl) {
+            inputEl = document.createElement('input');
+            inputEl.type = input.type || 'text';
+            inputEl.placeholder = input.placeholder || '';
+            inputEl.className = 'mt-2 w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]';
+            msgEl.appendChild(document.createElement('br'));
+            msgEl.appendChild(inputEl);
+            // focus on next frame
+            setTimeout(() => { try { inputEl.focus(); } catch (_) { } }, 50);
+        }
+
+        if (confirmBtn) confirmBtn.textContent = confirmText;
+        if (cancelBtn) cancelBtn.textContent = cancelText;
+
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            // remove any input we added
+            if (inputEl && inputEl.parentNode) {
+                try { inputEl.parentNode.removeChild(inputEl); } catch (_) { }
+            }
+        };
+
+        const onConfirm = () => {
+            cleanup();
+            resolve({ confirmed: true, value: inputEl ? inputEl.value : undefined });
+        };
+
+        const onCancel = () => {
+            cleanup();
+            resolve({ confirmed: false });
+        };
+
+        // Attach handlers once
+        if (confirmBtn) confirmBtn.addEventListener('click', onConfirm, { once: true });
+        if (cancelBtn) cancelBtn.addEventListener('click', onCancel, { once: true });
+
+        // show modal
+        modal.classList.remove('hidden');
+    });
 }
 
 /* ===== Announcements (Admin UI) ===== */
@@ -102,6 +211,22 @@ async function fetchAdminAnnouncements() {
     }
 }
 
+// Translation removed — no client-side translateText function anymore
+
+function debounce(fn, wait = 300) {
+    let t = null;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+// Detect presence of strong RTL characters (Arabic, Hebrew ranges)
+function containsRTL(s) {
+    if (!s) return false;
+    return /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/.test(String(s));
+}
+
 function renderAnnouncementList(items = []) {
     const list = document.getElementById('announcementList');
     if (!list) return;
@@ -112,12 +237,12 @@ function renderAnnouncementList(items = []) {
     }
     items.forEach(it => {
         const el = document.createElement('div');
-        el.className = 'p-3 border rounded hover-lite flex items-start gap-3';
+        el.className = 'p-3 border rounded hover-lite';
+        const defaultMsg = (it.message || '').slice(0, 240);
         el.innerHTML = `
-            <div class="flex-shrink-0"><i class="fas ${it.icon || 'fa-bullhorn'} text-xl"></i></div>
-            <div class="flex-1">
+            <div>
                 <div class="text-sm font-semibold">${(it.title || '').slice(0, 80)}</div>
-                <div class="text-sm text-[var(--text-secondary)] whitespace-pre-line">${(it.message || '').slice(0, 240)}</div>
+                <div class="text-sm text-[var(--text-secondary)] whitespace-pre-line">${defaultMsg}</div>
                 <div class="mt-2 flex items-center gap-2">
                     <button data-action="edit" data-id="${it.id}" class="text-xs text-[var(--link-color)]">Edit</button>
                     <button data-action="delete" data-id="${it.id}" class="text-xs text-red-600">Delete</button>
@@ -137,7 +262,6 @@ function openAnnouncementModal(data = null) {
     const title = document.getElementById('announcement_title');
     const editor = document.getElementById('announcement_editor');
     const hiddenMsg = document.getElementById('announcement_message');
-    const icon = document.getElementById('announcement_icon');
     const active = document.getElementById('announcement_active');
 
     if (data) {
@@ -145,17 +269,47 @@ function openAnnouncementModal(data = null) {
         title.value = data.title || '';
         if (editor) editor.innerHTML = data.message || '';
         if (hiddenMsg) hiddenMsg.value = data.message || '';
-        icon.value = data.icon || 'fa-bullhorn';
+        // icons removed from modal; ignore any existing icon field
         active.checked = !!data.isActive;
     } else {
         id.value = '';
         title.value = '';
         if (editor) editor.innerHTML = '';
         if (hiddenMsg) hiddenMsg.value = '';
-        icon.value = 'fa-bullhorn';
+        // icons removed
         active.checked = true;
     }
     modal.classList.remove('hidden');
+
+    // Setup editor live translation and icon select
+    try {
+        // Ensure handlers are wired and apply language orientation for existing data
+        setupAnnouncementHandlers();
+        // If we have a language stored on the message use it, otherwise detect from content
+        try {
+            const langSel = document.getElementById('announcement_lang');
+            const titleEl = document.getElementById('announcement_title');
+            const editorEl = document.getElementById('announcement_editor');
+            if (langSel) {
+                if (data && data.lang) {
+                    langSel.value = data.lang;
+                } else {
+                    // infer from content
+                    const sample = (data && (data.message || data.title)) || '';
+                    langSel.value = containsRTL(sample) ? 'ar' : 'en';
+                }
+                // apply orientation
+                const applyLang = (l) => {
+                    const isAr = String(l) === 'ar';
+                    const dir = isAr ? 'rtl' : 'ltr';
+                    if (titleEl) { titleEl.dir = dir; titleEl.style.textAlign = isAr ? 'right' : 'left'; }
+                    if (editorEl) { editorEl.dir = dir; editorEl.style.textAlign = isAr ? 'right' : 'left'; }
+                    const hidden = document.getElementById('announcement_message'); if (hidden) hidden.dir = dir;
+                };
+                applyLang(langSel.value);
+            }
+        } catch (e) { /* ignore */ }
+    } catch (e) { console.debug('setupAnnouncementHandlers', e); }
 }
 
 function closeAnnouncementModal() {
@@ -171,20 +325,53 @@ async function saveAnnouncement() {
     // keep hidden textarea in sync (for progressive enhancement)
     const hiddenMsgEl = document.getElementById('announcement_message');
     if (hiddenMsgEl) hiddenMsgEl.value = message;
-    const icon = document.getElementById('announcement_icon').value.trim() || 'fa-bullhorn';
     const isActive = document.getElementById('announcement_active').checked;
     const lang = document.getElementById('announcement_lang') ? document.getElementById('announcement_lang').value : 'en';
     const start = document.getElementById('announcement_start') ? document.getElementById('announcement_start').value.trim() : '';
     const end = document.getElementById('announcement_end') ? document.getElementById('announcement_end').value.trim() : '';
 
-    if (!message) { showToast('Message is required', 'error'); return; }
+    // Normalize message: strip HTML and check visible text to avoid saving empty content like <br> or &nbsp;
+    const getPlainTextFromHtml = (html) => {
+        try {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html || '';
+            return (tmp.textContent || tmp.innerText || '').replace(/\u00A0/g, '');
+        } catch (e) { return String(html || '').replace(/<[^>]*>/g, ''); }
+    };
+    const plainMessage = getPlainTextFromHtml(message).trim();
+    if (!plainMessage) { showToast('Message is required', 'error'); return; }
+
+    // Date validation: ensure start/end (if provided) are future dates and end >= start
+    const parseLocalDateTime = (s) => {
+        if (!s) return null;
+        // convert 'YYYY-MM-DD HH:mm' to 'YYYY-MM-DDTHH:mm' for reliable parsing
+        const iso = s.replace(' ', 'T');
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
+    };
+
+    const now = new Date();
+    if (start) {
+        const sd = parseLocalDateTime(start);
+        if (!sd) { showToast('Start date format is invalid', 'error'); return; }
+        if (sd <= now) { showToast('Start date must be in the future', 'error'); return; }
+    }
+    if (end) {
+        const ed = parseLocalDateTime(end);
+        if (!ed) { showToast('End date format is invalid', 'error'); return; }
+        if (ed <= now) { showToast('End date must be in the future', 'error'); return; }
+        if (start) {
+            const sd = parseLocalDateTime(start);
+            if (sd && ed < sd) { showToast('End date must be the same as or after start date', 'error'); return; }
+        }
+    }
 
     try {
         const payload = {
             title,
-            icon,
+            message,
             isActive,
-            translations: [{ lang, title, message }]
+            lang
         };
         if (start) payload.startAt = start;
         if (end) payload.endAt = end;
@@ -218,7 +405,10 @@ async function saveAnnouncement() {
 }
 
 async function deleteAnnouncement(id) {
-    if (!confirm('Delete this announcement?')) return;
+    // confirmation should be handled by the caller (UI delegate) via modal.
+    // If called directly, show the shared confirm modal as a fallback.
+    const resp = await showConfirmModal({ title: 'Confirm delete', message: 'Delete this announcement? This action cannot be undone.', confirmText: 'Delete', cancelText: 'Cancel' });
+    if (!resp || !resp.confirmed) return;
     try {
         const res = await fetch(`${API_BASE}/api/system-message/${id}`, { method: 'DELETE', credentials: 'include' });
         if (!res.ok) throw new Error('Delete failed');
@@ -273,6 +463,26 @@ function setupAnnouncementHandlers() {
     const saveBtn = document.getElementById('announcementSaveBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveAnnouncement);
 
+    // language select: set orientation of title/editor based on selected language
+    try {
+        const langSel = document.getElementById('announcement_lang');
+        const titleEl = document.getElementById('announcement_title');
+        const editorEl = document.getElementById('announcement_editor');
+        const hidden = document.getElementById('announcement_message');
+        if (langSel) {
+            const applyLang = (l) => {
+                const isAr = String(l) === 'ar';
+                const dir = isAr ? 'rtl' : 'ltr';
+                if (titleEl) { titleEl.dir = dir; titleEl.style.textAlign = isAr ? 'right' : 'left'; }
+                if (editorEl) { editorEl.dir = dir; editorEl.style.textAlign = isAr ? 'right' : 'left'; }
+                if (hidden) hidden.dir = dir;
+            };
+            langSel.addEventListener('change', (ev) => { try { applyLang(langSel.value); } catch (_) { } });
+            // apply initial value
+            applyLang(langSel.value);
+        }
+    } catch (e) { /* ignore */ }
+
     // rich-text toolbar
     try {
         const toolbar = document.getElementById('announcement_toolbar');
@@ -293,28 +503,25 @@ function setupAnnouncementHandlers() {
         if (window.flatpickr) {
             const s = document.getElementById('announcement_start');
             const e = document.getElementById('announcement_end');
-            if (s && !s._flatpickr) flatpickr(s, { enableTime: true, dateFormat: 'Y-m-d H:i' });
-            if (e && !e._flatpickr) flatpickr(e, { enableTime: true, dateFormat: 'Y-m-d H:i' });
+            // Use minDate:'today' to prevent selecting past dates and use dropdown
+            // month selector for a consistent UX. Flatpickr will render month/year
+            // controls which we theme via CSS.
+            if (s && !s._flatpickr) flatpickr(s, { enableTime: true, dateFormat: 'Y-m-d H:i', minDate: 'today', monthSelectorType: 'dropdown' });
+            if (e && !e._flatpickr) flatpickr(e, { enableTime: true, dateFormat: 'Y-m-d H:i', minDate: 'today', monthSelectorType: 'dropdown' });
         }
+    } catch (e) { /* ignore */ }
+
+    // Icon select and live translation wiring
+    try {
+        // icons removed from modal; skip icon select wiring
+
+        // Translation removed — no live translation wiring
     } catch (e) { /* ignore */ }
 
     // delegate list actions
     const list = document.getElementById('announcementList');
     if (list) {
-        // publish/unpublish confirmation flow
-        const publishModal = document.getElementById('publish-confirm-modal');
-        const publishConfirmBtn = document.getElementById('publishConfirmBtn');
-        const publishCancelBtn = document.getElementById('publishCancelBtn');
         let pendingPublish = null;
-
-        if (publishConfirmBtn) publishConfirmBtn.addEventListener('click', async () => {
-            if (!pendingPublish) return;
-            const { id, publish } = pendingPublish;
-            pendingPublish = null;
-            if (publishModal) publishModal.classList.add('hidden');
-            await toggleAnnouncement(id, publish);
-        });
-        if (publishCancelBtn) publishCancelBtn.addEventListener('click', () => { if (publishModal) publishModal.classList.add('hidden'); pendingPublish = null; });
 
         list.addEventListener('click', (ev) => {
             const a = ev.target.closest('button[data-action]');
@@ -331,7 +538,29 @@ function setupAnnouncementHandlers() {
                     } catch (e) { console.warn(e); }
                 })();
             } else if (action === 'delete') {
-                deleteAnnouncement(id);
+                // Use shared confirmation modal if available for a consistent UX
+                (async () => {
+                    const confirmModal = document.getElementById('publish-confirm-modal');
+                    if (confirmModal) {
+                        const titleEl = confirmModal.querySelector('#publish-confirm-title');
+                        const msg = confirmModal.querySelector('#publish-confirm-message');
+                        const confirmBtn = confirmModal.querySelector('#publishConfirmBtn');
+                        const cancelBtn = confirmModal.querySelector('#publishCancelBtn');
+                        if (titleEl) titleEl.textContent = 'Confirm delete';
+                        if (msg) msg.textContent = 'Delete this announcement? This action cannot be undone.';
+                        confirmModal.classList.remove('hidden');
+                        const onConfirm = async () => {
+                            confirmModal.classList.add('hidden');
+                            try { await deleteAnnouncement(id); } catch (e) { console.error(e); }
+                        };
+                        const onCancel = () => { confirmModal.classList.add('hidden'); };
+                        if (confirmBtn) confirmBtn.addEventListener('click', onConfirm, { once: true });
+                        if (cancelBtn) cancelBtn.addEventListener('click', onCancel, { once: true });
+                    } else {
+                        // fallback to simple confirm
+                        deleteAnnouncement(id);
+                    }
+                })();
             } else if (action === 'toggle') {
                 (async () => {
                     const items = await fetchAdminAnnouncements();
@@ -339,13 +568,36 @@ function setupAnnouncementHandlers() {
                     if (!it) return;
                     const publish = !it.isActive;
                     pendingPublish = { id, publish };
+
+                    // Resolve modal elements fresh at click time (shared layout may be mounted later)
+                    const publishModal = document.getElementById('publish-confirm-modal');
                     if (publishModal) {
-                        const msg = document.getElementById('publish-confirm-message');
+                        const msg = publishModal.querySelector('#publish-confirm-message');
                         if (msg) msg.textContent = publish ? 'Publish this announcement and make it visible on the login carousel?' : 'Unpublish this announcement and hide it from the login carousel?';
+                        // show modal
                         publishModal.classList.remove('hidden');
+
+                        const confirmBtn = publishModal.querySelector('#publishConfirmBtn');
+                        const cancelBtn = publishModal.querySelector('#publishCancelBtn');
+
+                        const cleanup = () => { pendingPublish = null; };
+
+                        if (confirmBtn) {
+                            const onConfirm = async () => {
+                                publishModal.classList.add('hidden');
+                                try { await toggleAnnouncement(id, publish); } catch (e) { console.error(e); }
+                                cleanup();
+                            };
+                            confirmBtn.addEventListener('click', onConfirm, { once: true });
+                        }
+                        if (cancelBtn) {
+                            const onCancel = () => { publishModal.classList.add('hidden'); cleanup(); };
+                            cancelBtn.addEventListener('click', onCancel, { once: true });
+                        }
                     } else {
                         // fallback: act immediately
                         await toggleAnnouncement(id, publish);
+                        pendingPublish = null;
                     }
                 })();
             }
@@ -526,8 +778,46 @@ async function loadUsers() {
     });
 
     try {
-        const res = await fetch(`${API_BASE}/admin/users`, { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to load users");
+        // Attach per-tab Authorization header if we have an access token so this tab remains authenticated even if the browser session cookie is replaced by another tab.
+        const reqHeaders = {};
+        try {
+            const at = sessionStorage.getItem('accessToken');
+            if (at) reqHeaders['Authorization'] = `Bearer ${at}`;
+        } catch (_) { }
+        let res = await fetch(`${API_BASE}/admin/users`, { credentials: "include", headers: reqHeaders });
+
+        if (res && (res.status === 401 || res.status === 403)) {
+            try {
+
+                if (typeof window.ptwRefreshToken === 'function') {
+                    const ok = await window.ptwRefreshToken();
+                    if (ok) {
+                        try {
+                            const at = sessionStorage.getItem('accessToken');
+                            if (at) reqHeaders['Authorization'] = `Bearer ${at}`;
+                        } catch (_) { }
+                        res = await fetch(`${API_BASE}/admin/users`, { credentials: 'include', headers: reqHeaders });
+                    }
+                }
+            } catch (_) { /* ignore refresh errors */ }
+        }
+
+        if (!res.ok) {
+            // Handle 403 (not authorized) with a friendly inline message
+            if (res.status === 403) {
+                showSkeleton('usersTable', false);
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td colspan="${thead.querySelectorAll('th').length}">
+                    <div class="py-6 text-center text-sm text-[var(--text-secondary)]">
+                      You must be signed in as an administrator to view this data. 
+                      <a href="/login/index.html" class="text-[var(--link-color)] underline">Sign in</a>
+                    </div>
+                  </td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+            throw new Error("Failed to load users");
+        }
         const users = await res.json();
         // store into cache for faster single-user loads
         usersCache = Array.isArray(users) ? users : [];
@@ -535,8 +825,10 @@ async function loadUsers() {
         showSkeleton('usersTable', false);
         users.forEach((u) => {
             const tr = document.createElement("tr");
+            tr.classList.add("border-b", "border-[var(--input-border)]");
             headers.forEach((h) => {
                 const td = document.createElement("td");
+                td.classList.add("border", "border-[var(--input-border)]", "px-4", "py-2");
                 switch (h) {
                     case "name":
                         td.textContent = u.fullName || u.username || "—";
@@ -584,11 +876,11 @@ async function loadUsers() {
                         td.classList.add("actions");
                         const idAttr = u.id || u._id;
                         td.innerHTML = `
-              <button class="btn reset" data-id="${idAttr}">Reset Password</button>
-              <button class="btn view" data-id="${idAttr}">View Profile</button>
-              <button class="btn toggle" data-id="${idAttr}" data-status="${u.status || ""}">
-                ${u.status === "Active" ? "Disable" : "Enable"}
-              </button>`;
+                            <button class="btn btn-sm btn-outline reset" data-id="${idAttr}" title="Reset password">Reset</button>
+                            <button class="btn btn-sm btn-primary view" data-id="${idAttr}" title="View profile">View</button>
+                            <button class="btn btn-sm btn-warning toggle" data-id="${idAttr}" data-status="${u.status || ""}" title="${u.status === "Active" ? "Disable" : "Enable"}">
+                                ${u.status === "Active" ? "Disable" : "Enable"}
+                            </button>`;
                         break;
                     default:
                         td.textContent = "—";
@@ -613,9 +905,58 @@ async function loadUsers() {
         const tr = document.createElement("tr");
         tr.innerHTML = `<td colspan="${thead.querySelectorAll("th").length}">Failed to load users</td>`;
         tbody.appendChild(tr);
-        showToast("⚠️ Failed to load users", "error");
+        showToast("Failed to load users", "error");
     }
 }
+
+/* ===== Live polling for users (secure, uses global fetch wrapper) =====
+   Polls `/admin/users` periodically and triggers a UI refresh when the
+   dataset changes. Uses the existing fetch override which attaches
+   Authorization from sessionStorage and performs silent refreshes.
+*/
+let __liveUsersPollingId = null;
+function startLiveUsersPolling(intervalMs = 30000) {
+    try {
+        if (__liveUsersPollingId) return; // already running
+        __liveUsersPollingId = setInterval(async () => {
+            try {
+                // light-weight fetch to check for changes
+                const res = await fetch(`${API_BASE}/admin/users`, { credentials: 'include' });
+                if (!res || !res.ok) return;
+                const data = await res.json().catch(() => []);
+                const arr = Array.isArray(data) ? data : [];
+                // quick change detection: length or id mismatch
+                const old = Array.isArray(usersCache) ? usersCache : [];
+                let changed = false;
+                if (arr.length !== old.length) changed = true;
+                else {
+                    for (let i = 0; i < arr.length; i++) {
+                        const aId = String(arr[i]?.id || arr[i]?._id || '');
+                        const oId = String(old[i]?.id || old[i]?._id || '');
+                        if (aId !== oId) { changed = true; break; }
+                    }
+                }
+                if (changed) {
+                    // update cache and re-render (use existing rendering path)
+                    usersCache = arr;
+                    try { await loadUsers(); } catch (_) { /* best-effort */ }
+                }
+            } catch (e) {
+                // non-fatal; just log in debug
+                try { console.debug('[live-users] poll error', e); } catch (_) { }
+            }
+        }, Number(intervalMs) || 30000);
+    } catch (e) { console.debug('[live-users] start failed', e); }
+}
+
+function stopLiveUsersPolling() {
+    try {
+        if (!__liveUsersPollingId) return;
+        clearInterval(__liveUsersPollingId);
+        __liveUsersPollingId = null;
+    } catch (e) { console.debug('[live-users] stop failed', e); }
+}
+
 
 /* ===== Fetch roles dynamically and populate role select ===== */
 async function loadRolesIntoSelect() {
@@ -720,8 +1061,42 @@ async function loadPermits() {
     });
 
     try {
-        const res = await fetch(`${API_BASE}/api/permits`, { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to load permits");
+        // Prefer per-tab access token if available to avoid cookie clobbering across tabs.
+        const pHeaders = {};
+        try {
+            const at = sessionStorage.getItem('accessToken');
+            if (at) pHeaders['Authorization'] = `Bearer ${at}`;
+        } catch (_) { }
+        let res = await fetch(`${API_BASE}/api/permits`, { credentials: "include", headers: pHeaders });
+        if (res && (res.status === 401 || res.status === 403)) {
+            try {
+                if (typeof window.ptwRefreshToken === 'function') {
+                    const ok = await window.ptwRefreshToken();
+                    if (ok) {
+                        try {
+                            const at = sessionStorage.getItem('accessToken');
+                            if (at) pHeaders['Authorization'] = `Bearer ${at}`;
+                        } catch (_) { }
+                        res = await fetch(`${API_BASE}/api/permits`, { credentials: 'include', headers: pHeaders });
+                    }
+                }
+            } catch (_) { }
+        }
+
+        if (!res.ok) {
+            if (res.status === 403) {
+                showSkeleton('permitsTable', false);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="${thead.querySelectorAll('th').length}">
+                    <div class="py-6 text-center text-sm text-[var(--text-secondary)]">
+                      You must be signed in to view permits. <a href="/login/index.html" class="text-[var(--link-color)] underline">Sign in</a>
+                    </div>
+                  </td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+            throw new Error("Failed to load permits");
+        }
         const payload = await res.json();
         // backend may return either an array or an object { permits, pagination }
         const permits = Array.isArray(payload) ? payload : (Array.isArray(payload?.permits) ? payload.permits : []);
@@ -736,7 +1111,7 @@ async function loadPermits() {
                 const tr = document.createElement("tr");
                 headers.forEach((h) => {
                     const td = document.createElement("td");
-                    td.classList.add('px-4', 'py-2');
+                    td.classList.add('border', 'border-[var(--input-border)]', 'px-4', 'py-2');
                     switch (h) {
                         case 'serial':
                             td.textContent = p.serial || p.id || p._id || '—';
@@ -759,7 +1134,7 @@ async function loadPermits() {
                             break;
                         case 'actions':
                             td.classList.add('actions');
-                            td.innerHTML = `<button class="btn view" data-id="${p.id || p._id}">View</button>`;
+                            td.innerHTML = `<button class="btn btn-sm btn-primary view" data-id="${p.id || p._id}" title="View permit">View</button>`;
                             break;
                         default:
                             td.textContent = '—';
@@ -836,8 +1211,9 @@ function updateChartTheme() {
         const ur = charts.userRoleChart;
         if (ur) {
             if (ur.data && ur.data.datasets && ur.data.datasets[0]) {
-                ur.data.datasets[0].backgroundColor = theme.primary;
-                ur.data.datasets[0].borderColor = theme.primary;
+                const roleColorsUpdate = [theme.primary, theme.inprogress || '#7c3aed', theme.success, theme.muted || '#f97373'];
+                ur.data.datasets[0].backgroundColor = roleColorsUpdate;
+                ur.data.datasets[0].borderColor = roleColorsUpdate;
             }
             if (ur.options && ur.options.scales) {
                 if (ur.options.scales.x && ur.options.scales.x.ticks) ur.options.scales.x.ticks.color = theme.text;
@@ -860,16 +1236,7 @@ function updateChartTheme() {
             ps.update();
         }
 
-        // userTypeChart (doughnut)
-        const ut = charts.userTypeChart;
-        if (ut) {
-            if (ut.data && ut.data.datasets && ut.data.datasets[0]) {
-                ut.data.datasets[0].backgroundColor = [theme.primary, theme.inprogress, theme.success];
-                ut.data.datasets[0].borderColor = theme.surface;
-            }
-            if (ut.options && ut.options.plugins && ut.options.plugins.legend && ut.options.plugins.legend.labels) ut.options.plugins.legend.labels.color = theme.text;
-            ut.update();
-        }
+        // userTypeChart removed — nothing to update
     } catch (err) {
         // non-fatal
         console.debug('updateChartTheme error', err);
@@ -1140,6 +1507,7 @@ async function loadStats() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { legend: { position: 'top', labels: { color: theme.text } } },
                     scales: {
                         x: { ticks: { color: theme.text } },
@@ -1170,6 +1538,7 @@ async function loadStats() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { legend: { position: "bottom", labels: { color: theme.text } } },
                 },
             });
@@ -1181,6 +1550,8 @@ async function loadStats() {
             if (charts.userRoleChart?.destroy) charts.userRoleChart.destroy();
             const ChartCtor2 = ChartLib || window.Chart;
             if (!ChartCtor2) throw new Error('Chart.js not available');
+            // Use a multi-color palette for each role so bars are visually distinct
+            const roleColors = [theme.primary, theme.inprogress || '#7c3aed', theme.success, theme.muted || '#f97373'];
             charts.userRoleChart = new ChartCtor2(userRoleCanvas, {
                 type: "bar",
                 data: {
@@ -1189,14 +1560,15 @@ async function loadStats() {
                         {
                             label: "Users",
                             data: [roleCounts.Admin, roleCounts.Approver, roleCounts.PreApprover, roleCounts.Requester],
-                            backgroundColor: theme.primary,
-                            borderColor: theme.primary,
+                            backgroundColor: roleColors,
+                            borderColor: roleColors,
                             borderWidth: 1,
                         },
                     ],
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { ticks: { color: theme.text } },
@@ -1228,6 +1600,7 @@ async function loadStats() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { ticks: { color: theme.text } },
@@ -1237,37 +1610,7 @@ async function loadStats() {
             });
         }
 
-        // User Type Distribution (doughnut) — replaces former permit stats
-        const userTypeCanvas = document.getElementById('userTypeChart');
-        if (userTypeCanvas) {
-            if (charts.userTypeChart?.destroy) charts.userTypeChart.destroy();
-            const ChartUser = ChartLib || window.Chart;
-            if (!ChartUser) throw new Error('Chart.js not available');
-
-            // Use derived roleCounts (ensures Requester is included)
-            const adminsCount = Number(roleCounts.Admin || 0);
-            const preApprovers = Number(roleCounts.PreApprover || 0);
-            const approvers = Number(roleCounts.Approver || 0);
-            const approverCount = preApprovers + approvers;
-            const requestersCount = Number(roleCounts.Requester || 0);
-
-            charts.userTypeChart = new ChartUser(userTypeCanvas, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Admins', 'Approvers', 'Requesters'],
-                    datasets: [{
-                        data: [adminsCount, approverCount, requestersCount],
-                        backgroundColor: [theme.primary, theme.inprogress, theme.success],
-                        borderColor: theme.surface,
-                        borderWidth: 1,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'bottom', labels: { color: theme.text } } }
-                }
-            });
-        }
+        // userTypeChart removed from UI; no initialization
     } catch (err) {
         showToast("⚠️ Failed to load stats", "error");
     }
@@ -1283,6 +1626,22 @@ function toggleDetails(id, btn) {
         btn.classList.toggle("active", isOpening);
         // Keep buttons icon-only; do not inject text content here.
         btn.setAttribute("aria-expanded", isOpening ? "true" : "false");
+        // Update chevron icon inside the button (make behavior match profile.toggleSection)
+        try {
+            const icon = btn.querySelector('i') || btn.querySelector('.chevron-icon');
+            if (icon) {
+                icon.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+                if (isOpening) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            }
+        } catch (e) { console.debug('toggleDetails icon update failed', e); }
     }
 
     if (isOpening) {
@@ -1315,7 +1674,152 @@ function toggleDetails(id, btn) {
     }
 }
 // Expose globally for inline HTML onclick
+// Initialize any existing .expandBtn icons to reflect current aria-expanded state
+(function initExpandBtns() {
+    try {
+        const btns = document.querySelectorAll('.expandBtn');
+        btns.forEach(btn => {
+            try {
+                const icon = btn.querySelector('i') || btn.querySelector('.chevron-icon');
+                if (!icon) return;
+                icon.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+                const expanded = btn.getAttribute('aria-expanded') === 'true' || btn.classList.contains('active');
+                // Sync icon
+                if (expanded) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                    icon.style.transform = 'rotate(180deg)';
+                    btn.classList.add('active');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                    icon.style.transform = 'rotate(0deg)';
+                    btn.classList.remove('active');
+                }
+
+                // If the button declares a target panel, ensure the panel's maxHeight/opacity reflect the state
+                try {
+                    const target = btn.dataset && btn.dataset.target;
+                    if (target) {
+                        const panel = document.getElementById(target);
+                        if (panel) {
+                            if (expanded) {
+                                panel.classList.add('open');
+                                panel.style.opacity = '1';
+                                // set explicit maxHeight so the transition can run and the panel remains open
+                                panel.style.maxHeight = panel.scrollHeight ? `${panel.scrollHeight}px` : 'none';
+                            } else {
+                                panel.style.maxHeight = '0px';
+                                panel.style.opacity = '0';
+                                panel.classList.remove('open');
+                            }
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+            } catch (e) { /* ignore */ }
+        });
+    } catch (e) { /* ignore */ }
+})();
 window.toggleDetails = toggleDetails;
+
+// Delegated toggleSection handler (profile-style)
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-action="toggleSection"]');
+    if (!btn) return;
+    e.preventDefault();
+    const section = btn.dataset.section;
+    if (section) toggleSection(section);
+});
+
+function toggleSection(sectionId) {
+    try {
+        const content = document.getElementById(`${sectionId}Content`);
+        const icon = document.getElementById(`${sectionId}Icon`);
+        if (!content) return;
+
+        const isCollapsed = content.classList.contains('hidden') || getComputedStyle(content).display === 'none' || content.style.maxHeight === '0px';
+
+        // Update aria-expanded on the control (if any)
+        const controller = document.querySelector(`[data-action="toggleSection"][data-section="${sectionId}"]`);
+        if (controller) controller.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
+
+        // Toggle a `.collapsed` helper on the containing card so CSS can
+        // completely hide the panel area (removes leftover spacing when
+        // collapsed). The controller sits inside the header which is inside
+        // the card element we annotated with `.section-card` in the HTML.
+        try {
+            const card = controller ? controller.closest('.section-card') : null;
+            if (card) card.classList.toggle('collapsed', !isCollapsed);
+        } catch (e) { /* ignore */ }
+
+        // animate chevron
+        if (icon) {
+            icon.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+            if (isCollapsed) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // animate content (use maxHeight to match other panel behavior)
+        if (isCollapsed) {
+            content.classList.remove('hidden');
+            content.style.opacity = '1';
+            content.style.maxHeight = '0px';
+            // force reflow
+            content.offsetHeight;
+            content.style.maxHeight = `${content.scrollHeight}px`;
+            content.addEventListener('transitionend', function onEnd(e) {
+                if (e.propertyName === 'max-height') {
+                    content.style.maxHeight = 'none';
+                    content.removeEventListener('transitionend', onEnd);
+                }
+            });
+
+            // lazy loaders
+            try {
+                if (sectionId === 'users' && typeof loadUsers === 'function') loadUsers();
+                if (sectionId === 'permits' && typeof loadPermits === 'function') loadPermits();
+                if ((sectionId === 'userStats' || sectionId === 'permitStats') && typeof loadStats === 'function') loadStats();
+            } catch (err) { console.debug('loader error', err); }
+
+            // Give Chart.js a moment to initialize when panels open; some charts are
+            // created while hidden which can lead to clipped legends. Resize/refresh
+            // charts after the panel is visible.
+            try {
+                setTimeout(() => {
+                    try {
+                        Object.values(charts).forEach(c => {
+                            if (!c) return;
+                            if (typeof c.resize === 'function') try { c.resize(); } catch (e) { /* ignore */ }
+                            else if (typeof c.update === 'function') try { c.update(); } catch (e) { /* ignore */ }
+                        });
+                    } catch (e) { /* ignore */ }
+                }, 350);
+            } catch (e) { /* ignore */ }
+
+        } else {
+            if (getComputedStyle(content).maxHeight === 'none') content.style.maxHeight = `${content.scrollHeight}px`;
+            // force reflow
+            content.offsetHeight;
+            content.style.maxHeight = '0px';
+            content.style.opacity = '0';
+            content.addEventListener('transitionend', function onEnd(e) {
+                if (e.propertyName === 'max-height') {
+                    content.classList.add('hidden');
+                    content.removeEventListener('transitionend', onEnd);
+                }
+            });
+        }
+    } catch (err) {
+        console.debug('toggleSection error', err);
+    }
+}
 
 /* ===== Actions ===== */
 function viewProfile(userId) {
@@ -1351,21 +1855,33 @@ function populateViewModal(user) {
     if (!user) return;
     // keep a snapshot for cancel
     modalOriginalUser = JSON.parse(JSON.stringify(user));
-    document.getElementById('view_userId').value = user.id || user._id || '';
-    document.getElementById('view_fullName').value = user.fullName || user.username || '';
-    document.getElementById('view_displayName').textContent = user.fullName || user.username || '—';
-    document.getElementById('view_email').value = user.email || '';
-    document.getElementById('view_displayEmail').textContent = user.email || '';
-    document.getElementById('view_mobile').value = user.phone || user.mobile || '';
-    document.getElementById('view_company').value = user.company || '';
-    document.getElementById('view_department').value = user.department || '';
-    document.getElementById('view_designation').value = user.designation || '';
+    const el_userId = document.getElementById('view_userId');
+    const el_fullName = document.getElementById('view_fullName');
+    const el_displayName = document.getElementById('view_displayName');
+    const el_email = document.getElementById('view_email');
+    const el_displayEmail = document.getElementById('view_displayEmail');
+    const el_mobile = document.getElementById('view_mobile');
+    const el_company = document.getElementById('view_company');
+    const el_department = document.getElementById('view_department');
+    const el_designation = document.getElementById('view_designation');
+    if (el_userId) el_userId.value = user.id || user._id || '';
+    if (el_fullName) el_fullName.value = user.fullName || user.username || '';
+    if (el_displayName) el_displayName.textContent = user.fullName || user.username || '—';
+    if (el_email) el_email.value = user.email || '';
+    if (el_displayEmail) el_displayEmail.textContent = user.email || '';
+    if (el_mobile) el_mobile.value = user.phone || user.mobile || '';
+    if (el_company) el_company.value = user.company || '';
+    if (el_department) el_department.value = user.department || '';
+    if (el_designation) el_designation.value = user.designation || '';
     // normalize role
     const r = (user.role || '').toString().toLowerCase();
-    if (r.includes('admin')) document.getElementById('view_role').value = 'admin';
-    else if (r.includes('pre')) document.getElementById('view_role').value = 'pre-approver';
-    else if (r.includes('approver')) document.getElementById('view_role').value = 'approver';
-    else document.getElementById('view_role').value = 'requester';
+    const el_role = document.getElementById('view_role');
+    if (el_role) {
+        if (r.includes('admin')) el_role.value = 'admin';
+        else if (r.includes('pre')) el_role.value = 'pre-approver';
+        else if (r.includes('approver')) el_role.value = 'approver';
+        else el_role.value = 'requester';
+    }
 
     const status = user.status || user.userStatus || '';
     const statusEl = document.getElementById('view_status');
@@ -1407,8 +1923,10 @@ function populateViewModal(user) {
         }
     }
 
-    document.getElementById('view_registered').textContent = safeFormatDate(reg);
-    document.getElementById('view_lastLogin').textContent = safeFormatDate(last);
+    const regEl = document.getElementById('view_registered');
+    const lastEl = document.getElementById('view_lastLogin');
+    if (regEl) regEl.textContent = safeFormatDate(reg);
+    if (lastEl) lastEl.textContent = safeFormatDate(last);
 }
 
 function openViewUserModal(userId) {
@@ -1486,7 +2004,9 @@ async function updateUserProfile() {
 async function deleteUser() {
     const id = document.getElementById('view_userId').value;
     if (!id) return showToast('Missing user id', 'error');
-    if (!confirm('Are you sure you want to permanently delete this user?')) return;
+    // Use shared confirm modal instead of native confirm
+    const resp = await showConfirmModal({ title: 'Confirm delete', message: 'Are you sure you want to permanently delete this user?', confirmText: 'Delete', cancelText: 'Cancel' });
+    if (!resp || !resp.confirmed) return;
     try {
         const res = await fetch(`${API_BASE}/admin/users/${encodeURIComponent(id)}`, {
             method: 'DELETE',
@@ -1509,8 +2029,11 @@ async function deleteUser() {
 async function resetUserPassword() {
     const id = document.getElementById('view_userId').value;
     if (!id) return showToast('Missing user id', 'error');
-    const newPassword = prompt('Enter new password for this user:');
-    if (!newPassword) return;
+    // Use shared modal to collect new password instead of native prompt
+    const resp = await showConfirmModal({ title: 'Reset password', message: 'Enter new password for this user:', confirmText: 'Reset', cancelText: 'Cancel', input: { type: 'password', placeholder: 'New password' } });
+    if (!resp || !resp.confirmed) return;
+    const newPassword = (resp.value || '').trim();
+    if (!newPassword) return showToast('Password cannot be empty', 'error');
     try {
         const res = await fetch(`${API_BASE}/admin/reset-password/${encodeURIComponent(id)}`, {
             method: 'POST',
@@ -1810,6 +2333,9 @@ async function mainInit() {
 
         // initialize data (loadUsers, loadPermits, loadStats are function declarations below)
         await loadUsers();
+        // start live polling to fetch fresh data from DB periodically while
+        // preserving security (global fetch wrapper handles Authorization + refresh)
+        try { startLiveUsersPolling(); } catch (e) { console.debug('startLiveUsersPolling failed', e); }
         await loadPermits();
         await loadStats();
     } catch (err) {
@@ -1822,3 +2348,6 @@ if (document.querySelector('[data-layout-wrapper]')) {
 } else {
     window.addEventListener('layout:mounted', mainInit, { once: true });
 }
+
+// Clean up polling when the page unloads to avoid timers running in background
+try { window.addEventListener('beforeunload', () => { try { stopLiveUsersPolling(); } catch (_) { } }); } catch (_) { }

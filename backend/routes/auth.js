@@ -203,20 +203,74 @@ router.post('/login', async (req, res) => {
         logger.warn({ e }, 'Failed to persist activeSession metadata');
       }
 
-      res.json({
-        message: 'Login successful',
-        user: {
-          id: account._id,
-          username: account.username, // use username consistently
-          email: account.email,
-          company: account.company,
-          role: account.role,
-          // current login time (just saved)
-          lastLogin: account.lastLogin?.toISOString(),
-          // previous login time (if any)
-          prevLogin: previousLogin ? previousLogin.toISOString() : account.lastLogin?.toISOString(),
-        },
-      });
+      // ---- Issue access + refresh tokens for per-tab authentication ----
+      try {
+        const jwt = require('jsonwebtoken');
+        const accessExpiry = process.env.ACCESS_TOKEN_EXPIRES || '15m';
+        const refreshExpiryMs = parseInt(process.env.REFRESH_TOKEN_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000), 10);
+        const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'dev-jwt-secret';
+
+        // Use a lightweight random id for refresh token rotation (jti)
+        const refreshId = require('crypto').randomBytes(16).toString('hex');
+
+        const accessToken = jwt.sign(
+          { sub: String(account._id), role: account.role },
+          secret,
+          { expiresIn: accessExpiry }
+        );
+
+        const refreshToken = jwt.sign(
+          { sub: String(account._id), role: account.role, jti: refreshId },
+          secret,
+          { expiresIn: Math.floor(refreshExpiryMs / 1000) + 's' }
+        );
+
+        // Persist refresh id so we can validate/rotate/revoke refresh tokens
+        try {
+          account.refreshTokenId = refreshId;
+          await account.save();
+        } catch (e) {
+          logger.warn({ e }, 'Failed to persist refreshTokenId');
+        }
+
+        // Set refresh token as httpOnly cookie (rotate on login)
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: refreshExpiryMs,
+          path: '/api',
+        });
+
+        // Return access token in body so frontend can store in sessionStorage
+        return res.json({
+          message: 'Login successful',
+          accessToken,
+          user: {
+            id: account._id,
+            username: account.username,
+            email: account.email,
+            company: account.company,
+            role: account.role,
+            lastLogin: account.lastLogin?.toISOString(),
+            prevLogin: previousLogin ? previousLogin.toISOString() : account.lastLogin?.toISOString(),
+          },
+        });
+      } catch (tokenErr) {
+        logger.warn({ tokenErr }, 'Failed to create tokens - falling back to session-only response');
+        return res.json({
+          message: 'Login successful',
+          user: {
+            id: account._id,
+            username: account.username,
+            email: account.email,
+            company: account.company,
+            role: account.role,
+            lastLogin: account.lastLogin?.toISOString(),
+            prevLogin: previousLogin ? previousLogin.toISOString() : account.lastLogin?.toISOString(),
+          },
+        });
+      }
     });
   } catch (err) {
     logger.error({ err }, 'Login error');
@@ -307,38 +361,138 @@ router.get('/profile', async (req, res) => {
 });
 
 // ----- LOGOUT -----
-router.post('/logout', (req, res) => {
-  const currentSessionId = req.sessionID;
+router.post('/logout', async (req, res) => {
+  // Support both session-based and token-based logouts.
+  const sessionId = req.sessionID;
   const role = req.session && req.session.userRole;
   const userId = req.session && req.session.userId;
-  req.session.destroy(async (err) => {
-    if (err) {
-      logger.error({ err }, 'Logout error');
-      return res.status(500).json({ message: 'Logout failed' });
-    }
-    res.clearCookie('sessionId', {
-      httpOnly: true,
-      sameSite: 'none',
-      secure: process.env.NODE_ENV === 'production',
-    });
-    // best-effort: clear activeSessionId on the account if it matches this session
-    try {
-      if (userId && role) {
-        if (role === 'Admin') {
-          const Admin = require('../models/admin');
-          await Admin.updateOne({ _id: userId, activeSessionId: currentSessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
-        } else if (role === 'Approver' || role === 'PreApprover') {
-          const Approver = require('../models/approver');
-          await Approver.updateOne({ _id: userId, activeSessionId: currentSessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
-        } else {
-          await User.updateOne({ _id: userId, activeSessionId: currentSessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
-        }
+
+  // Clear refresh cookie in all cases
+  res.clearCookie('refreshToken', { path: '/api' });
+
+  // If there's a session, destroy it and clear activeSessionId on account
+  if (req.session) {
+    req.session.destroy(async (err) => {
+      if (err) {
+        logger.error({ err }, 'Logout error');
+        return res.status(500).json({ message: 'Logout failed' });
       }
+      res.clearCookie('sessionId', {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
+      // best-effort: clear activeSessionId on the account if it matches this session
+      try {
+        if (userId && role) {
+          if (role === 'Admin') {
+            const Admin = require('../models/admin');
+            await Admin.updateOne({ _id: userId, activeSessionId: sessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+          } else if (role === 'Approver' || role === 'PreApprover') {
+            const Approver = require('../models/approver');
+            await Approver.updateOne({ _id: userId, activeSessionId: sessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+          } else {
+            await User.updateOne({ _id: userId, activeSessionId: sessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+          }
+        }
+      } catch (e) {
+        logger.warn('Failed to clear activeSession on logout:', e && e.message);
+      }
+      // Also clear persisted refreshTokenId server-side if present (best-effort)
+      try {
+        if (userId && role) {
+          const AccountModel = role === 'Admin' ? require('../models/admin') : (role === 'Approver' || role === 'PreApprover' ? require('../models/approver') : require('../models/user'));
+          await AccountModel.updateOne({ _id: userId }, { $unset: { refreshTokenId: 1 } });
+        }
+      } catch (e) {
+        logger.warn('Failed to clear refreshTokenId on logout:', e && e.message);
+      }
+      return res.json({ message: 'Logged out successfully' });
+    });
+  } else {
+    // No session — may be token-only. Attempt to clear server-side refreshTokenId if cookie exists.
+    try {
+      const cookie = req.cookies && req.cookies.refreshToken;
+      if (cookie) {
+        const jwt = require('jsonwebtoken');
+        const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'dev-jwt-secret';
+        try {
+          const payload = jwt.verify(cookie, secret);
+          const id = payload.sub;
+          const roleFromToken = payload.role;
+          if (id) {
+            const AccountModel = roleFromToken === 'Admin' ? require('../models/admin') : (roleFromToken === 'Approver' || roleFromToken === 'PreApprover' ? require('../models/approver') : require('../models/user'));
+            await AccountModel.updateOne({ _id: id }, { $unset: { refreshTokenId: 1 } });
+          }
+        } catch (_) { /* ignore invalid token */ }
+      }
+    } catch (e) { /* ignore */ }
+    return res.json({ message: 'Logged out (token-only) — refresh cookie cleared' });
+  }
+});
+
+
+// ----- REFRESH TOKEN -----
+// Exchange a valid refresh cookie for a new short-lived access token.
+router.post('/refresh-token', async (req, res) => {
+  try {
+    const cookie = req.cookies && req.cookies.refreshToken;
+    if (!cookie) return res.status(401).json({ message: 'No refresh token' });
+    const jwt = require('jsonwebtoken');
+    const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'dev-jwt-secret';
+    let payload;
+    try {
+      payload = jwt.verify(cookie, secret);
     } catch (e) {
-      logger.warn('Failed to clear activeSession on logout:', e && e.message);
+      return res.status(401).json({ message: 'Invalid refresh token' });
     }
-    res.json({ message: 'Logged out successfully' });
-  });
+
+    const userId = payload.sub;
+    const jti = payload.jti;
+    if (!userId) return res.status(401).json({ message: 'Invalid token payload' });
+
+    // Find account in appropriate collection
+    let account = await User.findById(userId).select('refreshTokenId');
+    if (!account) account = await Approver.findById(userId).select('refreshTokenId');
+    if (!account) account = await Admin.findById(userId).select('refreshTokenId');
+    if (!account) return res.status(401).json({ message: 'Account not found' });
+
+    // ensure the jti matches stored id
+    if (!jti || account.refreshTokenId !== jti) {
+      return res.status(401).json({ message: 'Refresh token revoked' });
+    }
+
+    // issue new access token and rotate refresh token for stronger security.
+    const accessExpiry = process.env.ACCESS_TOKEN_EXPIRES || '15m';
+    const refreshExpiryMs = parseInt(process.env.REFRESH_TOKEN_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000), 10);
+
+    // create new identifiers and tokens
+    const newRefreshId = require('crypto').randomBytes(16).toString('hex');
+    const accessToken = jwt.sign({ sub: String(userId), role: payload.role }, secret, { expiresIn: accessExpiry });
+    const newRefreshToken = jwt.sign({ sub: String(userId), role: payload.role, jti: newRefreshId }, secret, { expiresIn: Math.floor(refreshExpiryMs / 1000) + 's' });
+
+    // persist rotated refresh id
+    try {
+      account.refreshTokenId = newRefreshId;
+      await account.save();
+    } catch (e) {
+      logger.warn({ e }, 'Failed to persist rotated refreshTokenId');
+    }
+
+    // set cookie (rotate)
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: refreshExpiryMs,
+      path: '/api',
+    });
+
+    return res.json({ accessToken });
+  } catch (err) {
+    logger.error({ err }, 'Refresh token error');
+    return res.status(500).json({ message: 'Unable to refresh token' });
+  }
 });
 
 // ----- FORGOT PASSWORD -----

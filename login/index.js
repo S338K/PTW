@@ -2,150 +2,70 @@
 
 import { API_BASE } from '../config.js';
 
+// simple HTML escape helper
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// strip HTML tags and decode entities safely using a detached DOM node
+function stripHtmlTags(input) {
+    // Robust sanitizer: parse HTML, remove dangerous elements/attributes,
+    // then return safe plain text. This approach is resilient to future
+    // message content that may include markup or entities.
+    try {
+        if (input === null || input === undefined) return '';
+        const raw = String(input);
+        // Use DOMParser to parse in an isolated document
+        if (window.DOMParser) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(raw, 'text/html');
+
+            // Remove potentially executable or unwanted elements
+            doc.querySelectorAll('script,style,noscript,iframe,object,embed').forEach(el => el.remove());
+
+            // Remove event handler attributes and javascript: URIs
+            const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT, null, false);
+            while (walker.nextNode()) {
+                const el = walker.currentNode;
+                // copy attributes to avoid live mutation issues
+                const attrs = Array.from(el.attributes || []);
+                attrs.forEach(a => {
+                    const name = (a.name || '').toLowerCase();
+                    const val = a.value || '';
+                    if (name.startsWith('on') || name === 'style') {
+                        el.removeAttribute(a.name);
+                    }
+                    if ((name === 'href' || name === 'src') && /^\s*javascript:/i.test(val)) {
+                        el.removeAttribute(a.name);
+                    }
+                });
+            }
+
+            let text = (doc.body && (doc.body.textContent || doc.body.innerText)) || '';
+            // Normalize whitespace, remove control characters, and truncate to a sensible limit
+            text = text.replace(/\s+/g, ' ').replace(/[\x00-\x1F\x7F]/g, '').trim();
+            const MAX_LEN = 1000;
+            if (text.length > MAX_LEN) text = text.slice(0, MAX_LEN) + '…';
+            return text;
+        } else {
+            // Fallback for very old browsers: strip tags and collapse whitespace
+            return raw.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        }
+    } catch (err) {
+        try { return String(input).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(); } catch (_) { return ''; }
+    }
+}
+
+// stripHtml removed — HTML stripping was only needed for the removed carousel.
+
 // Consolidated and cleaned login page script
 document.addEventListener('DOMContentLoaded', () => {
-
-    // ========== CAROUSEL MESSAGES SYSTEM ==========
-    let carouselMessages = [];
-    let currentSlide = 0;
-    let carouselInterval = null;
-
-    async function fetchWeatherData() {
-        try {
-            const res = await fetch(`${API_BASE}/api/weather`, { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                return {
-                    icon: 'fa-temperature-half',
-                    title: `${data.location || 'Doha'} Weather`,
-                    message: `${data.temperature || '--'}°C, ${data.condition || 'Loading...'}`
-                };
-            }
-        } catch (e) {
-            console.warn('Weather fetch failed:', e);
-        }
-        return {
-            icon: 'fa-temperature-half',
-            title: 'Doha Weather',
-            message: 'Temperature data unavailable'
-        };
-    }
-
-    async function fetchSystemMessages() {
-        try {
-            const res = await fetch(`${API_BASE}/api/system-messages`, { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    return data
-                        .filter(msg => msg.isActive)
-                        .map(msg => ({
-                            icon: msg.icon || 'fa-bullhorn',
-                            title: msg.title || 'Announcement',
-                            message: msg.message || ''
-                        }));
-                }
-            }
-        } catch (e) {
-            console.warn('System messages fetch failed:', e);
-        }
-        return [];
-    }
-
-    async function initializeCarousel() {
-        // Fetch weather (always first slide)
-        const weatherData = await fetchWeatherData();
-
-        // Fetch admin messages
-        const adminMessages = await fetchSystemMessages();
-
-        // Combine: weather first, then admin messages
-        carouselMessages = [weatherData, ...adminMessages];
-
-        renderCarousel();
-        renderMarquee();
-        startCarousel();
-    }
-
-    function renderCarousel() {
-        const container = document.getElementById('carouselContainer');
-
-        if (!container) return;
-
-        // Clear existing content
-        container.innerHTML = '';
-
-        // Render slides
-        carouselMessages.forEach((msg, index) => {
-            const slide = document.createElement('div');
-            slide.className = 'carousel-slide min-w-full h-full flex items-center justify-center gap-3 text-[var(--text-primary)] px-4';
-            slide.innerHTML = `
-                <i class="fas ${msg.icon} text-xl flex-shrink-0"></i>
-                <div class="text-center">
-                    <span class="font-semibold text-base">${msg.title}:</span>
-                    <span class="ml-2 text-base">${msg.message}</span>
-                </div>
-            `;
-            container.appendChild(slide);
-        });
-    }
-
-    function renderMarquee() {
-        const marqueeContainer = document.getElementById('marqueeContainer');
-
-        if (!marqueeContainer) return;
-
-        // Create a continuous scrolling text with all messages duplicated for seamless loop
-        const messagesHTML = carouselMessages.map(msg => `
-            <span class="inline-flex items-center gap-2 text-[var(--text-primary)] px-6">
-                <i class="fas ${msg.icon} text-lg"></i>
-                <span class="font-semibold text-sm">${msg.title}:</span>
-                <span class="text-sm">${msg.message}</span>
-            </span>
-        `).join(' • ');
-
-        // Duplicate content for seamless scrolling
-        marqueeContainer.innerHTML = messagesHTML + ' • ' + messagesHTML;
-    }
-
-    function goToSlide(index) {
-        currentSlide = index;
-        const container = document.getElementById('carouselContainer');
-
-        if (!container) return;
-
-        // Update slide position
-        container.style.transform = `translateX(-${currentSlide * 100}%)`;
-    }
-
-    function nextSlide() {
-        currentSlide = (currentSlide + 1) % carouselMessages.length;
-        goToSlide(currentSlide);
-    }
-
-    function startCarousel() {
-        // Auto-advance every 5 seconds if there's more than one slide
-        if (carouselMessages.length > 1) {
-            carouselInterval = setInterval(nextSlide, 5000);
-        }
-    }
-
-    function stopCarousel() {
-        if (carouselInterval) {
-            clearInterval(carouselInterval);
-            carouselInterval = null;
-        }
-    }
-
-    // Pause carousel on hover
-    const carouselContainer = document.getElementById('carouselContainer');
-    if (carouselContainer) {
-        carouselContainer.addEventListener('mouseenter', stopCarousel);
-        carouselContainer.addEventListener('mouseleave', startCarousel);
-    }
-
-    // Initialize carousel
-    initializeCarousel();
 
     // ========== DYNAMIC BACKGROUND IMAGE SYSTEM ==========
     let backgroundImages = [];
@@ -253,9 +173,279 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
-        stopCarousel();
         stopBackgroundCarousel();
     });
+
+    // ===== Header announcement / weather marquee =====
+    // Marquee speed: use a single default duration for all messages (seconds)
+        // Marquee speed: use per-character duration but keep no inter-message delay.
+        // Duration will be: clamp(len * MULTIPLIER, MIN, MAX)
+        // Tuned marquee speed constants — reduced so messages transit faster
+        const MARQUEE_MIN_DURATION = 5; // seconds (minimum duration for very short messages)
+        const MARQUEE_MAX_DURATION = 20; // seconds (cap for very long messages)
+        const MARQUEE_CHAR_MULTIPLIER = 0.15; // seconds per character
+    // Controller for single-container sequential marquee (allows canceling previous runs)
+    let marqueeSequenceController = null;
+    async function fetchAnnouncementOrWeather() {
+        const marqueeEl = document.getElementById('announcement-marquee');
+        if (!marqueeEl) return;
+
+        try {
+            // Fetch multiple system messages so we can show English + Arabic simultaneously
+            const res = await fetch(`${API_BASE}/api/system-messages`, { credentials: 'include' });
+            if (res.ok) {
+                const messages = await res.json().catch(() => []);
+                if (Array.isArray(messages) && messages.length > 0) {
+                    let arabicMsg = null, englishMsg = null;
+                    for (const m of messages) {
+                        // sanitize title and message and keep structured object
+                        const rawMsg = (m && (m.message || m.message === 0)) ? m.message : '';
+                        const rawTitle = (m && (m.title || m.title === 0)) ? m.title : '';
+                        const safeTitle = stripHtmlTags(rawTitle).trim();
+                        const safeMsg = stripHtmlTags(rawMsg).trim();
+                        const combined = safeTitle ? `${safeTitle} : ${safeMsg}` : safeMsg;
+                        if (!combined) continue;
+                        const item = { title: safeTitle, text: safeMsg, combined };
+                        if (!arabicMsg && containsArabic(combined)) arabicMsg = item;
+                        if (!englishMsg && !containsArabic(combined)) englishMsg = item;
+                        if (arabicMsg && englishMsg) break;
+                    }
+
+                    if (arabicMsg && englishMsg) {
+                        renderMarqueeMultiple([englishMsg, arabicMsg]);
+                        return;
+                    }
+                    const single = englishMsg || arabicMsg;
+                    if (single) {
+                        renderMarqueeText(single);
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Announcement fetch failed', e);
+        }
+
+        // Fallback: weather
+        try {
+            const wres = await fetch(`${API_BASE}/api/weather?city=Doha`);
+            if (wres.ok) {
+                const wjson = await wres.json().catch(() => ({}));
+                const cityName = (wjson && wjson.name) ? String(wjson.name) : 'Doha';
+                const t = wjson && (wjson.temperature || wjson.temp || wjson.temperature === 0) ? `${wjson.temperature}°C` : (wjson && wjson.temperature ? `${wjson.temperature}` : 'N/A');
+                const condition = (wjson && wjson.condition) ? wjson.condition : (wjson && wjson.detailsLine ? '' : 'N/A');
+                const humidity = wjson && (wjson.humidity || wjson.humidity === 0) ? `${wjson.humidity}%` : 'N/A';
+                const visibility = wjson && (wjson.visibility || wjson.visibility === 0) ? `${wjson.visibility} km` : 'N/A';
+                const weatherText = `Temperature : ${t} | Weather Status : ${condition} | Humidity: ${humidity} | Visibility: ${visibility}`;
+                // use structured object so renderers can style title separately
+                renderMarqueeText({ title: cityName, text: weatherText, combined: `${cityName} : ${weatherText}` });
+                return;
+            }
+        } catch (e) {
+            console.warn('Weather fetch failed', e);
+        }
+
+        // Nothing to show
+        renderMarqueeText('');
+    }
+
+    function renderMarqueeMultiple(texts) {
+        // Single-container sequential loop implementation. Shows one message at a time
+        // (no overlap). Each message animates once, then the next starts after gapDelay.
+        const container = document.getElementById('announcement-marquee');
+        if (!container) return;
+        container.textContent = '';
+        if (!Array.isArray(texts) || texts.length === 0) return;
+
+        // Cancel any running sequence
+        if (marqueeSequenceController && typeof marqueeSequenceController.stop === 'function') {
+            marqueeSequenceController.stop();
+        }
+
+    const gapDelay = 0; // seconds between messages (0 => immediately start next)
+    const GAP_EXTRA_PX = 24; // additional px padding so text doesn't butt against edge
+    let cancelled = false;
+
+        function stopSequence() {
+            cancelled = true;
+            container.querySelectorAll('.marquee-inner').forEach(el => {
+                try { if (el._onAnimEnd) el.removeEventListener('animationend', el._onAnimEnd); } catch (e) {}
+                try { if (el.parentNode) el.parentNode.removeChild(el); } catch (e) {}
+            });
+        }
+
+        marqueeSequenceController = { stop: stopSequence };
+
+        // Pause-on-hover support
+        container.onmouseenter = () => container.querySelectorAll('.marquee-inner').forEach(i => { i.style.animationPlayState = 'paused'; });
+        container.onmouseleave = () => container.querySelectorAll('.marquee-inner').forEach(i => { i.style.animationPlayState = 'running'; });
+
+        async function showAtIndex(idx) {
+            if (cancelled) return;
+            const rawTxt = texts[idx];
+            // support structured message objects { title, text, combined }
+            let title = '';
+            let msg = '';
+            let combined = '';
+            if (rawTxt && typeof rawTxt === 'object') {
+                title = rawTxt.title || '';
+                msg = rawTxt.text || '';
+                combined = rawTxt.combined || (title ? `${title} : ${msg}` : msg);
+            } else {
+                msg = String(rawTxt || '').trim();
+                combined = msg;
+            }
+            if (!combined) {
+                // move to next immediately
+                showAtIndex((idx + 1) % texts.length);
+                return;
+            }
+
+            container.textContent = ''; // ensure only one child
+            const inner = document.createElement('div');
+            inner.className = 'marquee-inner';
+            inner.setAttribute('role', 'status');
+            inner.setAttribute('aria-live', 'polite');
+            // enforce uniform font size for all languages (including Arabic)
+            // font-size moved to shared CSS class
+            inner.classList.add('announcement-item');
+
+            // Create title span (bold) and message span (slightly larger)
+            if (title) {
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = title + ' : ';
+                titleSpan.classList.add('announcement-title');
+                inner.appendChild(titleSpan);
+            }
+            const msgSpan = document.createElement('span');
+            msgSpan.textContent = msg || combined;
+            inner.appendChild(msgSpan);
+
+            // compute gap using container width for reliable spacing across sizes
+            const containerWidth = Math.max(200, container.clientWidth || 600);
+            const gapPx = containerWidth + GAP_EXTRA_PX;
+
+            // Compute duration from message length (seconds) and clamp to min/max
+            const len = (combined && combined.length) ? combined.length : 20;
+            const duration = Math.max(MARQUEE_MIN_DURATION, Math.min(MARQUEE_MAX_DURATION, len * MARQUEE_CHAR_MULTIPLIER));
+
+            inner.style.animationTimingFunction = 'linear';
+            inner.style.animationDuration = duration + 's';
+            inner.style.animationIterationCount = '1';
+            inner.style.animationFillMode = 'forwards';
+
+            if (containsArabic(combined)) {
+                inner.style.animationName = 'marquee-ltr';
+                inner.style.direction = 'rtl';
+                inner.style.paddingRight = gapPx + 'px';
+                inner.style.textAlign = 'right';
+            } else {
+                inner.style.animationName = 'marquee-rtl';
+                inner.style.direction = 'ltr';
+                inner.style.paddingLeft = gapPx + 'px';
+                inner.style.textAlign = 'left';
+            }
+
+            // Advance to next message when this animation ends. Rely solely on
+            // the animationend event (no timers) so messages play sequentially
+            // with no additional delays.
+            const onEnd = () => {
+                try { inner.removeEventListener('animationend', onEnd); } catch (e) {}
+                if (cancelled) return;
+                // Immediately show next message
+                showAtIndex((idx + 1) % texts.length);
+            };
+            inner._onAnimEnd = onEnd;
+            inner.addEventListener('animationend', onEnd);
+
+            container.appendChild(inner);
+        }
+
+        // start sequence
+        showAtIndex(0);
+    }
+
+    // More robust Arabic detection: treat as Arabic if any Arabic character exists.
+    // This avoids false-negatives when messages include punctuation or short English
+    // fragments alongside Arabic text.
+    function containsArabic(s) {
+        try {
+            if (!s || typeof s !== 'string') return false;
+            return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(s);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function renderMarqueeText(text) {
+        const container = document.getElementById('announcement-marquee');
+        if (!container) return;
+        // Ensure we don't inject HTML — use textContent only
+        container.textContent = '';
+        if (!text) return;
+        // support object with title/text or a plain string
+        let title = '';
+        let msg = '';
+        let combined = '';
+        if (text && typeof text === 'object') {
+            title = text.title || '';
+            msg = text.text || '';
+            combined = text.combined || (title ? `${title} : ${msg}` : msg);
+        } else {
+            combined = stripHtmlTags(text).trim();
+            msg = combined;
+        }
+        if (!combined) return;
+
+    const inner = document.createElement('div');
+    inner.className = 'marquee-inner';
+    inner.setAttribute('role', 'status');
+    inner.setAttribute('aria-live', 'polite');
+    // enforce uniform font size for all languages (including Arabic)
+    // font-size moved to shared CSS class
+    inner.classList.add('announcement-item');
+
+        if (title) {
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = title + ' : ';
+            titleSpan.classList.add('announcement-title');
+            inner.appendChild(titleSpan);
+        }
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = msg;
+        inner.appendChild(msgSpan);
+
+        // compute duration based on length to keep readable speed
+        const len = (combined && combined.length) ? combined.length : 20;
+        const duration = Math.max(MARQUEE_MIN_DURATION, Math.min(MARQUEE_MAX_DURATION, len * MARQUEE_CHAR_MULTIPLIER));
+        inner.style.animationTimingFunction = 'linear';
+        inner.style.animationDuration = duration + 's';
+        inner.style.animationIterationCount = 'infinite';
+        inner.style.animationFillMode = 'forwards';
+        // Choose direction based on language: English -> rtl (move right->left), Arabic -> ltr
+        if (containsArabic(combined)) {
+            inner.style.animationName = 'marquee-ltr';
+            inner.style.direction = 'rtl';
+            inner.style.paddingRight = '100%';
+            inner.style.textAlign = 'right';
+        } else {
+            inner.style.animationName = 'marquee-rtl';
+            inner.style.direction = 'ltr';
+            inner.style.paddingLeft = '100%';
+            inner.style.textAlign = 'left';
+        }
+        container.appendChild(inner);
+
+        // Ensure pause-on-hover also works for single marquee via JS
+        container.onmouseenter = () => container.querySelectorAll('.marquee-inner').forEach(i => { i.style.animationPlayState = 'paused'; });
+        container.onmouseleave = () => container.querySelectorAll('.marquee-inner').forEach(i => { i.style.animationPlayState = 'running'; });
+    }
+
+    // Initialize and refresh periodically (every 5 minutes)
+    try {
+        fetchAnnouncementOrWeather();
+        setInterval(fetchAnnouncementOrWeather, 5 * 60 * 1000);
+    } catch (e) { /* ignore init errors */ }
 
     // ========== REST OF LOGIN PAGE CODE ==========
 
@@ -271,9 +461,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 0);
 
-    // Header/background image carousels removed per requirement
-
-    // Theme toggle handled by shared/layout.js via [data-theme-toggle]
 
     // Login form handlers (kept intact)
     const form = document.getElementById('loginForm');
@@ -323,10 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const email = emailEl.value.trim();
             const password = passwordEl.value.trim();
-            const originalButtonHTML = `<span class="relative z-10 flex items-center justify-center" style="color: #ffffff !important;"><i class="fas fa-sign-in-alt mr-2" style="color: #ffffff !important;"></i>Sign in to your account</span>`;
+            const originalButtonHTML = `<span class="relative z-10 flex items-center justify-center"><i class="fas fa-sign-in-alt mr-2"></i>Sign in to your account</span>`;
 
             loginBtn.disabled = true;
-            loginBtn.innerHTML = `<span class="flex items-center justify-center" style="color: #ffffff !important;"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Checking...</span>`;
+            loginBtn.innerHTML = `<span class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Checking...</span>`;
 
             // Helper to perform login (with optional force flag)
             async function performLogin(force = false) {
@@ -422,6 +609,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function finalizeSuccess(data) {
         try { sessionStorage.setItem('previousLogin', (data && data.user && data.user.lastLogin) || ''); } catch (_) { }
+        // store per-tab access token (if provided) so this tab uses token auth
+        try {
+            if (data && data.accessToken) {
+                sessionStorage.setItem('accessToken', data.accessToken);
+            }
+            // store a per-tab user id to help other tabs decide whether to reload
+            try { if (data && data.user && data.user.id) sessionStorage.setItem('ptw:userId', String(data.user.id)); } catch (_) { }
+            // broadcast to other tabs that session changed; they may reload
+            try { if (window.__ptw_broadcastSession) window.__ptw_broadcastSession({ type: 'login', userId: data && data.user && data.user.id }); } catch (_) { }
+        } catch (_) { }
         showToast('success', 'Signed in successfully');
         setTimeout(() => {
             const role = data && data.user && data.user.role;

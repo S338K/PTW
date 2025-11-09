@@ -6,8 +6,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard UI</title>
   <script>
-    // Configure Tailwind to use class-based dark mode (must be defined before CDN script)
-    window.tailwind = { config: { darkMode: 'class' } };
+    (function () {
+      try {
+        // Helper to detect templating placeholders left in the HTML (e.g., {{USER_ID}})
+        const isPlaceholder = (v) => !v || (/\{\{.*\}\}/).test(v) || v.trim() === '';
+
+        const m = document.querySelector('meta[name="user-id"]');
+        if (m && m.content && !isPlaceholder(m.content)) {
+          window.__USER_ID__ = m.content;
+        }
+
+        // populate common profile slots used in the sidebar/layout only when the
+        // meta tag contains a real value (not a placeholder). This ensures the
+        // shared template file can be served statically without accidentally
+        // populating the layout with the last served user's info.
+        const keys = ['fullname', 'email', 'company', 'phone', 'memberSince', 'lastLogin', 'ip'];
+        const nameMap = {
+          fullname: 'fullName',
+          email: 'email',
+          company: 'company',
+          phone: 'phone',
+          memberSince: 'memberSince',
+          lastLogin: 'lastLogin',
+          ip: 'ipAddress'
+        };
+
+        keys.forEach(k => {
+          try {
+            const meta = document.querySelector(`meta[name="user-${k}"]`);
+            if (!meta || isPlaceholder(meta.content)) return;
+            const value = meta.content;
+            const field = nameMap[k];
+            if (!field) return;
+            document.querySelectorAll(`[data-user-field="${field}"]`).forEach(el => {
+              try { el.textContent = value || ''; } catch (e) { }
+            });
+          } catch (e) { /* ignore individual failures */ }
+        });
+      } catch (e) { /* fail quietly */ }
+    })();
   </script>
   <script>
     // Ensure front-end fetches target the correct backend in production when not

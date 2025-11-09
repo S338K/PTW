@@ -1274,23 +1274,27 @@ async function handlePermitAction(permitId, action) {
 async function confirmLogout() {
     if (confirm('Are you sure you want to logout?')) {
         try {
-            // Call logout API to clean up server session
-            const response = await fetch(`${API_BASE}/api/logout`, {
-                method: 'POST',
-                credentials: 'include'
-            });
+            // Prefer shared logout helper so per-tab token is cleared and other
+            // tabs are notified. Fall back to direct API call if helper missing.
+            if (window.ptwLogout) {
+                await window.ptwLogout();
+                return;
+            }
 
-            // Clear client-side storage regardless of API response
-            sessionStorage.clear();
-            localStorage.clear();
+            // Call logout API to clean up server session
+            await fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' });
+
+            // Clear only per-tab access token and notify other tabs; avoid wiping all localStorage
+            try { sessionStorage.removeItem('accessToken'); } catch (_) { }
+            try { if (window.__ptw_broadcastSession) window.__ptw_broadcastSession({ type: 'logout' }); } catch (_) { }
 
             // Redirect to login page
             window.location.href = '../login/index.html';
         } catch (error) {
             console.error('Logout error:', error);
             // Still redirect even if API call fails
-            sessionStorage.clear();
-            localStorage.clear();
+            try { sessionStorage.removeItem('accessToken'); } catch (_) { }
+            try { if (window.__ptw_broadcastSession) window.__ptw_broadcastSession({ type: 'logout' }); } catch (_) { }
             window.location.href = '../login/index.html';
         }
     }

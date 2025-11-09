@@ -12,8 +12,194 @@
   // --- Global fetch interceptor for revoked sessions ---
   try {
     const origFetch = window.fetch.bind(window);
+    // Helper to read per-tab access token (sessionStorage)
+    function getAccessToken() {
+      try { return sessionStorage.getItem('accessToken'); } catch (_) { return null; }
+    }
+
+    // Broadcast helpers for session events (login/logout) to other tabs
+    window.__ptw_broadcastSession = function (data) {
+      try {
+        localStorage.setItem('ptw:session', JSON.stringify({ ts: Date.now(), ...data }));
+      } catch (_) { /* ignore */ }
+    };
+
+    window.__ptw_clearSessionBroadcast = function () {
+      try { localStorage.removeItem('ptw:session'); } catch (_) { }
+    };
+
+    // Listen for session broadcast events from other tabs and react in a conservative way.
+    // Previously we reloaded on any session broadcast which caused tabs to flip state when
+    // another tab logged in (or rotated the refresh cookie). That breaks multi-tab workflows
+    // where different users want to remain signed-in in separate tabs. We'll only reload on
+    // logout/session_expired or when a login for a different user is detected.
+    window.addEventListener('storage', (ev) => {
+      try {
+        if (!ev.key) return;
+        if (ev.key !== 'ptw:session') return;
+        const payload = (() => {
+          try { return JSON.parse(ev.newValue || ev.oldValue || '{}'); } catch (e) { return {}; }
+        })();
+
+        const type = payload && payload.type;
+        // Always reload on explicit logout or session expiry so UI clears sensitive state
+        if (type === 'logout' || type === 'session_expired') {
+          try { window.location.reload(); } catch (_) { /* ignore */ }
+          return;
+        }
+
+        // On login: only reload if a different user signed in elsewhere. Many pages store a
+        // per-tab `accessToken` and optionally a known `__USER_ID__` meta/global. If the
+        // broadcast contains a userId and it doesn't match this tab's user, reload so cookie
+        // state / server-side session is reflected. If it matches (same user), avoid reloading
+        // to keep the current tab's per-tab token intact.
+        if (type === 'login') {
+          const otherUserId = payload.userId || null;
+          let localUser = null;
+          try {
+            if (window.__USER_ID__) localUser = String(window.__USER_ID__);
+            else {
+              const m = document.querySelector('meta[name="user-id"]');
+              if (m && m.content) localUser = String(m.content);
+            }
+          } catch (e) { /* ignore */ }
+
+          // Also check sessionStorage for any stored per-tab userId (non-blocking)
+          try { if (!localUser) localUser = sessionStorage.getItem('ptw:userId'); } catch (_) { }
+
+          // If otherUserId is present and different from localUser, reload to reflect new server session
+          if (otherUserId && String(otherUserId) !== String(localUser)) {
+            try { window.location.reload(); } catch (_) { /* ignore */ }
+          }
+          return;
+        }
+      } catch (_) { /* ignore */ }
+    });
+
+    // Single-refresh lock and queue: ensures only one /api/refresh-token call runs at a time
+    let __ptw_refreshPromise = null;
+
+    function isReplayableBody(body) {
+      try {
+        if (!body) return true;
+        if (typeof body === 'string') return true;
+        if (body instanceof FormData) return true;
+        if (body instanceof URLSearchParams) return true;
+        if (body instanceof Blob) return true;
+        if (body instanceof ArrayBuffer) return true;
+        if (ArrayBuffer.isView && ArrayBuffer.isView(body)) return true;
+        return false;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    async function runRefreshOnce() {
+      if (__ptw_refreshPromise) return __ptw_refreshPromise;
+      __ptw_refreshPromise = (async () => {
+        try {
+          // call the existing helper which exchanges the httpOnly refresh cookie
+          if (typeof window.ptwRefreshToken === 'function') {
+            const ok = await window.ptwRefreshToken();
+            return !!ok;
+          }
+          // fallback: call the endpoint directly
+          try {
+            const r = await origFetch(apiUrl('/api/refresh-token'), { method: 'POST', credentials: 'include' });
+            if (!r.ok) return false;
+            const j = await r.json().catch(() => ({}));
+            if (j && j.accessToken) {
+              try { sessionStorage.setItem('accessToken', j.accessToken); } catch (_) { }
+              return true;
+            }
+            return false;
+          } catch (e) { return false; }
+        } finally {
+          // allow next refresh after this completes
+          const p = __ptw_refreshPromise;
+          __ptw_refreshPromise = null;
+          return p;
+        }
+      })();
+      return __ptw_refreshPromise;
+    }
+
     window.fetch = async function (...args) {
-      const res = await origFetch(...args);
+      // Normalize args -> [url, options]
+      const url = args[0];
+      const options = Object.assign({}, args[1] || {});
+
+      // ensure headers exist
+      options.headers = options.headers || {};
+
+      // Attach access token if available
+      try {
+        const token = getAccessToken();
+        if (token) {
+          if (typeof options.headers.set === 'function') options.headers.set('Authorization', `Bearer ${token}`);
+          else options.headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (_) { }
+
+      // Use a single attempt + one refresh retry. If body is not replayable, do not attempt retry.
+      let attemptedRefresh = false;
+      // Keep original body reference for replay check
+      const originalBody = options.body;
+      const canReplay = isReplayableBody(originalBody);
+
+      // Build request args for invocation
+      async function doRequest(opts) {
+        const callArgs = [url, opts];
+        return origFetch(...callArgs);
+      }
+
+      let res;
+      try {
+        res = await doRequest(options);
+      } catch (e) {
+        // network failure — propagate
+        throw e;
+      }
+
+      // If 401 and we can attempt refresh, do so (only once)
+      if (res && res.status === 401 && !attemptedRefresh && canReplay) {
+        attemptedRefresh = true;
+        try {
+          const refreshed = await runRefreshOnce();
+          if (refreshed) {
+            // update Authorization header from newly stored token
+            try {
+              const newToken = getAccessToken();
+              if (newToken) {
+                if (typeof options.headers.set === 'function') options.headers.set('Authorization', `Bearer ${newToken}`);
+                else options.headers['Authorization'] = `Bearer ${newToken}`;
+              }
+            } catch (_) { }
+
+            // retry original request once
+            try {
+              const retryOpts = Object.assign({}, options, { _ptwRetry: true });
+              res = await doRequest(retryOpts);
+            } catch (e) {
+              // if retry fails, fall through to return original response (or throw)
+            }
+          } else {
+            // refresh failed: clear local access, show a friendly toast, notify other tabs,
+            // and redirect to login after a short pause so the user can read the message.
+            try { sessionStorage.removeItem('accessToken'); } catch (_) { }
+            try { if (window.__ptw_broadcastSession) window.__ptw_broadcastSession({ type: 'session_expired' }); } catch (_) { }
+            try {
+              try { if (window.showToast) window.showToast('error', 'Your session expired — please sign in again.'); } catch (_) { }
+              setTimeout(() => {
+                try { window.location.href = getLoginUrl ? getLoginUrl() : '/login/index.html'; } catch (_) { window.location.href = '/login/index.html'; }
+              }, 1400);
+            } catch (_) {
+              try { window.location.href = getLoginUrl ? getLoginUrl() : '/login/index.html'; } catch (_) { window.location.href = '/login/index.html'; }
+            }
+          }
+        } catch (_) { /* ignore refresh errors */ }
+      }
+
       try {
         if (res && (res.status === 440 || (res.status === 401))) {
           // Try to detect our specific code
@@ -34,17 +220,83 @@
           }
         }
       } catch (_) { /* ignore */ }
+
       return res;
+    };
+  } catch (_) { /* ignore */ }
+
+  // Convenience logout helper used by pages to perform a logout and clear
+  // per-tab access token storage, then notify other tabs to reload.
+  try {
+    window.ptwLogout = async function () {
+      try {
+        await fetch(apiUrl('/api/logout'), { method: 'POST', credentials: 'include' });
+      } catch (_) { /* ignore network errors, still clear local state */ }
+      try { sessionStorage.removeItem('accessToken'); } catch (_) { }
+      try { sessionStorage.removeItem('ptw:userId'); } catch (_) { }
+      try { if (window.__ptw_broadcastSession) window.__ptw_broadcastSession({ type: 'logout' }); } catch (_) { }
+      try { await findLoginAndRedirect(); } catch (_) { try { window.location.href = getLoginUrl ? getLoginUrl() : '/login/index.html'; } catch (_) { window.location.href = '/'; } }
+    };
+  } catch (_) { /* ignore */ }
+  try {
+    // Expose a programmatic refresh helper: attempts to exchange httpOnly refresh
+    // cookie for a new access token and stores it in sessionStorage.
+    window.ptwRefreshToken = async function () {
+      try {
+        const res = await fetch(apiUrl('/api/refresh-token'), { method: 'POST', credentials: 'include' });
+        if (!res.ok) return false;
+        const json = await res.json().catch(() => ({}));
+        if (json && json.accessToken) {
+          try { sessionStorage.setItem('accessToken', json.accessToken); } catch (_) { }
+          return true;
+        }
+        return false;
+      } catch (e) {
+        return false;
+      }
     };
   } catch (_) { /* ignore */ }
   // --- Theme init & toggle ---
   try {
     const STORAGE_KEY = 'theme';
+    const USER_KEY_PREFIX = 'theme_user_';
+    // Migrate legacy page-specific key 'hia:theme' to the unified STORAGE_KEY if present.
+    try {
+      const legacy = localStorage.getItem('hia:theme');
+      if (legacy && !localStorage.getItem(STORAGE_KEY)) {
+        localStorage.setItem(STORAGE_KEY, legacy);
+      }
+    } catch (_) { /* ignore storage errors */ }
     const root = document.documentElement;
-    // Prefer localStorage but fall back to sessionStorage (other scripts may use it)
+    // Determine a logged-in user id if the server injected one (meta tag) or
+    // a global override exists. This allows persisting a theme per-user so two
+    // different users in the same browser profile don't clobber each other's
+    // preference.
+    let detectedUserId = null;
+    try {
+      if (window.__USER_ID__) detectedUserId = String(window.__USER_ID__);
+    } catch (e) { /* ignore */ }
+    try {
+      if (!detectedUserId) {
+        const m = document.querySelector('meta[name="user-id"]');
+        if (m && m.content) detectedUserId = String(m.content);
+      }
+    } catch (e) { /* ignore */ }
+
+    // Prefer sessionStorage for tab-scoped preference, then a per-user
+    // localStorage key (if user known). Falling back to a generic localStorage
+    // value keeps backwards compatibility for guest or legacy usage.
     const stored = (() => {
       try {
-        return localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
+        if (detectedUserId) {
+          const perUser = localStorage.getItem(USER_KEY_PREFIX + detectedUserId);
+          if (perUser && perUser.trim()) return perUser.trim();
+        }
+        // sessionStorage keeps each tab independent (avoids cross-user clobbers)
+        const sessionVal = sessionStorage.getItem(STORAGE_KEY);
+        if (sessionVal && sessionVal.trim()) return sessionVal.trim();
+        // fallback to legacy localStorage key
+        try { return localStorage.getItem(STORAGE_KEY); } catch (_e) { return null; }
       } catch (e) {
         try { return sessionStorage.getItem(STORAGE_KEY); } catch (_e) { return null; }
       }
@@ -130,9 +382,19 @@
 
   function persistTheme(theme) {
     try {
-      localStorage.setItem('theme', theme);
-      // also write to sessionStorage for compatibility with other scripts
-      try { sessionStorage.setItem('theme', theme); } catch (_e) { /* ignore */ }
+      // write tab-scoped value (avoids cross-tab/user clobbering)
+      try { sessionStorage.setItem(STORAGE_KEY, theme); } catch (_e) { /* ignore */ }
+      // if we detected a user id, persist per-user in localStorage so the
+      // preference follows that user across tabs. Otherwise keep legacy
+      // behaviour and write a generic localStorage value.
+      try {
+        if (detectedUserId) {
+          localStorage.setItem(USER_KEY_PREFIX + detectedUserId, theme);
+        } else {
+          localStorage.setItem(STORAGE_KEY, theme);
+        }
+      } catch (_e) { /* ignore */ }
+      // also write to sessionStorage for compatibility with other scripts (again)
     } catch (_e) { }
   }
 
@@ -1244,6 +1506,32 @@
     } catch (_) { return '/login/index.html'; }
   }
 
+  // Probe a list of candidate login URLs and redirect to the first reachable one.
+  // This makes logout robust when front-end static files may be served from
+  // different base paths in production vs dev (e.g., '/PTW').
+  async function findLoginAndRedirect(fallback = '/') {
+    const candidates = [getLoginUrl(), '/login/index.html', '/PTW/login/index.html', '/login.html', '/PTW/login.html', '/index.html', '/'];
+    for (const candidate of candidates) {
+      try {
+        // Build absolute URL for same-origin probing
+        const url = candidate.startsWith('http') ? candidate : (window.location.origin + (candidate.startsWith('/') ? candidate : '/' + candidate));
+        // Use a short HEAD request with timeout so we don't hang on slow networks
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(url, { method: 'HEAD', credentials: 'include', signal: controller.signal });
+        clearTimeout(timer);
+        if (res && res.status >= 200 && res.status < 400) {
+          window.location.href = url;
+          return;
+        }
+      } catch (_) {
+        // ignore and try next candidate
+      }
+    }
+    // last resort
+    try { window.location.href = fallback; } catch (_) { window.location.href = '/'; }
+  }
+
   function showSessionEndedNotice() {
     try {
       let bar = document.getElementById('session-ended-bar');
@@ -1293,7 +1581,8 @@
         // Clear any theme/session storage hints to avoid visual mismatch after redirect
         try { localStorage.removeItem('theme'); } catch (_) { }
         try { sessionStorage.removeItem('theme'); } catch (_) { }
-        window.location.href = getLoginUrl();
+        // Redirect to the best available login page (robust across different deploy bases)
+        try { await findLoginAndRedirect(); } catch (_) { try { window.location.href = getLoginUrl(); } catch (_) { window.location.href = '/'; } }
       } catch (_) {
         if (status) { status.textContent = 'Network error during logout'; status.classList.remove('hidden'); }
       }

@@ -62,6 +62,10 @@ const userSchema = new mongoose.Schema(
     activeSessionCreatedAt: { type: Date },
     activeSessionUserAgent: { type: String },
     activeSessionIp: { type: String },
+    // Refresh token id (jti) for rotating refresh tokens when using JWT-based
+    // per-tab authentication. Stored as a short identifier so refresh tokens
+    // can be revoked when a user logs out or an admin invalidates sessions.
+    refreshTokenId: { type: String, index: true },
 
     // 🔹 New Office Address subdocument
     officeAddress: {

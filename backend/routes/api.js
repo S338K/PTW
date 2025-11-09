@@ -33,25 +33,13 @@ router.get('/system-messages', async (req, res) => {
       .limit(10)
       .lean();
 
-    const formattedMessages = messages.map(msg => {
-      // Prefer translations (English fallback) when present
-      let title = msg.title || 'Announcement';
-      let message = msg.message || '';
-      if (Array.isArray(msg.translations) && msg.translations.length > 0) {
-        const en = msg.translations.find(t => t.lang === 'en') || msg.translations[0];
-        if (en) {
-          title = en.title || title;
-          message = en.message || message;
-        }
-      }
-      return {
-        id: msg._id,
-        title,
-        message,
-        icon: msg.icon || 'fa-bullhorn',
-        isActive: msg.isActive !== false
-      };
-    });
+    const formattedMessages = messages.map(msg => ({
+      id: msg._id,
+      title: msg.title || 'Announcement',
+      message: msg.message || '',
+      icon: msg.icon || 'fa-bullhorn',
+      isActive: msg.isActive !== false
+    }));
 
     res.json(formattedMessages);
   } catch (err) {
@@ -66,18 +54,12 @@ router.post('/system-message', async (req, res) => {
     if (!req.session || !req.session.userId || req.session.userRole !== 'Admin') {
       return res.status(403).json({ message: 'Forbidden: Admins only' });
     }
-    const { title, message, icon, isActive, translations, startAt, endAt } = req.body;
+    const { title, message, icon, isActive, startAt, endAt } = req.body;
     const errors = [];
-    // Accept translations array preferred; fallback to message/title
-    const tx = Array.isArray(translations) ? translations : (message ? [{ lang: 'en', title: title || 'Announcement', message }] : []);
-    if (!tx.length) errors.push({ field: 'message', message: 'Message or translations are required' });
-    // Validate lengths
-    tx.forEach((t, idx) => {
-      if (!t || typeof t.message !== 'string' || !t.message.trim()) errors.push({ field: `translations[${idx}].message`, message: 'Message is required' });
-      if (t.title && t.title.length > 200) errors.push({ field: `translations[${idx}].title`, message: 'Title is too long (max 200 chars)' });
-      if (t.message && t.message.length > 2000) errors.push({ field: `translations[${idx}].message`, message: 'Message is too long (max 2000 chars)' });
-      if (t.lang && typeof t.lang !== 'string') errors.push({ field: `translations[${idx}].lang`, message: 'Invalid language code' });
-    });
+    // Validate presence and lengths
+    if (!message || typeof message !== 'string' || !message.trim()) errors.push({ field: 'message', message: 'Message is required' });
+    if (title && title.length > 200) errors.push({ field: 'title', message: 'Title is too long (max 200 chars)' });
+    if (message && message.length > 2000) errors.push({ field: 'message', message: 'Message is too long (max 2000 chars)' });
     if (icon && icon.length > 100) errors.push({ field: 'icon', message: 'Icon value too long' });
     // Validate dates
     let s = null, e = null;
@@ -94,9 +76,8 @@ router.post('/system-message', async (req, res) => {
     if (errors.length) return res.status(400).json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
 
     const newMsg = new SystemMessage({
-      title: title || (tx[0] && tx[0].title) || 'Announcement',
-      message: message || (tx[0] && tx[0].message) || '',
-      translations: tx,
+      title: title || 'Announcement',
+      message: message || '',
       icon: icon || 'fa-bullhorn',
       isActive: typeof isActive === 'boolean' ? isActive : true,
       startAt: s,
@@ -141,25 +122,23 @@ router.put('/system-message/:id', async (req, res) => {
       return res.status(403).json({ message: 'Forbidden: Admins only' });
     }
     const id = req.params.id;
-    const { title, message, icon, isActive, translations, startAt, endAt } = req.body;
+    const { title, message, icon, isActive, startAt, endAt } = req.body;
     const errors = [];
     const update = {};
-    if (typeof title === 'string') update.title = title;
-    if (typeof message === 'string') update.message = message;
-    if (typeof icon === 'string') update.icon = icon;
-    if (typeof isActive === 'boolean') update.isActive = isActive;
-
-    // Accept translations and validate
-    if (Array.isArray(translations)) {
-      translations.forEach((t, idx) => {
-        if (!t || typeof t.message !== 'string' || !t.message.trim()) errors.push({ field: `translations[${idx}].message`, message: 'Message is required' });
-        if (t.title && t.title.length > 200) errors.push({ field: `translations[${idx}].title`, message: 'Title too long' });
-        if (t.message && t.message.length > 2000) errors.push({ field: `translations[${idx}].message`, message: 'Message too long' });
-      });
-      if (!errors.length) update.translations = translations;
+    if (typeof title === 'string') {
+      if (title.length > 200) errors.push({ field: 'title', message: 'Title too long' });
+      else update.title = title;
     }
-
-    if (icon && icon.length > 100) errors.push({ field: 'icon', message: 'Icon value too long' });
+    if (typeof message === 'string') {
+      if (!message.trim()) errors.push({ field: 'message', message: 'Message is required' });
+      else if (message.length > 2000) errors.push({ field: 'message', message: 'Message too long' });
+      else update.message = message;
+    }
+    if (typeof icon === 'string') {
+      if (icon.length > 100) errors.push({ field: 'icon', message: 'Icon value too long' });
+      else update.icon = icon;
+    }
+    if (typeof isActive === 'boolean') update.isActive = isActive;
 
     let s = null, e = null;
     if (startAt) {
@@ -273,6 +252,8 @@ router.get('/weather', async (req, res) => {
       .json({ message: 'Unable to fetch weather', error: err.response?.data || err.message });
   }
 });
+
+// Translation endpoints removed — translation is no longer provided by the backend
 
 // ===== DASHBOARD STATISTICS =====
 router.get('/dashboard/stats', async (req, res) => {
