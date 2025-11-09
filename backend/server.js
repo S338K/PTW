@@ -84,7 +84,10 @@ const DEFAULT_DEV_SECRET = 'PTW-2024-simple-dev-session-key-for-local-testing';
 // Accept multiple env names for convenience. In production provide SESSION_SECRET_PROD;
 // if it's missing but SESSION_SECRET exists (common), use that as a fallback.
 const sessionSecret = isProd
-  ? process.env.SESSION_SECRET_PROD || process.env.SESSION_SECRET || process.env.SESSION_SECRET_DEV || DEFAULT_DEV_SECRET
+  ? process.env.SESSION_SECRET_PROD ||
+    process.env.SESSION_SECRET ||
+    process.env.SESSION_SECRET_DEV ||
+    DEFAULT_DEV_SECRET
   : process.env.SESSION_SECRET_DEV || process.env.SESSION_SECRET || DEFAULT_DEV_SECRET;
 
 // Ensure a session secret is provided in production for cryptographic safety
@@ -121,7 +124,11 @@ app.use(
 app.use((req, res, next) => {
   try {
     const authHeader = req.headers && req.headers.authorization;
-    if (authHeader && typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+    if (
+      authHeader &&
+      typeof authHeader === 'string' &&
+      authHeader.toLowerCase().startsWith('bearer ')
+    ) {
       const token = authHeader.slice(7).trim();
       if (token) {
         const jwt = require('jsonwebtoken');
@@ -180,7 +187,6 @@ async function getBrowser() {
     const fs = require('fs');
     let executablePath;
 
-
     // 1) Env var override (highest priority), but only if file exists
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
       const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
@@ -209,8 +215,8 @@ async function getBrowser() {
         candidates.push(
           `${process.env['PROGRAMFILES'] || 'C:\\Program Files'}\\Google\\Chrome\\Application\\chrome.exe`,
           `${process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)'}\\Google\\Chrome\\Application\\chrome.exe`,
-          `${process.env['LOCALAPPDATA'] || (process.env.USERPROFILE + '\\AppData\\Local')}\\Google\\Chrome\\Application\\chrome.exe`,
-          `${process.env['LOCALAPPDATA'] || (process.env.USERPROFILE + '\\AppData\\Local')}\\Microsoft\\Edge\\Application\\msedge.exe`
+          `${process.env['LOCALAPPDATA'] || process.env.USERPROFILE + '\\AppData\\Local'}\\Google\\Chrome\\Application\\chrome.exe`,
+          `${process.env['LOCALAPPDATA'] || process.env.USERPROFILE + '\\AppData\\Local'}\\Microsoft\\Edge\\Application\\msedge.exe`
         );
       } else if (process.platform === 'darwin') {
         candidates.push(
@@ -240,7 +246,6 @@ async function getBrowser() {
       }
     }
 
-
     if (!executablePath && puppeteer === puppeteerCore) {
       try {
         // try to require full puppeteer dynamically
@@ -263,7 +268,9 @@ async function getBrowser() {
       launchOptions.executablePath = executablePath;
     } else if (puppeteer === puppeteerCore) {
       // puppeteer-core requires an executable; if we reach here, none was found
-      logger.error('Chromium executable not found and puppeteer-core is in use. Set PUPPETEER_EXECUTABLE_PATH or install the full "puppeteer" package. See https://pptr.dev/troubleshooting');
+      logger.error(
+        'Chromium executable not found and puppeteer-core is in use. Set PUPPETEER_EXECUTABLE_PATH or install the full "puppeteer" package. See https://pptr.dev/troubleshooting'
+      );
       throw new Error('No Chromium executable found for puppeteer-core');
     } else {
       // using full puppeteer which includes a Chromium; no executablePath required
@@ -319,12 +326,29 @@ mongoose
   .catch((err) => logger.error(err));
 
 // ===== GLOBAL ERROR HANDLER ===== //
+// Mongoose validation error translator and global error handler
 app.use((err, req, res, _next) => {
   const timestamp = new Date().toISOString();
   logger.error(
     { method: req.method, url: req.originalUrl, stack: err.stack },
     `[${timestamp}] Error handler`
   );
+
+  // If this is a Mongoose ValidationError, normalize to 400 and provide field-level details
+  if (err && err.name === 'ValidationError' && err.errors) {
+    const fields = {};
+    Object.keys(err.errors).forEach((k) => {
+      try {
+        fields[k] = err.errors[k].message || String(err.errors[k]);
+      } catch (e) {
+        fields[k] = String(err.errors[k]);
+      }
+    });
+    return res.status(400).json({
+      message: 'Validation failed',
+      errors: fields,
+    });
+  }
 
   res.status(err.status || 500).json({
     message: isProd ? 'An unexpected error occurred' : err.message,
@@ -346,7 +370,9 @@ async function startServerWithBrowserCheck() {
       logger.info(`[DIAGNOSTIC] Executable exists: ${exists}`);
       if (exists) {
         const stat = fs.statSync(execPath);
-        logger.info(`[DIAGNOSTIC] Executable permissions: mode=${stat.mode.toString(8)} size=${stat.size}`);
+        logger.info(
+          `[DIAGNOSTIC] Executable permissions: mode=${stat.mode.toString(8)} size=${stat.size}`
+        );
       }
     } catch (e) {
       logger.error('[DIAGNOSTIC] Error checking executable:', e && e.message);
@@ -368,7 +394,9 @@ async function startServerWithBrowserCheck() {
       logger.error('Exiting because browser is required in production.');
       process.exit(1);
     } else {
-      logger.warn('Continuing startup in development despite browser startup failure. PDF generation may not work until resolved.');
+      logger.warn(
+        'Continuing startup in development despite browser startup failure. PDF generation may not work until resolved.'
+      );
     }
   }
 

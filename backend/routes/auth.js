@@ -31,19 +31,61 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    // Server-side validation rules (mirror client-side rules)
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const alphaRe = /^[A-Za-z\s]+$/;
+    const numericRe = /^\d+$/;
+    // Require Qatar country code +974 followed by at least 8 digits (e.g. +97412345678)
+    const phoneRe = /^\+974\d{8,}$/;
+    // Require min 8 chars, at least one lowercase, one uppercase, one digit and one special char
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         message:
-          'Password must be at least 8 characters long and include one letter, number, and special character.',
+          'Password must be at least 8 characters long and include upper and lower case letters, a number, and a special character.',
       });
+    }
+
+    // Require confirmPassword and ensure it matches password
+    if (
+      typeof req.body.confirmPassword === 'undefined' ||
+      String(req.body.confirmPassword || '').trim() === ''
+    ) {
+      return res.status(400).json({ message: 'confirmPassword is required.' });
+    }
+    const confirm = String(req.body.confirmPassword || '');
+    if (confirm !== String(password || '')) {
+      return res.status(400).json({ message: 'Password and confirm password do not match.' });
+    }
+
+    if (!emailRe.test(email)) {
+      return res.status(400).json({ message: 'Enter a valid email address.' });
+    }
+
+    // Validate username and company (letters and spaces only)
+    if (username && !alphaRe.test(username)) {
+      return res.status(400).json({ message: 'Full name should contain letters only.' });
+    }
+    if (company && !alphaRe.test(company)) {
+      return res.status(400).json({ message: 'Company name should contain letters only.' });
     }
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(409).json({ message: 'Email is already in use' });
 
-    // Accept either `phone` or `mobile` from different frontends/forms
-    const phoneVal = (phone && phone.trim()) || (mobile && mobile.trim()) || '';
+    // Accept either `phone` or `mobile` from different frontends/forms and validate
+    let phoneVal = (phone && phone.trim()) || (mobile && mobile.trim()) || '';
+    if (!phoneVal) {
+      return res.status(400).json({ message: 'Phone number is required.' });
+    }
+    // normalize separators so values like '+974 1234-5678' are accepted
+    phoneVal = phoneVal.replace(/[\s\-()]/g, '');
+    if (!phoneRe.test(phoneVal)) {
+      return res
+        .status(400)
+        .json({ message: 'Phone must start with +974 and contain at least 8 digits.' });
+    }
 
     const newUser = new User({
       username,
@@ -63,6 +105,22 @@ router.post('/register', async (req, res) => {
         poBox: poBox || '',
       },
     });
+
+    // Validate numeric address fields if provided
+    const numericFields = { buildingNo, floorNo, streetNo, zone, poBox };
+    for (const [k, v] of Object.entries(numericFields)) {
+      if (v && String(v).trim() && !numericRe.test(String(v).trim())) {
+        return res.status(400).json({ message: `${k} should contain numbers only.` });
+      }
+    }
+
+    // Validate city/country (alpha)
+    if (city && city.trim() && !alphaRe.test(city.trim())) {
+      return res.status(400).json({ message: 'City should contain letters only.' });
+    }
+    if (country && country.trim() && !alphaRe.test(country.trim())) {
+      return res.status(400).json({ message: 'Country should contain letters only.' });
+    }
 
     await newUser.save();
     res.status(201).json({
@@ -140,7 +198,9 @@ router.post('/login', async (req, res) => {
       if (!clientIp && req.headers['x-real-ip']) clientIp = req.headers['x-real-ip'];
       if (!clientIp && req.socket && req.socket.remoteAddress) clientIp = req.socket.remoteAddress;
       if (!clientIp && req.ip) clientIp = req.ip;
-    } catch (_) { clientIp = req.ip || null; }
+    } catch (_) {
+      clientIp = req.ip || null;
+    }
 
     const displayName = account.fullName || account.username || account.email;
 
@@ -207,17 +267,18 @@ router.post('/login', async (req, res) => {
       try {
         const jwt = require('jsonwebtoken');
         const accessExpiry = process.env.ACCESS_TOKEN_EXPIRES || '15m';
-        const refreshExpiryMs = parseInt(process.env.REFRESH_TOKEN_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000), 10);
+        const refreshExpiryMs = parseInt(
+          process.env.REFRESH_TOKEN_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000),
+          10
+        );
         const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'dev-jwt-secret';
 
         // Use a lightweight random id for refresh token rotation (jti)
         const refreshId = require('crypto').randomBytes(16).toString('hex');
 
-        const accessToken = jwt.sign(
-          { sub: String(account._id), role: account.role },
-          secret,
-          { expiresIn: accessExpiry }
-        );
+        const accessToken = jwt.sign({ sub: String(account._id), role: account.role }, secret, {
+          expiresIn: accessExpiry,
+        });
 
         const refreshToken = jwt.sign(
           { sub: String(account._id), role: account.role, jti: refreshId },
@@ -253,11 +314,16 @@ router.post('/login', async (req, res) => {
             company: account.company,
             role: account.role,
             lastLogin: account.lastLogin?.toISOString(),
-            prevLogin: previousLogin ? previousLogin.toISOString() : account.lastLogin?.toISOString(),
+            prevLogin: previousLogin
+              ? previousLogin.toISOString()
+              : account.lastLogin?.toISOString(),
           },
         });
       } catch (tokenErr) {
-        logger.warn({ tokenErr }, 'Failed to create tokens - falling back to session-only response');
+        logger.warn(
+          { tokenErr },
+          'Failed to create tokens - falling back to session-only response'
+        );
         return res.json({
           message: 'Login successful',
           user: {
@@ -267,7 +333,9 @@ router.post('/login', async (req, res) => {
             company: account.company,
             role: account.role,
             lastLogin: account.lastLogin?.toISOString(),
-            prevLogin: previousLogin ? previousLogin.toISOString() : account.lastLogin?.toISOString(),
+            prevLogin: previousLogin
+              ? previousLogin.toISOString()
+              : account.lastLogin?.toISOString(),
           },
         });
       }
@@ -338,12 +406,26 @@ router.get('/profile', async (req, res) => {
     }
     // Build a safe user payload to avoid leaking sensitive fields
     const safeUser = user.toObject ? user.toObject() : { ...user };
-    safeUser.profileUpdatedAt = safeUser.profileUpdatedAt ? safeUser.profileUpdatedAt.toISOString() : null;
-    safeUser.passwordUpdatedAt = safeUser.passwordUpdatedAt ? safeUser.passwordUpdatedAt.toISOString() : null;
+    safeUser.profileUpdatedAt = safeUser.profileUpdatedAt
+      ? safeUser.profileUpdatedAt.toISOString()
+      : null;
+    safeUser.passwordUpdatedAt = safeUser.passwordUpdatedAt
+      ? safeUser.passwordUpdatedAt.toISOString()
+      : null;
 
     // Log client IP and source for debugging (helps confirm the running server has this code)
     try {
-      const ipSource = req.headers['x-forwarded-for'] ? 'x-forwarded-for' : (req.headers['cf-connecting-ip'] ? 'cf-connecting-ip' : (req.headers['x-real-ip'] ? 'x-real-ip' : (req.socket && req.socket.remoteAddress ? 'socket.remoteAddress' : (req.ip ? 'req.ip' : 'unknown'))));
+      const ipSource = req.headers['x-forwarded-for']
+        ? 'x-forwarded-for'
+        : req.headers['cf-connecting-ip']
+          ? 'cf-connecting-ip'
+          : req.headers['x-real-ip']
+            ? 'x-real-ip'
+            : req.socket && req.socket.remoteAddress
+              ? 'socket.remoteAddress'
+              : req.ip
+                ? 'req.ip'
+                : 'unknown';
       logger.debug({ clientIp, ipSource }, 'Profile response - client IP detected');
     } catch (e) {
       // ignore logging errors
@@ -352,7 +434,7 @@ router.get('/profile', async (req, res) => {
     res.json({
       user: safeUser,
       session: { id: req.session.userId, role: req.session.userRole },
-      clientIp
+      clientIp,
     });
   } catch (err) {
     logger.error({ err }, 'Profile fetch error');
@@ -387,12 +469,42 @@ router.post('/logout', async (req, res) => {
         if (userId && role) {
           if (role === 'Admin') {
             const Admin = require('../models/admin');
-            await Admin.updateOne({ _id: userId, activeSessionId: sessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+            await Admin.updateOne(
+              { _id: userId, activeSessionId: sessionId },
+              {
+                $unset: {
+                  activeSessionId: 1,
+                  activeSessionCreatedAt: 1,
+                  activeSessionUserAgent: 1,
+                  activeSessionIp: 1,
+                },
+              }
+            );
           } else if (role === 'Approver' || role === 'PreApprover') {
             const Approver = require('../models/approver');
-            await Approver.updateOne({ _id: userId, activeSessionId: sessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+            await Approver.updateOne(
+              { _id: userId, activeSessionId: sessionId },
+              {
+                $unset: {
+                  activeSessionId: 1,
+                  activeSessionCreatedAt: 1,
+                  activeSessionUserAgent: 1,
+                  activeSessionIp: 1,
+                },
+              }
+            );
           } else {
-            await User.updateOne({ _id: userId, activeSessionId: sessionId }, { $unset: { activeSessionId: 1, activeSessionCreatedAt: 1, activeSessionUserAgent: 1, activeSessionIp: 1 } });
+            await User.updateOne(
+              { _id: userId, activeSessionId: sessionId },
+              {
+                $unset: {
+                  activeSessionId: 1,
+                  activeSessionCreatedAt: 1,
+                  activeSessionUserAgent: 1,
+                  activeSessionIp: 1,
+                },
+              }
+            );
           }
         }
       } catch (e) {
@@ -401,7 +513,12 @@ router.post('/logout', async (req, res) => {
       // Also clear persisted refreshTokenId server-side if present (best-effort)
       try {
         if (userId && role) {
-          const AccountModel = role === 'Admin' ? require('../models/admin') : (role === 'Approver' || role === 'PreApprover' ? require('../models/approver') : require('../models/user'));
+          const AccountModel =
+            role === 'Admin'
+              ? require('../models/admin')
+              : role === 'Approver' || role === 'PreApprover'
+                ? require('../models/approver')
+                : require('../models/user');
           await AccountModel.updateOne({ _id: userId }, { $unset: { refreshTokenId: 1 } });
         }
       } catch (e) {
@@ -421,16 +538,24 @@ router.post('/logout', async (req, res) => {
           const id = payload.sub;
           const roleFromToken = payload.role;
           if (id) {
-            const AccountModel = roleFromToken === 'Admin' ? require('../models/admin') : (roleFromToken === 'Approver' || roleFromToken === 'PreApprover' ? require('../models/approver') : require('../models/user'));
+            const AccountModel =
+              roleFromToken === 'Admin'
+                ? require('../models/admin')
+                : roleFromToken === 'Approver' || roleFromToken === 'PreApprover'
+                  ? require('../models/approver')
+                  : require('../models/user');
             await AccountModel.updateOne({ _id: id }, { $unset: { refreshTokenId: 1 } });
           }
-        } catch (_) { /* ignore invalid token */ }
+        } catch (_) {
+          /* ignore invalid token */
+        }
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
     return res.json({ message: 'Logged out (token-only) — refresh cookie cleared' });
   }
 });
-
 
 // ----- REFRESH TOKEN -----
 // Exchange a valid refresh cookie for a new short-lived access token.
@@ -464,12 +589,21 @@ router.post('/refresh-token', async (req, res) => {
 
     // issue new access token and rotate refresh token for stronger security.
     const accessExpiry = process.env.ACCESS_TOKEN_EXPIRES || '15m';
-    const refreshExpiryMs = parseInt(process.env.REFRESH_TOKEN_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000), 10);
+    const refreshExpiryMs = parseInt(
+      process.env.REFRESH_TOKEN_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000),
+      10
+    );
 
     // create new identifiers and tokens
     const newRefreshId = require('crypto').randomBytes(16).toString('hex');
-    const accessToken = jwt.sign({ sub: String(userId), role: payload.role }, secret, { expiresIn: accessExpiry });
-    const newRefreshToken = jwt.sign({ sub: String(userId), role: payload.role, jti: newRefreshId }, secret, { expiresIn: Math.floor(refreshExpiryMs / 1000) + 's' });
+    const accessToken = jwt.sign({ sub: String(userId), role: payload.role }, secret, {
+      expiresIn: accessExpiry,
+    });
+    const newRefreshToken = jwt.sign(
+      { sub: String(userId), role: payload.role, jti: newRefreshId },
+      secret,
+      { expiresIn: Math.floor(refreshExpiryMs / 1000) + 's' }
+    );
 
     // persist rotated refresh id
     try {
@@ -536,12 +670,10 @@ router.post('/reset-password', async (req, res) => {
 
     const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
     if (!strongPasswordRegex.test(newPassword)) {
-      return res
-        .status(400)
-        .json({
-          message:
-            'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
-        });
+      return res.status(400).json({
+        message:
+          'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+      });
     }
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -617,7 +749,8 @@ router.put('/update-password', async (req, res) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
-        message: 'Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character'
+        message:
+          'Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character',
       });
     }
 
@@ -655,7 +788,10 @@ router.put('/update-password', async (req, res) => {
     await account.save();
 
     logger.info({ userId: account._id }, 'Password updated successfully');
-    res.json({ message: 'Password updated successfully', passwordUpdatedAt: account.passwordUpdatedAt });
+    res.json({
+      message: 'Password updated successfully',
+      passwordUpdatedAt: account.passwordUpdatedAt,
+    });
   } catch (err) {
     logger.error({ err }, '[Update Password] Error');
     res.status(500).json({ message: 'Error updating password', error: err.message });
@@ -686,7 +822,8 @@ router.put('/update-profile', async (req, res) => {
       if (!emailRegex.test(email)) return res.status(400).json({ message: 'Invalid email format' });
       if (email !== user.email) {
         const existingUser = await User.findOne({ email, _id: { $ne: user._id } });
-        if (existingUser) return res.status(409).json({ message: 'Email is already in use by another account' });
+        if (existingUser)
+          return res.status(409).json({ message: 'Email is already in use by another account' });
       }
       user.username = username;
       user.email = email;
@@ -715,8 +852,8 @@ router.put('/update-profile', async (req, res) => {
         company: user.company,
         phone: user.phone,
         role: user.role,
-        profileUpdatedAt: user.profileUpdatedAt
-      }
+        profileUpdatedAt: user.profileUpdatedAt,
+      },
     });
   } catch (err) {
     logger.error({ err }, '[Update Profile] Error');

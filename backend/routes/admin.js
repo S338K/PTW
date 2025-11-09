@@ -22,7 +22,8 @@ router.post('/register-user', async (req, res) => {
   // register-user: no debug logging here
 
   try {
-    if (process.env.NODE_ENV !== 'production') console.debug('[DEBUG] /admin/register-user req.body=', req.body);
+    if (process.env.NODE_ENV !== 'production')
+      console.debug('[DEBUG] /admin/register-user req.body=', req.body);
     const { fullName, email, mobile, company, department, designation, password, role } = req.body;
     if (process.env.NODE_ENV !== 'production') {
       console.debug('[DEBUG] /admin/register-user body role=', role);
@@ -33,18 +34,55 @@ router.post('/register-user', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Server-side validation to mirror client rules
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const alphaRe = /^[A-Za-z\s]+$/;
+    const passwordRe = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    const phoneRe = /^\+974\d{8,}$/;
+
+    if (!emailRe.test(email)) return res.status(400).json({ error: 'Enter a valid email address' });
+    if (!alphaRe.test(fullName))
+      return res.status(400).json({ error: 'Full name should contain letters only' });
+    // normalize mobile (strip common separators) so values like '+974 1234-5678' are accepted
+    const cleanMobile = String(mobile || '')
+      .trim()
+      .replace(/[\s\-()]/g, '');
+    if (!phoneRe.test(cleanMobile))
+      return res
+        .status(400)
+        .json({ error: 'Phone must start with +974 and contain at least 8 digits' });
+    if (!passwordRe.test(password))
+      return res.status(400).json({
+        error:
+          'Password must be at least 8 characters long and include upper/lower case letters, a number and a special character',
+      });
+
+    // Require confirmPassword and ensure it matches the password
+    if (
+      typeof req.body.confirmPassword === 'undefined' ||
+      String(req.body.confirmPassword || '').trim() === ''
+    ) {
+      return res.status(400).json({ error: 'confirmPassword is required' });
+    }
+    const confirm = String(req.body.confirmPassword || '');
+    if (confirm !== String(password || '')) {
+      return res.status(400).json({ error: 'Password and confirm password do not match' });
+    }
+
     // Defensive normalization: accept hyphenated or spaced variants and normalize to canonical values
     let normalizedRole = role;
     if (typeof normalizedRole === 'string') {
       const r = normalizedRole.trim().toLowerCase();
-      if (process.env.NODE_ENV !== 'production') console.debug('[DEBUG] normalized role input lower=', r);
+      if (process.env.NODE_ENV !== 'production')
+        console.debug('[DEBUG] normalized role input lower=', r);
       if (r === 'pre-approver' || r === 'preapprover' || r === 'pre approver')
         normalizedRole = 'PreApprover';
       else if (r === 'approver') normalizedRole = 'Approver';
       else if (r === 'admin') normalizedRole = 'Admin';
       else if (r === 'requester' || r === 'user') normalizedRole = 'Requester';
     }
-    if (process.env.NODE_ENV !== 'production') console.debug('[DEBUG] normalizedRole after mapping=', normalizedRole);
+    if (process.env.NODE_ENV !== 'production')
+      console.debug('[DEBUG] normalizedRole after mapping=', normalizedRole);
 
     if (normalizedRole === 'Admin') {
       const exists = await Admin.findOne({ email });
@@ -78,9 +116,15 @@ router.post('/register-user', async (req, res) => {
       await approver.save();
     } else {
       // Allow creating Requester (User) accounts via admin panel
-      if (String(normalizedRole).toLowerCase() === 'requester' || String(role).toLowerCase() === 'requester') {
+      if (
+        String(normalizedRole).toLowerCase() === 'requester' ||
+        String(role).toLowerCase() === 'requester'
+      ) {
         // ensure email isn't used by any account type
-        const existsAny = (await Admin.findOne({ email })) || (await Approver.findOne({ email })) || (await User.findOne({ email }));
+        const existsAny =
+          (await Admin.findOne({ email })) ||
+          (await Approver.findOne({ email })) ||
+          (await User.findOne({ email }));
         if (existsAny) return res.status(409).json({ error: 'Email already exists' });
         const user = new User({
           fullName,
@@ -210,10 +254,22 @@ router.get('/reports', async (req, res) => {
     // Aggregate counts
     const totalPermits = await Permit.countDocuments();
     const createdInPeriod = await Permit.countDocuments({ createdAt: { $gte: start } });
-    const pending = await Permit.countDocuments({ status: { $in: ['Pending'] }, createdAt: { $gte: start } });
-    const inProgress = await Permit.countDocuments({ status: 'In Progress', createdAt: { $gte: start } });
-    const approved = await Permit.countDocuments({ status: 'Approved', createdAt: { $gte: start } });
-    const rejected = await Permit.countDocuments({ status: 'Rejected', createdAt: { $gte: start } });
+    const pending = await Permit.countDocuments({
+      status: { $in: ['Pending'] },
+      createdAt: { $gte: start },
+    });
+    const inProgress = await Permit.countDocuments({
+      status: 'In Progress',
+      createdAt: { $gte: start },
+    });
+    const approved = await Permit.countDocuments({
+      status: 'Approved',
+      createdAt: { $gte: start },
+    });
+    const rejected = await Permit.countDocuments({
+      status: 'Rejected',
+      createdAt: { $gte: start },
+    });
 
     // Also include approvals within period (approvedAt)
     const approvedAtPeriod = await Permit.countDocuments({ approvedAt: { $gte: start } });
@@ -234,7 +290,9 @@ router.get('/reports', async (req, res) => {
     ];
 
     // Convert to CSV
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
 
     const filename = `report-${period}-${now.toISOString().split('T')[0]}.csv`;
     res.setHeader('Content-Type', 'text/csv');
@@ -333,7 +391,8 @@ router.patch('/users/:id', async (req, res) => {
       if (typeof req.body[key] !== 'undefined') updates[key] = req.body[key];
     }
 
-    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No updatable fields provided' });
+    if (Object.keys(updates).length === 0)
+      return res.status(400).json({ error: 'No updatable fields provided' });
 
     // Try Approver
     let target = await Approver.findById(id);
@@ -358,7 +417,8 @@ router.patch('/users/:id', async (req, res) => {
       if (updates.role) {
         const r = String(updates.role).trim().toLowerCase();
         if (r === 'admin') target.role = 'Admin';
-        else if (r === 'approver' || r === 'pre-approver' || r === 'preapprover') target.role = 'Approver';
+        else if (r === 'approver' || r === 'pre-approver' || r === 'preapprover')
+          target.role = 'Approver';
         else if (r === 'requester') target.role = 'Requester';
       }
       await target.save();

@@ -60,12 +60,15 @@
 
                         <!-- Phone Number -->
                         <div class="floating-label relative w-[90%] mb-8">
-                            <input type="tel" id="signupPhone" name="phone" autocomplete="tel" required placeholder=" "
-                                pattern="^[\+]?[1-9][\d\s\-\(\)]{7,20}$"
+                            <input type="tel" id="signupPhone" name="phone" autocomplete="tel" required
+                                placeholder="Enter phone number" pattern="^\+974\d{8,}$"
+                                aria-describedby="signupPhoneHelp"
                                 class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
                             <label for="signupPhone"
                                 class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Phone
                                 Number</label>
+                            <p id="signupPhoneHelp" class="mt-2 text-xs text-text-muted">Include country code +974.
+                                Example: <span class="font-mono">+97412345678</span></p>
                             <span
                                 class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
                                 aria-live="polite"></span>

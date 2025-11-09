@@ -181,9 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Marquee speed: use per-character duration but keep no inter-message delay.
         // Duration will be: clamp(len * MULTIPLIER, MIN, MAX)
         // Tuned marquee speed constants — reduced so messages transit faster
-        const MARQUEE_MIN_DURATION = 5; // seconds (minimum duration for very short messages)
-        const MARQUEE_MAX_DURATION = 20; // seconds (cap for very long messages)
-        const MARQUEE_CHAR_MULTIPLIER = 0.15; // seconds per character
+    // Slow down marquee: increase per-character multiplier and minimum duration
+    const MARQUEE_MIN_DURATION = 10; // seconds (minimum duration for very short messages)
+    const MARQUEE_MAX_DURATION = 60; // seconds (cap for very long messages)
+    const MARQUEE_CHAR_MULTIPLIER = 0.28; // seconds per character
     // Controller for single-container sequential marquee (allows canceling previous runs)
     let marqueeSequenceController = null;
     async function fetchAnnouncementOrWeather() {
@@ -630,5 +631,115 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 700);
     }
+
+    // ----- Fix for sticky header overlap -----
+    // Measure the sticky header height and reserve top padding so the
+    // login card (and other content) isn't hidden under the header.
+    (function ensureHeaderSpacing() {
+        const header = document.getElementById('page-header');
+        if (!header) return;
+
+        function updateSpacing() {
+            try {
+                const h = header.offsetHeight || 64;
+                // set a CSS var so theme rules can use it
+                document.documentElement.style.setProperty('--page-header-height', h + 'px');
+                // add a helper class so theme.css applies padding-top
+                document.body.classList.add('has-sticky-header');
+            } catch (e) { /* ignore */ }
+        }
+
+        // update on load and resize (debounced)
+        let t = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(t);
+            t = setTimeout(updateSpacing, 120);
+        });
+        // run once now
+        updateSpacing();
+    })();
+
+    // ----- Sign-up modal open/close wiring -----
+    (function wireSignupModal() {
+        const modal = document.getElementById('signupModal');
+        const openBtn = document.getElementById('openSignupModal');
+        const closeBtn = document.getElementById('closeSignupModal');
+        const overlay = document.getElementById('signupModalOverlay');
+        if (!modal || !openBtn) return;
+
+        let focusTrapCleanup = null;
+
+        function enableFocusTrap(root) {
+            const focusableSelector = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])';
+            const prevActive = document.activeElement;
+            const nodes = Array.from(root.querySelectorAll(focusableSelector)).filter(n => n.offsetParent !== null);
+            if (!nodes.length) return () => { try { prevActive && prevActive.focus(); } catch (_) {} };
+            let first = nodes[0];
+            let last = nodes[nodes.length - 1];
+
+            function onKey(e) {
+                if (e.key !== 'Tab') return;
+                if (nodes.length === 1) {
+                    e.preventDefault();
+                    nodes[0].focus();
+                    return;
+                }
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            }
+
+            document.addEventListener('keydown', onKey);
+
+            // focus first element
+            try { first.focus(); } catch (_) {}
+
+            // return cleanup
+            return () => {
+                document.removeEventListener('keydown', onKey);
+                try { prevActive && prevActive.focus(); } catch (_) {}
+            };
+        }
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            // prevent background scroll while modal open
+            document.body.classList.add('overflow-hidden');
+            // enable focus trap and store cleanup
+            focusTrapCleanup = enableFocusTrap(modal);
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            // cleanup focus trap
+            try { if (typeof focusTrapCleanup === 'function') focusTrapCleanup(); } catch (e) {}
+            openBtn.focus();
+        }
+
+        openBtn.addEventListener('click', (ev) => { ev.preventDefault(); openModal(); });
+        closeBtn && closeBtn.addEventListener('click', (ev) => { ev.preventDefault(); closeModal(); });
+        overlay && overlay.addEventListener('click', () => closeModal());
+
+        // ESC to close
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+        });
+
+        // Close modal when signup succeeds (signup.js will dispatch 'signup:success')
+        document.addEventListener('signup:success', (ev) => {
+            // show success toast if available
+            try { if (ev && ev.detail && ev.detail.message) showToast('success', ev.detail.message); else showToast('success', 'Registration successful'); } catch (_) {}
+            closeModal();
+        });
+    })();
 
 });

@@ -3,10 +3,37 @@ const bcrypt = require('bcrypt');
 
 const adminSchema = new mongoose.Schema(
   {
-    fullName: { type: String, required: true, trim: true },
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+      validate: {
+        validator: (v) => !v || /^[A-Za-z\s]+$/.test(v),
+        message: 'Full name should contain letters and spaces only.',
+      },
+    },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    mobile: { type: String, required: true, trim: true },
-    company: { type: String, trim: true },
+    mobile: {
+      type: String,
+      required: true,
+      trim: true,
+      validate: {
+        validator: (v) => {
+          if (!v) return false;
+          const cleaned = String(v).replace(/[\s\-()]/g, '');
+          return /^\+974\d{8,}$/.test(cleaned);
+        },
+        message: 'Phone must start with +974 and contain at least 8 digits.',
+      },
+    },
+    company: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (v) => !v || /^[A-Za-z0-9\s]+$/.test(v),
+        message: 'Company name should contain letters, numbers and spaces only.',
+      },
+    },
     department: { type: String, trim: true },
     designation: { type: String, trim: true },
     role: { type: String, enum: ['Admin'], default: 'Admin' },
@@ -36,6 +63,11 @@ const adminSchema = new mongoose.Schema(
 
 // 🔹 Pre-save hook to hash password if modified or new
 adminSchema.pre('save', async function (next) {
+  // Normalize mobile to canonical form (strip spaces, hyphens, parentheses)
+  if (this.mobile && typeof this.mobile === 'string') {
+    this.mobile = this.mobile.replace(/[\s\-()]/g, '');
+  }
+
   if (!this.isModified('password')) return next();
   try {
     const salt = await bcrypt.genSalt(12);
