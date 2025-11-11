@@ -51,20 +51,20 @@ async function run() {
   await mongoose.connect(MONGO, { dbName: process.env.MONGO_DB || 'PTW' });
   logger.info('Connected to Mongo for phone normalization');
 
-  console.log('Processing Users (phone)...');
+  logger.info('Processing Users (phone)...');
   const uRes = await processModel(User, 'phone');
-  console.log('Users updated:', uRes.updated, 'failures:', uRes.failed.length);
-  if (uRes.failed.length) console.table(uRes.failed.slice(0, 20));
+  logger.info({ updated: uRes.updated, failures: uRes.failed.length }, 'Users processed');
+  if (uRes.failed.length) logger.info({ sampleFailures: uRes.failed.slice(0, 20) });
 
-  console.log('Processing Admins (mobile)...');
+  logger.info('Processing Admins (mobile)...');
   const aRes = await processModel(Admin, 'mobile');
-  console.log('Admins updated:', aRes.updated, 'failures:', aRes.failed.length);
-  if (aRes.failed.length) console.table(aRes.failed.slice(0, 20));
+  logger.info({ updated: aRes.updated, failures: aRes.failed.length }, 'Admins processed');
+  if (aRes.failed.length) logger.info({ sampleFailures: aRes.failed.slice(0, 20) });
 
-  console.log('Processing Approvers (mobile)...');
+  logger.info('Processing Approvers (mobile)...');
   const apRes = await processModel(Approver, 'mobile');
-  console.log('Approvers updated:', apRes.updated, 'failures:', apRes.failed.length);
-  if (apRes.failed.length) console.table(apRes.failed.slice(0, 20));
+  logger.info({ updated: apRes.updated, failures: apRes.failed.length }, 'Approvers processed');
+  if (apRes.failed.length) logger.info({ sampleFailures: apRes.failed.slice(0, 20) });
 
   await mongoose.disconnect();
   logger.info('Phone normalization complete');
@@ -72,6 +72,6 @@ async function run() {
 }
 
 run().catch((e) => {
-  console.error('normalize-phones error:', e && e.message);
+  logger.error({ err: e }, 'normalize-phones error');
   process.exit(2);
 });

@@ -167,24 +167,31 @@ router.post('/login', async (req, res) => {
     }
 
     // Debug logging
+    // Safely build a sample of the stored password hash for debug (only if string)
+    const passwordSample =
+      typeof account.password === 'string' ? account.password.slice(0, 20) + '...' : null;
     logger.debug(
       {
         emailFromBody: email,
         passwordProvided: !!password,
         accountRole: account.role,
         accountHasPassword: !!account.password,
-        accountPasswordSample: account.password ? account.password.slice(0, 20) + '...' : null,
+        accountPasswordSample: passwordSample,
       },
       'Login attempt'
     );
 
-    // ✅ Compare using schema method
-    const passwordMatch = await account.comparePassword(password);
+    // ✅ Compare using schema method — guard against comparePassword throwing (malformed/missing hash)
+    let passwordMatch = false;
+    try {
+      passwordMatch = await account.comparePassword(password);
+    } catch (pwErr) {
+      // Log at warn level and return a validation-like error instead of a 500
+      logger.warn({ pwErr, accountId: account._id }, 'Password comparison failed');
+      return res.status(400).json({ field: 'password', message: 'Please enter a valid password.' });
+    }
     if (!passwordMatch) {
-      return res.status(400).json({
-        field: 'password',
-        message: 'Please enter a valid password.',
-      });
+      return res.status(400).json({ field: 'password', message: 'Please enter a valid password.' });
     }
 
     // ---- Single active-session enforcement ----
@@ -723,7 +730,13 @@ router.post('/check-password', async (req, res) => {
       return res.status(404).json({ message: 'Account not found' });
     }
 
-    const ok = await account.comparePassword(currentPassword);
+    let ok = false;
+    try {
+      ok = await account.comparePassword(currentPassword);
+    } catch (pwErr) {
+      logger.warn({ pwErr, accountId: account._id }, '[Check Password] Password comparison failed');
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
     if (!ok) return res.status(400).json({ message: 'Current password is incorrect' });
     return res.json({ valid: true });
   } catch (err) {
@@ -772,7 +785,16 @@ router.put('/update-password', async (req, res) => {
     }
 
     // Verify current password
-    const passwordMatch = await account.comparePassword(currentPassword);
+    let passwordMatch = false;
+    try {
+      passwordMatch = await account.comparePassword(currentPassword);
+    } catch (pwErr) {
+      logger.warn(
+        { pwErr, accountId: account._id },
+        '[Update Password] Password comparison failed'
+      );
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
     if (!passwordMatch) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
