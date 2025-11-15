@@ -30,7 +30,7 @@ router.get('/permit', requireAuth, async (req, res) => {
         id: permits[0]._id,
         status: permits[0].status,
         preApprovedBy: permits[0].preApprovedBy,
-        approvedBy: permits[0].approvedBy
+        approvedBy: permits[0].approvedBy,
       });
     }
 
@@ -112,7 +112,7 @@ router.post('/permit', requireAuth, upload.array('files', 5), async (req, res) =
         {
           permitId: permit._id.toString(),
           permitNumber: permit.permitNumber || '',
-          status: 'Pending'
+          status: 'Pending',
         }
       );
     } catch (notifErr) {
@@ -184,19 +184,13 @@ router.patch('/permit/:id/status', requireAuth, async (req, res) => {
           notifMessage = `Your permit "${permit.permitTitle || permit.permitNumber || 'N/A'}" has been rejected.`;
         }
 
-        await createNotification(
-          permit.requester,
-          notifType,
-          notifTitle,
-          notifMessage,
-          {
-            permitId: permit._id.toString(),
-            permitNumber: permit.permitNumber,
-            status: status,
-            approverName: approverName || 'Approver',
-            comments: comments || ''
-          }
-        );
+        await createNotification(permit.requester, notifType, notifTitle, notifMessage, {
+          permitId: permit._id.toString(),
+          permitNumber: permit.permitNumber,
+          status: status,
+          approverName: approverName || 'Approver',
+          comments: comments || '',
+        });
       } catch (notifErr) {
         console.error('Failed to create notification:', notifErr);
       }
@@ -222,7 +216,12 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     } else {
       // Fallback to launching our own browser instance (Windows/dev friendly)
       const launchOptions = {
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none', '--disable-gpu'],
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--font-render-hinting=none',
+          '--disable-gpu',
+        ],
         headless: true,
       };
       try {
@@ -298,15 +297,16 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
           <meta charset="utf-8" />
           <style>
             @page { size: A4; margin: 1cm; }
-            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 12px; line-height: 1.4; border: 2px solid #000; padding: 20px; box-sizing: border-box; }
+            /* Use standard project base font-size for printable reports */
+            body { font-size: 16px; line-height: 1.4; border: 2px solid #000; padding: 20px; box-sizing: border-box; }
             header { text-align: center; margin-bottom: 20px; background-color: #273172; color: #fff; padding: 10px; }
-            header h1 { font-size: 16px; margin: 0; }
-            header h2 { font-size: 14px; margin: 5px 0 0 0; }
+            header h1 { font-size: 1.25rem; margin: 0; }
+            header h2 { font-size: 1rem; margin: 5px 0 0 0; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
             td { border: 1px solid #000; padding: 6px; vertical-align: top; }
             td.label { font-weight: bold; width: 35%; background: #f2f2f2; }
             blockquote { font-style: italic; margin: 20px 0; padding-left: 10px; border-left: 3px solid #999; }
-            footer { font-size: 11px; margin-top: 30px; border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+            footer { font-size: 0.6875rem; margin-top: 30px; border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
             footer .center { flex: 1; text-align: center; }
             footer .left { text-align: left; flex: 1; }
             footer .right { text-align: right; flex: 1; }
@@ -318,22 +318,26 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
             <h2>Permit Status Report</h2>
           </header>
           <table>
-            <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${permit.lastName || ''
-      }</td></tr>
+            <tr><td class="label">Full Name</td><td>${permit.fullName || ''} ${
+              permit.lastName || ''
+            }</td></tr>
             <tr><td class="label">Mobile Number</td><td>${permit.contactDetails || ''}</td></tr>
-            <tr><td class="label">Alternate Mobile Number</td><td>${permit.altContactDetails || ''
-      }</td></tr>
+            <tr><td class="label">Alternate Mobile Number</td><td>${
+              permit.altContactDetails || ''
+            }</td></tr>
             <tr><td class="label">Designation</td><td>${permit.designation || ''}</td></tr>
             <tr><td class="label">Permit Title</td><td>${permit.permitTitle || ''}</td></tr>
             <tr><td class="label">Permit Number</td><td>${permit.permitNumber || ''}</td></tr>
-            <tr><td class="label">Start Date and Time</td><td>${permit.startDateTime
-        ? new Date(permit.startDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
-        : ''
-      }</td></tr>
-            <tr><td class="label">End Date and Time</td><td>${permit.endDateTime
-        ? new Date(permit.endDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
-        : ''
-      }</td></tr>
+            <tr><td class="label">Start Date and Time</td><td>${
+              permit.startDateTime
+                ? new Date(permit.startDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
+                : ''
+            }</td></tr>
+            <tr><td class="label">End Date and Time</td><td>${
+              permit.endDateTime
+                ? new Date(permit.endDateTime).toLocaleString(FORMAT_LOCALE, FORMAT_OPTS_DATETIME)
+                : ''
+            }</td></tr>
             <tr><td class="label">Work Description</td><td>${permit.workDescription || ''}</td></tr>
             <tr><td class="label">Status</td><td>${permit.status || ''}</td></tr>
           </table>
@@ -364,8 +368,18 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.emulateMediaType('print');
     await page.waitForSelector('body', { timeout: 3000 });
-    await page.waitForFunction('document.body && document.body.innerText.trim().length > 0', { timeout: 3000 }).catch(() => { /* ignore */ });
-    let pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+    await page
+      .waitForFunction('document.body && document.body.innerText.trim().length > 0', {
+        timeout: 3000,
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    let pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
     // Fallback: if buffer suspiciously small, try data URL approach with screen media
     if (!pdfBuffer || pdfBuffer.length < 2000) {
       try {
@@ -376,8 +390,18 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
         const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
         await page.goto(dataUrl, { waitUntil: 'load' });
         await page.waitForSelector('body', { timeout: 3000 });
-        await page.waitForFunction('document.body && document.body.innerText.trim().length > 0', { timeout: 3000 }).catch(() => { /* ignore */ });
-        pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+        await page
+          .waitForFunction('document.body && document.body.innerText.trim().length > 0', {
+            timeout: 3000,
+          })
+          .catch(() => {
+            /* ignore */
+          });
+        pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          preferCSSPageSize: true,
+        });
       } catch (e) {
         // keep original buffer if fallback fails
       }
@@ -386,7 +410,10 @@ router.get('/permit/:id/pdf', requireAuth, async (req, res) => {
     if (launchedOwnBrowser) await browser.close();
 
     res.setHeader('Content-Type', 'application/pdf');
-    const safeName = (permit.permitNumber || `permit-${permit._id}`).replace(/[^a-zA-Z0-9._-]+/g, '-');
+    const safeName = (permit.permitNumber || `permit-${permit._id}`).replace(
+      /[^a-zA-Z0-9._-]+/g,
+      '-'
+    );
     res.setHeader('Content-Disposition', `attachment; filename="BHS-${safeName}.pdf"`);
     res.send(pdfBuffer);
   } catch (err) {

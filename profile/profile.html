@@ -1,27 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Profile - HIA Baggage Handling System</title>
-    <link rel="icon" type="image/x-icon" href="../images/HIA_logo.png">
+    <link rel="icon" type="image/x-icon" href="../images/HIA_logo.png" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="../theme.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../shared/theme.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        /* Profile page: hide chevron icon visuals (we removed chevrons and related JS) */
+        .chevron-icon {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body class="bg-[var(--bg-surface)] text-[var(--text-primary)] font-system min-h-screen transition-all duration-300">
-
-
-    <!-- Main Content: full-width inside shared layout (page-specific) -->
-    <main class="w-full mx-auto px-0 sm:px-2 md:px-4 lg:px-6 xl:px-8 py-8 max-w-none">
-
+    <main class="w-full max-w-full px-0 py-8">
         <div class="flex flex-col items-center gap-6 mb-8">
-
             <!-- Submitted Permits Table Card -->
             <section
-                class="analytics-card w-full bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)] overflow-hidden"
+                class="analytics-card w-full bg-[var(--bg-surface)] rounded-2xl shadow-lg border border-[var(--input-border)]"
                 id="submittedPermitsCard">
                 <div
                     class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
@@ -29,63 +30,88 @@
                         <h2
                             class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2 whitespace-nowrap">
                             <i class="fas fa-clipboard-list text-hia-blue"></i>
-                            Submitted
-                            Permit Details
+                            Submitted Permit Details
                         </h2>
-                        <button data-action="toggleSection" data-section="submittedPermits"
-                            class="p-2 rounded-lg transition-colors">
-                            <i id="submittedPermitsIcon"
-                                class="chevron-icon fas fa-chevron-up text-[var(--text-primary)] text-sm"></i>
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm text-[var(--text-secondary)] hidden sm:block mr-3">
+                                Showing <span id="permitsShowingCount"
+                                    class="font-semibold text-[var(--text-primary)]">0</span>
+                                of <span id="permitsTotalCount"
+                                    class="font-semibold text-[var(--text-primary)]">0</span>
+                                permits
+                            </div>
+                            <div class="relative hidden sm:block max-w-sm w-[300px]">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
+                                    aria-hidden="true"></i>
+                                <input type="text" id="permitsSearchInput"
+                                    aria-label="Search permits by title or number"
+                                    placeholder="Search permits by title or number..."
+                                    class="w-full pl-10 pr-4 py-2.5 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-sm focus:ring-2 focus:ring-hia-blue focus:border-transparent transition-all"
+                                    aria-controls="permitsTable" />
+                            </div>
+                            <div class="hidden sm:flex">
+                                <select id="permitsStatusFilter" aria-label="Filter permits by status"
+                                    class="px-4 py-2.5 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-sm focus:ring-2 focus:ring-hia-blue transition-all"
+                                    aria-controls="permitsTable">
+                                    <option value="">All Status</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="submittedPermitsContent" class="overflow-x-auto">
-                    <table id="permitTable" class="w-full">
-                        <thead class="bg-[var(--bg-surface)]">
-                            <tr class="border-b border-[var(--input-border)]">
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Serial Number</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Submitted On</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Name</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Permit Title</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Pre Approver Name</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Pre Approved On</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Comments</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Approver Name</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Approved On</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Comments</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Status</th>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
-                                    Permit Number</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-[var(--input-border)]">
-                            <!-- Dynamic rows will be injected via JS -->
-                        </tbody>
-                    </table>
+                <div id="submittedPermitsContent" class="overflow-x-hidden max-w-full">
+
+                    <!-- Responsive grid view for desktop; table remains for mobile/layout fallback -->
+                    <div id="permitsGrid" class="permits-grid max-w-full">
+                        <!-- Cards will be injected here by JS for desktop view -->
+                    </div>
+
+                    <div class="overflow-x-auto max-w-full">
+                        <table id="permitsTable" class="min-w-max w-full max-w-full table-auto">
+                            <thead class="bg-[var(--bg-surface)]">
+                                <tr class="border-b border-[var(--input-border)]">
+                                    <th
+                                        class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
+                                        Serial No.</th>
+                                    <th data-sort="submitted"
+                                        class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap cursor-pointer">
+                                        <div class="flex items-center gap-2"><span>Submitted On</span><i
+                                                class="fas fa-sort text-[var(--text-secondary)] text-xs ml-2"></i></div>
+                                    </th>
+                                    <th data-sort="title"
+                                        class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap cursor-pointer">
+                                        <div class="flex items-center gap-2"><span>Permit Title</span><i
+                                                class="fas fa-sort text-[var(--text-secondary)] text-xs ml-2"></i></div>
+                                    </th>
+                                    <th data-sort="status"
+                                        class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap cursor-pointer">
+                                        <div class="flex items-center gap-2"><span>Status</span><i
+                                                class="fas fa-sort text-[var(--text-secondary)] text-xs ml-2"></i></div>
+                                    </th>
+                                    <th data-sort="permitNumber"
+                                        class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap cursor-pointer">
+                                        <div class="flex items-center gap-2"><span>Permit Number</span><i
+                                                class="fas fa-sort text-[var(--text-secondary)] text-xs ml-2"></i></div>
+                                    </th>
+                                    <th
+                                        class="px-6 py-4 text-left text-sm font-semibold text-[var(--text-primary)] tracking-wider whitespace-nowrap">
+                                        Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permitsTableBody" class="divide-y divide-[var(--input-border)]">
+                                <!-- Dynamic rows will be injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div id="permitsPagination" class="flex gap-1"></div>
+                    </div>
                 </div>
             </section>
 
@@ -102,12 +128,14 @@
                                 Permit Analytics Overview
                             </h2>
                             <button data-action="toggleSection" data-section="permitAnalytics"
-                                class="p-2 rounded-lg transition-colors"><i id="permitAnalyticsIcon"
-                                    class="chevron-icon fas fa-chevron-down text-[var(--text-primary)] text-sm"></i></button>
+                                class="p-2 rounded-lg transition-colors" aria-label="Toggle Permit Analytics">
+                                <!-- chevron removed per profile design -->
+                                <span class="sr-only">Toggle Permit Analytics</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div id="permitAnalyticsContent" class="p-6 hidden">
+                    <div id="permitAnalyticsContent" class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
                             <div
                                 class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
@@ -116,9 +144,17 @@
                                     <i class="fas fa-file-alt text-blue-600 dark:text-blue-400 text-xl"></i>
                                 </div>
                                 <div id="totalPermits" class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-                                    0</div>
-                                <div class="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                                    Total Permits</div>
+                                    0
+                                </div>
+                                <div class="text-xs text-[var(--text-secondary)] mt-1">Change: <span
+                                        id="totalPermitsChange">0%</span></div>
+                                <div class="flex items-center justify-center mt-2 flex-col">
+                                    <div class="kpi-sparkline mt-1 w-full max-w-[140px]">
+                                        <svg id="totalPermitsSpark" role="img" aria-hidden="true"></svg>
+                                    </div>
+                                    <div class="text-sm text-blue-700 dark:text-blue-300 font-medium kpi-title mt-2">
+                                        Total Permits</div>
+                                </div>
                             </div>
 
                             <div
@@ -129,9 +165,17 @@
                                 </div>
                                 <div id="approvedPermits"
                                     class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
-                                    0</div>
-                                <div class="text-sm text-green-700 dark:text-green-300 font-medium">
-                                    Approved</div>
+                                    0
+                                </div>
+                                <div class="text-xs text-[var(--text-secondary)] mt-1">Change: <span
+                                        id="approvedPermitsChange">0%</span></div>
+                                <div class="flex items-center justify-center mt-2 flex-col">
+                                    <div class="kpi-sparkline mt-1 w-full max-w-[140px]">
+                                        <svg id="approvedPermitsSpark" role="img" aria-hidden="true"></svg>
+                                    </div>
+                                    <div class="text-sm text-green-700 dark:text-green-300 font-medium kpi-title mt-2">
+                                        Approved</div>
+                                </div>
                             </div>
 
                             <div
@@ -142,9 +186,18 @@
                                 </div>
                                 <div id="pendingPermits"
                                     class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
-                                    0</div>
-                                <div class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
-                                    Pending</div>
+                                    0
+                                </div>
+                                <div class="text-xs text-[var(--text-secondary)] mt-1">Change: <span
+                                        id="pendingPermitsChange">0%</span></div>
+                                <div class="flex items-center justify-center mt-2 flex-col">
+                                    <div class="kpi-sparkline mt-1 w-full max-w-[140px]">
+                                        <svg id="pendingPermitsSpark" role="img" aria-hidden="true"></svg>
+                                    </div>
+                                    <div
+                                        class="text-sm text-yellow-700 dark:text-yellow-300 font-medium kpi-title mt-2">
+                                        Pending</div>
+                                </div>
                             </div>
 
                             <div
@@ -154,8 +207,18 @@
                                     <i class="fas fa-spinner text-sky-600 dark:text-sky-400 text-xl"></i>
                                 </div>
                                 <div id="inProgressPermits"
-                                    class="text-2xl font-bold text-sky-600 dark:text-sky-400 mb-1">0</div>
-                                <div class="text-sm text-sky-700 dark:text-sky-300 font-medium">In Progress</div>
+                                    class="text-2xl font-bold text-sky-600 dark:text-sky-400 mb-1">
+                                    0
+                                </div>
+                                <div class="text-xs text-[var(--text-secondary)] mt-1">Change: <span
+                                        id="inProgressPermitsChange">0%</span></div>
+                                <div class="flex items-center justify-center mt-2 flex-col">
+                                    <div class="kpi-sparkline mt-1 w-full max-w-[140px]">
+                                        <svg id="inProgressPermitsSpark" role="img" aria-hidden="true"></svg>
+                                    </div>
+                                    <div class="text-sm text-sky-700 dark:text-sky-300 font-medium kpi-title mt-2">In
+                                        Progress</div>
+                                </div>
                             </div>
 
                             <div
@@ -165,8 +228,18 @@
                                     <i class="fas fa-times-circle text-red-600 dark:text-red-400 text-xl"></i>
                                 </div>
                                 <div id="rejectedPermits"
-                                    class="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">0</div>
-                                <div class="text-sm text-red-700 dark:text-red-300 font-medium">Rejected</div>
+                                    class="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
+                                    0
+                                </div>
+                                <div class="text-xs text-[var(--text-secondary)] mt-1">Change: <span
+                                        id="rejectedPermitsChange">0%</span></div>
+                                <div class="flex items-center justify-center mt-2 flex-col">
+                                    <div class="kpi-sparkline mt-1 w-full max-w-[140px]">
+                                        <svg id="rejectedPermitsSpark" role="img" aria-hidden="true"></svg>
+                                    </div>
+                                    <div class="text-sm text-red-700 dark:text-red-300 font-medium kpi-title mt-2">
+                                        Rejected</div>
+                                </div>
                             </div>
                         </div>
 
@@ -179,8 +252,12 @@
                                         <i class="fas fa-pie-chart text-hia-blue text-sm"></i>
                                         Permit Distribution
                                     </h4>
-                                    <div style="position: relative; height: 250px; max-height: 250px;">
-                                        <canvas id="permitStatusChart"></canvas>
+                                    <div class="chart-container">
+                                        <div class="overflow-x-auto max-w-full">
+                                            <div class="permit-status-wrapper">
+                                                <canvas id="permitStatusChart"></canvas>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div
@@ -190,8 +267,12 @@
                                         <i class="fas fa-chart-line text-hia-blue text-sm"></i>
                                         Monthly Trends
                                     </h4>
-                                    <div style="position: relative; height: 250px; max-height: 250px;">
-                                        <canvas id="monthlyTrendChart"></canvas>
+                                    <div class="chart-container">
+                                        <div class="overflow-x-auto max-w-full">
+                                            <div class="monthly-trend-wrapper">
+                                                <canvas id="monthlyTrendChart"></canvas>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -213,12 +294,14 @@
                                 Approval Time Analytics
                             </h2>
                             <button data-action="toggleSection" data-section="approvalAnalytics"
-                                class="p-2 rounded-lg transition-colors"><i id="approvalAnalyticsIcon"
-                                    class="chevron-icon fas fa-chevron-down text-[var(--text-primary)] text-sm"></i></button>
+                                class="p-2 rounded-lg transition-colors" aria-label="Toggle Approval Analytics">
+                                <!-- chevron removed per profile design -->
+                                <span class="sr-only">Toggle Approval Analytics</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div id="approvalAnalyticsContent" class="p-6 hidden">
+                    <div id="approvalAnalyticsContent" class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div
                                 class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
@@ -228,9 +311,11 @@
                                 </div>
                                 <div id="avgApprovalTime"
                                     class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
-                                    --</div>
+                                    --
+                                </div>
                                 <div class="text-sm text-purple-700 dark:text-purple-300 font-medium">
-                                    Average Approval</div>
+                                    Average Approval
+                                </div>
                             </div>
                             <div
                                 class="text-center p-4 bg-white dark:bg-gray-800/40 rounded-xl border border-[var(--input-border)]">
@@ -240,27 +325,31 @@
                                 </div>
                                 <div id="fastestApproval"
                                     class="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
-                                    --</div>
+                                    --
+                                </div>
                                 <div class="text-sm text-cyan-700 dark:text-cyan-300 font-medium">
-                                    Fastest Approval</div>
+                                    Fastest Approval
+                                </div>
                             </div>
                         </div>
 
                         <div class="bg-white dark:bg-gray-800/40 rounded-xl p-4 border border-[var(--input-border)]">
                             <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                                 <i class="fas fa-chart-line text-hia-blue text-sm"></i>
-                                Approval Time Trend (Last 30 Days)
+                                Approval Time Trend
                             </h4>
-                            <canvas id="approvalTimeChart" height="120"></canvas>
+                            <div class="overflow-x-auto max-w-full">
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div class="approval-trend-wrapper">
+                                        <canvas id="approvalTimeChart" height="120"></canvas>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
-
         </div>
-
-
-
     </main>
 
     <!-- Modals -->
@@ -272,52 +361,36 @@
                 class="bg-gradient-to-r from-hia-blue/10 to-hia-light-blue/10 px-6 py-4 border-b border-[var(--input-border)]">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                        <i class="fas fa-user-edit text-hia-blue"></i> Profile
-                        Settings
-                    </h3><button data-action="hideProfileSettings"
-                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors"><i
-                            class="fas fa-times text-xl"></i></button>
+                        <i class="fas fa-user-edit text-hia-blue"></i> Profile Settings
+                    </h3>
+                    <button data-action="hideProfileSettings"
+                        class="text-[var(--text-primary)] hover:text-hia-blue transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
-            <div class="p-6"><button data-action="showUpdatePasswordModal hideProfileSettings"
-                    class="w-full flex items-center gap-3 p-4 bg-[var(--input-border)]/20 hover:bg-hia-blue/10 rounded-xl transition-all duration-200 group"><i
+            <div class="p-6">
+                <button data-action="showUpdatePasswordModal hideProfileSettings"
+                    class="w-full flex items-center gap-3 p-4 bg-[var(--input-border)]/20 hover:bg-hia-blue/10 rounded-xl transition-all duration-200 group">
+                    <i
                         class="fas fa-key text-hia-blue text-lg group-hover:scale-110 transition-transform duration-200"></i>
                     <div class="text-left">
                         <div class="text-[var(--text-primary)] font-semibold">
-                            Change
-                            Password</div>
+                            Change Password
+                        </div>
                         <div class="text-[var(--text-primary)] opacity-60 text-sm">
-                            Update your account password</div>
+                            Update your account password
+                        </div>
                     </div>
-                </button></div>
+                </button>
+            </div>
         </div>
     </div>
 
-
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js"></script>
-    <script type="module" src="../session.js"></script>
+    <script type="module" src="../shared/session.js"></script>
     <script type="module" src="profile.js"></script>
-    <!-- Mount shared layout shell and move this page's content into it -->
     <script defer src="../shared/layout.mount.js" data-layout="../shared/layout.html"></script>
-    <!-- Make this page use full-width by overriding layout container after mount (page-specific) -->
-    <script>
-        (function () {
-            function applyFullWidth() {
-                var wrapper = document.querySelector('[data-layout-wrapper]');
-                if (!wrapper) return;
-                // Remove Tailwind container constraint if present
-                wrapper.classList.remove('container');
-                // Ensure full-bleed width with responsive padding controlled by this page
-                wrapper.classList.add('w-full', 'max-w-none');
-            }
-
-            // Run once now (in case layout already mounted) and also after mount event
-            applyFullWidth();
-            window.addEventListener('layout:mounted', applyFullWidth, { once: true });
-        })();
-    </script>
-
 </body>
 
 </html>

@@ -1,16 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dasher UI - Pre-Approver Dashboard</title>
-    <link rel="stylesheet" href="../theme.css">
-    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/theme.css" />
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600,700&display=swap" rel="stylesheet" />
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Font Awesome 5 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- XLSX for Excel export -->
@@ -31,12 +31,14 @@
                     <div class="card card-stats card-round h-100 shadow-sm">
                         <div class="card-body d-flex align-items-center gap-3">
                             <div class="icon-big text-center rounded-3 d-flex align-items-center justify-content-center"
-                                style="background:#1769ff;width:80px;height:80px;">
+                                style="background: #1769ff; width: 80px; height: 80px">
                                 <i class="fas fa-file-alt fa-2x text-white"></i>
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Total Permits</p>
-                                <h4 id="totalPermitsCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0</h4>
+                                <h4 id="totalPermitsCount" class="card-title mb-0 fw-bold" style="color: #2d3651">
+                                    0
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -47,12 +49,13 @@
                     <div class="card card-stats card-round h-100 shadow-sm">
                         <div class="card-body d-flex align-items-center gap-3">
                             <div class="icon-big text-center rounded-3 d-flex align-items-center justify-content-center"
-                                style="background:#f59e0b;width:80px;height:80px;">
+                                style="background: #f59e0b; width: 80px; height: 80px">
                                 <i class="fas fa-clock fa-2x text-white"></i>
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Pending Review</p>
-                                <h4 id="pendingReviewCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0
+                                <h4 id="pendingReviewCount" class="card-title mb-0 fw-bold" style="color: #2d3651">
+                                    0
                                 </h4>
                             </div>
                         </div>
@@ -64,12 +67,14 @@
                     <div class="card card-stats card-round h-100 shadow-sm">
                         <div class="card-body d-flex align-items-center gap-3">
                             <div class="icon-big text-center rounded-3 d-flex align-items-center justify-content-center"
-                                style="background:#22c55e;width:80px;height:80px;">
+                                style="background: #22c55e; width: 80px; height: 80px">
                                 <i class="fas fa-check-circle fa-2x text-white"></i>
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Pre-Approved</p>
-                                <h4 id="preApprovedCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0</h4>
+                                <h4 id="preApprovedCount" class="card-title mb-0 fw-bold" style="color: #2d3651">
+                                    0
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -80,12 +85,14 @@
                     <div class="card card-stats card-round h-100 shadow-sm">
                         <div class="card-body d-flex align-items-center gap-3">
                             <div class="icon-big text-center rounded-3 d-flex align-items-center justify-content-center"
-                                style="background:#ef4444;width:80px;height:80px;">
+                                style="background: #ef4444; width: 80px; height: 80px">
                                 <i class="fas fa-times-circle fa-2x text-white"></i>
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Rejected by Me</p>
-                                <h4 id="rejectedByMeCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0</h4>
+                                <h4 id="rejectedByMeCount" class="card-title mb-0 fw-bold" style="color: #2d3651">
+                                    0
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -96,12 +103,14 @@
                     <div class="card card-stats card-round h-100 shadow-sm">
                         <div class="card-body d-flex align-items-center gap-3">
                             <div class="icon-big text-center rounded-3 d-flex align-items-center justify-content-center"
-                                style="background:#8b5cf6;width:80px;height:80px;">
+                                style="background: #8b5cf6; width: 80px; height: 80px">
                                 <i class="fas fa-percentage fa-2x text-white"></i>
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">Approval Rate</p>
-                                <h4 id="approvalRate" class="card-title mb-0 fw-bold" style="color:#2d3651;">0%</h4>
+                                <h4 id="approvalRate" class="card-title mb-0 fw-bold" style="color: #2d3651">
+                                    0%
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -112,12 +121,14 @@
                     <div class="card card-stats card-round h-100 shadow-sm">
                         <div class="card-body d-flex align-items-center gap-3">
                             <div class="icon-big text-center rounded-3 d-flex align-items-center justify-content-center"
-                                style="background:#06b6d4;width:80px;height:80px;">
+                                style="background: #06b6d4; width: 80px; height: 80px">
                                 <i class="fas fa-spinner fa-2x text-white"></i>
                             </div>
                             <div>
                                 <p class="card-category mb-1 text-muted">In Progress</p>
-                                <h4 id="inProgressCount" class="card-title mb-0 fw-bold" style="color:#2d3651;">0</h4>
+                                <h4 id="inProgressCount" class="card-title mb-0 fw-bold" style="color: #2d3651">
+                                    0
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -142,10 +153,16 @@
                                             <i class="fas fa-download me-1"></i>Export
                                         </button>
                                         <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                                            <li><a class="dropdown-item" href="#" onclick="exportToCSV()"><i
-                                                        class="fas fa-file-csv me-2"></i>Export to CSV</a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i
-                                                        class="fas fa-file-excel me-2"></i>Export to Excel</a></li>
+                                            <li>
+                                                <a class="dropdown-item" href="#" onclick="exportToCSV()"><i
+                                                        class="fas fa-file-csv me-2"></i>Export to
+                                                    CSV</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#" onclick="exportToExcel()"><i
+                                                        class="fas fa-file-excel me-2"></i>Export to
+                                                    Excel</a>
+                                            </li>
                                         </ul>
                                     </div>
                                     <button class="btn btn-info btn-sm" onclick="printTable()">
@@ -266,18 +283,24 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="permitDetailsModalLabel">Permit Details</h5>
+                    <h5 class="modal-title" id="permitDetailsModalLabel">
+                        Permit Details
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="permitDetailsContent">
                     <!-- Content will be populated by JavaScript -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" id="rejectFromModal"
-                        onclick="showRejectModal()">Reject</button>
-                    <button type="button" class="btn btn-success" id="approveFromModal"
-                        onclick="showApproveModal()">Pre-Approve</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-danger" id="rejectFromModal" onclick="showRejectModal()">
+                        Reject
+                    </button>
+                    <button type="button" class="btn btn-success" id="approveFromModal" onclick="showApproveModal()">
+                        Pre-Approve
+                    </button>
                 </div>
             </div>
         </div>
@@ -288,7 +311,9 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="approveModalLabel">Pre-Approve Permit</h5>
+                    <h5 class="modal-title" id="approveModalLabel">
+                        Pre-Approve Permit
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -299,8 +324,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="confirmApprove">Pre-Approve</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmApprove">
+                        Pre-Approve
+                    </button>
                 </div>
             </div>
         </div>
@@ -322,8 +351,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmReject">Reject</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmReject">
+                        Reject
+                    </button>
                 </div>
             </div>
         </div>
@@ -341,21 +374,25 @@
                     <form id="profileForm">
                         <div class="mb-3">
                             <label for="profileUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="profileUsername" required>
+                            <input type="text" class="form-control" id="profileUsername" required />
                         </div>
                         <div class="mb-3">
                             <label for="profileEmailInput" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="profileEmailInput" required>
+                            <input type="email" class="form-control" id="profileEmailInput" required />
                         </div>
                         <div class="mb-3">
                             <label for="profilePhoneInput" class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="profilePhoneInput">
+                            <input type="tel" class="form-control" id="profilePhoneInput" />
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateProfile()">Update Profile</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                        Update Profile
+                    </button>
                 </div>
             </div>
         </div>
@@ -373,21 +410,25 @@
                     <form id="passwordForm">
                         <div class="mb-3">
                             <label for="currentPassword" class="form-label">Current Password</label>
-                            <input type="password" class="form-control" id="currentPassword" required>
+                            <input type="password" class="form-control" id="currentPassword" required />
                         </div>
                         <div class="mb-3">
                             <label for="newPassword" class="form-label">New Password</label>
-                            <input type="password" class="form-control" id="newPassword" required>
+                            <input type="password" class="form-control" id="newPassword" required />
                         </div>
                         <div class="mb-3">
                             <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
-                            <input type="password" class="form-control" id="confirmNewPassword" required>
+                            <input type="password" class="form-control" id="confirmNewPassword" required />
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updatePassword()">Update Password</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="updatePassword()">
+                        Update Password
+                    </button>
                 </div>
             </div>
         </div>
@@ -398,5 +439,8 @@
 
     <script type="module" src="preapprover.js"></script>
 </body>
+<script type="module" src="../shared/session.js"></script>
+<script src="../shared/toast.js" defer></script>
+<script defer src="../shared/layout.mount.js" data-layout="../shared/layout.html"></script>
 
 </html>

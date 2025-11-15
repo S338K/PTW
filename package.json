@@ -1,7 +1,1 @@
-{
-  "dependencies": {
-    "exceljs": "^4.4.0",
-    "json2csv": "^6.0.0-alpha.2",
-    "pdfkit": "^0.17.2"
-  }
-}
+{}

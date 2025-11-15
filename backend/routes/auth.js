@@ -71,8 +71,12 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Company name should contain letters only.' });
     }
 
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(409).json({ message: 'Email is already in use' });
+    // Ensure email is unique across all account collections (Admin, Approver, User)
+    const emailExists =
+      (await Admin.findOne({ email })) ||
+      (await Approver.findOne({ email })) ||
+      (await User.findOne({ email }));
+    if (emailExists) return res.status(409).json({ message: 'Email is already in use' });
 
     // Accept either `phone` or `mobile` from different frontends/forms and validate
     let phoneVal = (phone && phone.trim()) || (mobile && mobile.trim()) || '';
@@ -87,6 +91,7 @@ router.post('/register', async (req, res) => {
         .json({ message: 'Phone must start with +974 and contain at least 8 digits.' });
     }
 
+    // Accept either `phone` or `mobile` from different frontends/forms and validate
     const newUser = new User({
       username,
       email,
@@ -121,6 +126,13 @@ router.post('/register', async (req, res) => {
     if (country && country.trim() && !alphaRe.test(country.trim())) {
       return res.status(400).json({ message: 'Country should contain letters only.' });
     }
+
+    // Ensure phone number is unique across Admin, Approver and User collections
+    const phoneExists =
+      (await Admin.findOne({ phone: phoneVal })) ||
+      (await Approver.findOne({ phone: phoneVal })) ||
+      (await User.findOne({ phone: phoneVal }));
+    if (phoneExists) return res.status(409).json({ message: 'Phone number is already in use' });
 
     await newUser.save();
     res.status(201).json({
@@ -362,8 +374,6 @@ router.get('/profile', async (req, res) => {
     if (!req.session.userId)
       return res.status(401).json({ message: 'Unauthorized - session expired' });
 
-    // Fetch from the appropriate collection depending on role. Previously we only
-    // queried User which caused approver/admin sessions to appear invalid and get destroyed.
     let user = null;
     const role = req.session.userRole;
     if (role === 'Admin') {

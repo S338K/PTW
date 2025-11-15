@@ -6,7 +6,11 @@ function requireAuth(req, res, next) {
   // auth. If not present, fall back to the existing session cookie approach.
   try {
     const authHeader = req.headers && req.headers.authorization;
-    if (authHeader && typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+    if (
+      authHeader &&
+      typeof authHeader === 'string' &&
+      authHeader.toLowerCase().startsWith('bearer ')
+    ) {
       const token = authHeader.slice(7).trim();
       if (token) {
         const jwt = require('jsonwebtoken');
@@ -80,14 +84,27 @@ async function enforceActiveSession(req, res, next) {
     const acc = await AccountModel.findById(id).select('activeSessionId');
     if (!acc) {
       // user no longer exists; end session
-      try { req.session.destroy(() => { }); } catch (_) { /* ignore */ }
-      return res.status(401).json({ code: 'NO_ACCOUNT', message: 'Your account is no longer available.' });
+      try {
+        req.session.destroy(() => {});
+      } catch (_) {
+        /* ignore */
+      }
+      return res
+        .status(401)
+        .json({ code: 'NO_ACCOUNT', message: 'Your account is no longer available.' });
     }
 
     const activeId = acc.activeSessionId;
     if (activeId && activeId !== req.sessionID) {
-      try { req.session.destroy(() => { }); } catch (_) { /* ignore */ }
-      return res.status(440).json({ code: 'SESSION_REVOKED', message: 'Your session ended because it was used on another device. Please sign in again.' });
+      try {
+        req.session.destroy(() => {});
+      } catch (_) {
+        /* ignore */
+      }
+      return res.status(440).json({
+        code: 'SESSION_REVOKED',
+        message: 'Your session ended because it was used on another device. Please sign in again.',
+      });
     }
 
     return next();

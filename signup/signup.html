@@ -1,231 +1,246 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign Up - HIA Baggage Handling System</title>
+    <title>Create Account - HIA Permit to Work</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="../theme.css" />
-</head>
+    <link rel="stylesheet" href="../shared/build/tailwind.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
 
-<body class="bg-primary-bg font-sans m-0 p-0 w-full">
-
-    <main>
-        <div class="w-[90%] md:w-[80%] lg:w-[70%] xl:w-[60%] bg-surface-bg p-8 rounded shadow-xl mx-auto">
-            <fieldset id="officeAddressFieldset" class="border-2 border-text-primary rounded-xl p-5 text-text-primary">
-                <legend class="text-center text-lg font-semibold px-2 text-text-primary">Sign Up</legend>
-
-                <form id="signupForm" method="POST" action="" novalidate>
-                    <div class="space-y-6">
-
-                        <!-- Full Name -->
-                        <div class="floating-label relative w-[90%] mb-8">
-                            <input type="text" id="signupName" name="username" autocomplete="name" required
-                                placeholder=" "
-                                class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                            <label for="signupName"
-                                class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Full
-                                Name</label>
-                            <span
-                                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Company Name -->
-                        <div class="floating-label relative w-[90%] mb-8">
-                            <input type="text" id="companyName" name="company" autocomplete="organization" required
-                                placeholder=" "
-                                class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                            <label for="companyName"
-                                class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Company
-                                Name</label>
-                            <span
-                                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Email -->
-                        <div class="floating-label relative w-[90%] mb-8">
-                            <input type="email" id="signupEmail" name="email" autocomplete="email" required
-                                placeholder=" "
-                                class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                            <label for="signupEmail"
-                                class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Email
-                                Address</label>
-                            <span
-                                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Phone Number -->
-                        <div class="floating-label relative w-[90%] mb-8">
-                            <input type="tel" id="signupPhone" name="phone" autocomplete="tel" required
-                                placeholder="Enter phone number" pattern="^\+974\d{8,}$"
-                                aria-describedby="signupPhoneHelp"
-                                class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                            <label for="signupPhone"
-                                class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Phone
-                                Number</label>
-                            <p id="signupPhoneHelp" class="mt-2 text-xs text-text-muted">Include country code +974.
-                                Example: <span class="font-mono">+97412345678</span></p>
-                            <span
-                                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Password -->
-                        <div class="floating-label relative w-[90%] mb-8">
-                            <input type="password" id="signupPassword" name="password" autocomplete="new-password"
-                                required placeholder=" "
-                                class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                            <label for="signupPassword"
-                                class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Password</label>
-                            <span
-                                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Confirm Password -->
-                        <div class="floating-label relative w-[90%] mb-8">
-                            <input type="password" id="signupConfirmPassword" name="confirmPassword"
-                                autocomplete="new-password" required placeholder=" "
-                                class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                            <label for="signupConfirmPassword"
-                                class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Confirm
-                                Password</label>
-                            <span
-                                class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Office Address -->
-                        <fieldset class="w-[90%] border-2 border-text-primary rounded-2xl p-5 text-text-primary">
-                            <legend class="text-left text-sm font-normal px-2 text-text-primary">Office Address</legend>
-                            <div id="officeAddressSection"
-                                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5 w-full">
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="buildingNo" name="buildingNo" required placeholder=" "
-                                        maxlength="2" pattern="^\d{1,2}$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="buildingNo"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Building
-                                        No.</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="floorNo" name="floorNo" required placeholder=" "
-                                        maxlength="2" pattern="^\d{1,2}$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="floorNo"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Floor
-                                        No.</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="streetNo" name="streetNo" required placeholder=" "
-                                        maxlength="3" pattern="^\d{1,3}$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="streetNo"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Street
-                                        No.</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="zone" name="zone" required placeholder=" " maxlength="2"
-                                        pattern="^\d{1,2}$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="zone"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Zone</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="city" name="city" required placeholder=" "
-                                        pattern="^[A-Za-z\s]+$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="city"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">City</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="country" name="country" required placeholder=" "
-                                        pattern="^[A-Za-z\s]+$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="country"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">Country</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                                <div class="floating-label relative mb-8">
-                                    <input type="text" id="poBox" name="poBox" required placeholder=" " maxlength="6"
-                                        pattern="^\d{1,6}$"
-                                        class="w-full p-4 border-2 border-input-border rounded-3xl text-base transition-all duration-200 bg-surface-bg text-text-primary focus:border-input-focus focus:shadow-lg focus:outline-none peer" />
-                                    <label for="poBox"
-                                        class="absolute top-1/2 left-5 transform -translate-y-1/2 text-text-muted text-base pointer-events-none transition-all duration-300 px-1 rounded peer-focus:top-[-10px] peer-focus:left-4 peer-focus:text-sm peer-focus:font-medium peer-focus:text-text-primary peer-[:not(:placeholder-shown)]:top-[-10px] peer-[:not(:placeholder-shown)]:left-4 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:font-medium peer-[:not(:placeholder-shown)]:text-text-primary bg-surface-bg">P.O.
-                                        Box</label>
-                                    <span
-                                        class="error-message absolute left-3 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium"
-                                        aria-live="polite"></span>
-                                </div>
-
-                            </div>
-                        </fieldset>
-
-                        <!-- Terms -->
-                        <div class="relative mt-4 mb-8">
-                            <label
-                                class="flex items-start space-x-3 text-base font-semibold text-text-secondary cursor-pointer">
-                                <input type="checkbox" id="termsCheckbox" name="terms"
-                                    class="mt-1 w-4 h-4 text-button-bg bg-surface-bg border-input-border rounded focus:ring-button-bg focus:ring-2" />
-                                <span>I agree to the <a href="terms.html" target="_blank"
-                                        class="text-text-primary font-normal underline hover:text-button-hover hover:no-underline">Terms
-                                        and Conditions</a></span>
-                            </label>
-                            <span
-                                class="error-message absolute left-6 bottom-[-18px] text-error-color text-xs opacity-0 transform translate-y-1 transition-all duration-300 pointer-events-none font-medium max-w-[calc(100%-1.5rem)]"
-                                aria-live="polite"></span>
-                        </div>
-
-                        <!-- Submit -->
-                        <button id="signupBtn" type="submit"
-                            class="w-full bg-button-bg text-white border-2 border-button-bg px-6 py-3 text-base font-semibold rounded-lg cursor-pointer transition-all duration-300 hover:bg-button-hover hover:border-button-hover hover:rounded-3xl hover:-translate-y-1 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-button-bg focus:ring-offset-2">Create
-                            Account</button>
-
-                        <!-- Login link -->
-                        <div class="text-left font-bold mt-8">
-                            <p class="text-text-primary">Already have an account?
-                                <a href="../login/index.html"
-                                    class="font-normal text-button-bg no-underline hover:underline hover:text-error-color transition-colors duration-200">Login
-                                    here</a>
-                            </p>
-                        </div>
-
-                    </div>
-                </form>
-
-            </fieldset>
+  <body
+    class="min-h-screen flex flex-col bg-[var(--bg-surface)] text-[var(--text-primary)] pt-16"
+  >
+    <!-- Navigation Bar (simplified from shared layout - logo and theme only) -->
+    <nav
+      class="fixed top-0 inset-x-0 z-50 h-16 flex items-center border-b border-[var(--button-border)] bg-[var(--navbar-bg)] text-[var(--navbar-text)]"
+    >
+      <div class="flex items-center justify-between w-full px-4">
+        <!-- Left: Logo -->
+        <div
+          class="flex items-center gap-3 shrink-0 w-24 sm:w-28 md:w-24 lg:w-32"
+        >
+          <img
+            src="../images/HIA_logo.png"
+            alt="HIA Logo"
+            class="h-10 w-auto"
+          />
         </div>
+
+        <!-- Right: Theme toggle -->
+        <button
+          id="theme-toggle"
+          type="button"
+          data-theme-toggle
+          class="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full text-[var(--navbar-text)] icon-btn hover-lite"
+          aria-label="Toggle theme"
+        >
+          <i class="fas fa-sun icon-sun text-xl md:text-2xl"></i>
+          <i class="fas fa-moon icon-moon text-xl md:text-2xl"></i>
+        </button>
+      </div>
+    </nav>
+
+    <main class="flex-1 w-full">
+      <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 px-6 py-10">
+        <!-- Left: Marketing / Benefits -->
+        <section class="hidden lg:flex flex-col justify-center space-y-6 pr-4">
+          <div class="space-y-3">
+            <h1
+              class="text-3xl font-bold leading-tight text-[var(--text-primary)]"
+            >
+              Create your account
+            </h1>
+            <p
+              class="text-[var(--text-primary)] opacity-70 text-base leading-relaxed"
+            >
+              Access the Permit to Work system to submit requests, track
+              approvals, and stay informed. Secure, role-based workflow built
+              for operational safety.
+            </p>
+          </div>
+          <ul class="space-y-3 text-sm text-[var(--text-primary)]">
+            <li class="flex items-start gap-3">
+              <span class="text-[var(--page-color)]"
+                ><i class="fas fa-shield-alt"></i></span
+              ><span>Secure role-based access controls</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-[var(--page-color)]"
+                ><i class="fas fa-bolt"></i></span
+              ><span>Fast permit submission workflow</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-[var(--page-color)]"
+                ><i class="fas fa-chart-line"></i></span
+              ><span>Real-time status & notifications</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-[var(--page-color)]"
+                ><i class="fas fa-file-signature"></i></span
+              ><span>Audit trail & compliance ready</span>
+            </li>
+          </ul>
+          <div class="mt-4 text-xs text-[var(--text-primary)] opacity-60">
+            By creating an account you agree to our
+            <a
+              href="terms.html"
+              class="text-[var(--link-color)] hover:text-[var(--link-hover)] underline"
+              >Terms & Conditions</a
+            >.
+          </div>
+        </section>
+
+        <!-- Right: Signup Form Card -->
+        <section
+          class="bg-[var(--bg-surface)] border border-[var(--input-border)] rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        >
+          <div class="bg-[var(--button-bg)] px-6 py-5">
+            <h2
+              class="text-xl font-semibold text-[var(--button-text)] flex items-center gap-2"
+            >
+              <i class="fas fa-user-plus"></i> Register
+            </h2>
+            <p class="text-[var(--button-text)] opacity-90 text-sm mt-1">
+              Fill in your details to create a requester account.
+            </p>
+          </div>
+          <form
+            id="publicSignupForm"
+            class="p-6 space-y-5 flex-1 overflow-y-auto"
+            novalidate
+          >
+            <div>
+              <label for="fullName" class="block text-sm font-semibold mb-1"
+                >Full Name
+                <span class="text-[var(--error-color)]">*</span></label
+              >
+              <input
+                id="fullName"
+                name="username"
+                type="text"
+                required
+                placeholder="Full Name"
+                class="w-full px-4 py-3 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--input-border)] text-[var(--text-primary)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-semibold mb-1"
+                >Email <span class="text-[var(--error-color)]">*</span></label
+              >
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                class="w-full px-4 py-3 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--input-border)] text-[var(--text-primary)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label for="phone" class="block text-sm font-semibold mb-1"
+                >Phone (+974...)
+                <span class="text-[var(--error-color)]">*</span></label
+              >
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                placeholder="+974XXXXXXXX"
+                class="w-full px-4 py-3 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--input-border)] text-[var(--text-primary)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label for="company" class="block text-sm font-semibold mb-1"
+                >Company (optional)</label
+              >
+              <input
+                id="company"
+                name="company"
+                type="text"
+                placeholder="Company name"
+                class="w-full px-4 py-3 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--input-border)] text-[var(--text-primary)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label for="password" class="block text-sm font-semibold mb-1"
+                >Password
+                <span class="text-[var(--error-color)]">*</span></label
+              >
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                placeholder="Min 8 chars incl upper, lower, number, special"
+                class="w-full px-4 py-3 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--input-border)] text-[var(--text-primary)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label
+                for="confirmPassword"
+                class="block text-sm font-semibold mb-1"
+                >Confirm Password
+                <span class="text-[var(--error-color)]">*</span></label
+              >
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                placeholder="Re-enter password"
+                class="w-full px-4 py-3 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--input-border)] text-[var(--text-primary)] focus:outline-none"
+              />
+            </div>
+            <div class="flex items-center gap-2 pt-2">
+              <input
+                id="acceptTerms"
+                type="checkbox"
+                required
+                class="h-4 w-4 rounded border-[var(--input-border)]"
+              />
+              <label for="acceptTerms" class="text-sm"
+                >I agree to the
+                <a
+                  href="terms.html"
+                  target="_blank"
+                  class="text-[var(--link-color)] hover:text-[var(--link-hover)] underline"
+                  >terms & conditions</a
+                >.</label
+              >
+            </div>
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-4 pb-2 border-t border-[var(--input-border)]"
+            >
+              <a
+                href="../login/index.html"
+                class="px-5 py-3 rounded-lg border border-[var(--button-border)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]/10 transition-colors text-center font-semibold shadow-sm"
+                >Back to Login</a
+              >
+              <button
+                type="submit"
+                id="createAccountBtn"
+                class="px-5 py-3 rounded-lg bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)] text-[var(--button-text)] font-semibold transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
+              >
+                <i class="fas fa-user-plus mr-2"></i><span>Create Account</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </main>
 
-    <script type="module" src="signup.js"></script>
-</body>
+    <footer class="text-center text-xs py-6 text-[var(--text-primary)]/70">
+      © 2025 Hamad International Airport. All rights reserved.
+    </footer>
 
+    <script src="../shared/toast.js"></script>
+    <script src="../shared/theme-toggle.js"></script>
+    <script type="module" src="signup.js"></script>
+  </body>
 </html>

@@ -1,78 +1,150 @@
-/* Main Content */
-#main-content {
-  padding-top: 96px;
-}
-
-/* Hamburger Menu Animation */
-#sidebar-hamburger {
-  transition: color 0.2s ease;
-}
-
-#sidebar-hamburger .hamburger-icon {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 24px;
-  height: 20px;
-  margin-left: 10px;
-  transition: transform 0.3s ease;
-}
-
-#sidebar-hamburger .hamburger-line {
-  width: 100%;
-  height: 2px;
-  background-color: currentColor;
-  border-radius: 9999px;
-  transition: transform 0.3s ease, opacity 0.2s ease;
-}
-
-#sidebar-hamburger.is-open .hamburger-line:nth-child(1) {
-  transform: translateY(8px) rotate(45deg);
-}
-
-#sidebar-hamburger.is-open .hamburger-line:nth-child(2) {
-  opacity: 0;
-}
-
-#sidebar-hamburger.is-open .hamburger-line:nth-child(3) {
-  transform: translateY(-8px) rotate(-45deg);
-}
-
-/* Make page background follow theme variable */
 body {
   background: var(--bg-surface) !important;
   color: var(--text-primary) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Ubuntu, Cantarell, "Fira Sans", "Droid Sans", sans-serif;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
-
-/* Global default: ensure all text (including links) inherits theme font color */
 body,
 body * {
   color: var(--text-primary);
 }
-
-/* Links default to theme text color; specific sections can override if needed */
 a {
   color: var(--text-primary);
 }
 
-#sidebar-hamburger:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+/* ===== Typography (project-wide defaults) ===== */
+:root {
+  --font-size-base: 16px; /* new base */
+  --line-height-base: 1.45;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
+
+/* Shared color tokens (consolidate repeated magic hex values) */
+:root {
+  --white: #ffffff;
+  --muted-50: #f8fafc;
+  --muted-100: #f3f4f6;
+  --muted-200: #f9f9fb;
+  --muted-700: #374151;
+  --blue-500: #2563eb;
+  --blue-600: #1d4ed8;
+  --gold: #ffd700;
+  --blue-400: #60a5fa;
+  --blue-300: #93c5fd;
+  --blue-strong: #3b82f6;
+  --indigo-800: #1e3a8a;
+  --indigo-900: #1e40af;
+  --muted-500: #6b7280;
+  --muted-600: #4b5563;
+  /* Status badge tokens */
+  --status-approved-bg: #dcfce7;
+  --status-approved-text: #166534;
+  --status-pending-bg: #fef3c7;
+  --status-pending-text: #92400e;
+  --status-rejected-bg: #fee2e2;
+  --status-rejected-text: #991b1b;
+  --status-inprogress-bg: #dbeafe;
+  --status-inprogress-text: var(--indigo-900);
+}
+/* ensure the whole site inherits the base size */
+html,
+body {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base elements inherit theme colors and weights */
+body,
+p,
+label,
+input,
+select,
+textarea,
+button,
+a,
+li,
+span,
+div {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.25;
+  font-weight: var(--font-weight-semibold);
+}
+h1 {
+  font-size: 1.5rem;
+}
+h2 {
+  font-size: 1.25rem;
+}
+h3 {
+  font-size: 1.125rem;
+}
+h4 {
+  font-size: 1rem;
+}
+h5 {
+  font-size: 0.9375rem;
+}
+h6 {
+  font-size: 0.875rem;
+}
+
+/* Muted / secondary text */
+.text-muted,
+small,
+.muted {
+  color: var(--muted-color);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Ensure interactive controls use theme colors and inherit font */
+button,
+input[type="button"],
+input[type="submit"],
+.btn {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: var(--font-weight-medium);
+  color: var(--button-text, var(--text-primary));
+}
+
+/* Tables */
+table,
+th,
+td {
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text-primary);
+  vertical-align: middle;
 }
 
 /* Sidebar */
 #global-sidebar {
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
-  background: #fff;
+  background: var(--white);
   transition: width 0.3s;
 }
 
 #global-sidebar .sidebar-logo {
-  background: #f8fafc;
+  background: var(--muted-50);
 }
 
 #global-sidebar .avatar-circle {
@@ -80,7 +152,7 @@ a {
 }
 
 #global-sidebar .card {
-  background: #f9f9fb;
+  background: var(--muted-200);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
@@ -97,31 +169,21 @@ a {
 }
 
 #global-sidebar .btn-primary {
-  background: #2563eb;
+  background: var(--blue-500);
   border: none;
 }
 
 #global-sidebar .btn-danger {
-  background: #dc2626;
+  background: var(--danger-bg);
   border: none;
 }
 
 #global-sidebar .btn-light {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--muted-100);
+  color: var(--muted-700);
 }
 
 /* Header */
-#global-header {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  background: #fff;
-}
-
-#global-header h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e293b;
-}
 
 #notifBtn {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -138,13 +200,32 @@ a {
   transition: background 0.2s;
 }
 
+/* Nudge the hamburger (sidebar toggle) slightly to the right for visual balance */
+#sidebarToggle {
+  margin-left: 6px; /* small nudge; adjust as needed */
+}
+
+/* The shared layout uses `#sidebar-hamburger` and `.hamburger-icon` — ensure they also get the nudge */
+#sidebar-hamburger,
+.hamburger-icon {
+  margin-left: 6px;
+}
+
 #sidebarToggle:hover span {
-  background: #2563eb;
+  background: var(--blue-500);
+}
+
+/* Nudge theme, notification and logout icons slightly to the left for balance */
+#theme-toggle,
+#notification-bell,
+button[data-logout-trigger] {
+  transform: translateX(-6px);
+  transition: transform 180ms ease;
 }
 
 /* Main Content */
 #layout-main {
-  background: #f3f4f6;
+  background: var(--muted-100);
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   min-height: 80vh;
@@ -183,70 +264,6 @@ a {
     overflow: visible;
   }
 }
-
-/* Light mode defaults */
-:root {
-  --bg-surface: #ffffff;
-  --text-primary: #273172;
-  --page-color: #273172;
-  --text-secondary: #6b7280;
-  --link-color: #273172;
-  --link-hover: #3a449e;
-  --section-bg: #ffffff;
-  /* unify with bg-surface */
-  --button-bg: #273172;
-  --button-text: #ffffff;
-  --button-border: #ccc;
-  /* Primary button hover */
-  --button-hover-bg: #3a449e;
-  --input-border: #ccc;
-  --input-bg: rgba(39, 49, 114, 0.05);
-  --input-focus-border: #273172;
-  --error-color: #d9534f;
-  --success-color: #008000;
-  /* Overlay color for modals */
-  --overlay-bg: rgba(17, 24, 39, 0.6);
-  /* Danger buttons */
-  --danger-bg: #dc2626;
-  /* red-600 */
-  --danger-hover-bg: #b91c1c;
-  /* red-700 */
-  --danger-text: #ffffff;
-  --danger-border: #dc2626;
-}
-
-/* System dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-surface: #1c1c28;
-    --text-primary: #ffffff;
-    --link-color: #7a86ff;
-    --link-hover: #ffffff;
-    --text-secondary: #9ca3af;
-    --section-bg: #1c1c28;
-    /* unify with bg-surface */
-    --button-bg: #3f4b9a;
-    --button-text: #ffffff;
-    --button-hover-bg: #5a66c5;
-    --button-border: #555;
-    --input-border: #555;
-    --input-bg: rgba(255, 255, 255, 0.07);
-    --input-focus-border: #7a86ff;
-    --error-color: #ff6b6b;
-    --success-color: #008000;
-    /* Overlay color for modals */
-    --overlay-bg: rgba(17, 24, 39, 0.6);
-    /* Danger buttons */
-    --danger-bg: #ef4444;
-    /* red-500 */
-    --danger-hover-bg: #f87171;
-    /* red-400 */
-    --danger-text: #1f2937;
-    /* gray-800 for contrast on lighter red */
-    --danger-border: #ef4444;
-  }
-}
-
 /* Profile sidebar slide and page push */
 #profile-sidebar {
   transform: translateX(-120%);
@@ -257,8 +274,6 @@ a {
   transform: translateX(0);
 }
 
-/* When sidebar is open, push main content to the right so page appears moved */
-/* Do not push main content when sidebar opens; keep overlay behavior only */
 body.sidebar-open main {
   margin-left: 0;
   transition: margin-left 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
@@ -274,8 +289,8 @@ html.dark:root {
   --link-color: #7a86ff;
   --link-hover: #ffffff;
   --section-bg: #222436;
-  --button-bg: #3f4b9a;
-  --button-text: #ffffff;
+  --button-bg: #ffffff;
+  --button-text: #273172;
   --button-hover-bg: #5a66c5;
   --button-border: #555;
   --input-border: #555;
@@ -308,17 +323,26 @@ html.dark:root {
   --error-color: #d9534f;
   --success-color: #008000;
   --section-bg: #ffffff;
-  /* unify with bg-surface */
-  /* Overlay color for modals */
   --overlay-bg: rgba(17, 24, 39, 0.6);
   /* Danger buttons */
   --danger-bg: #dc2626;
   --danger-hover-bg: #b91c1c;
   --danger-text: #ffffff;
   --danger-border: #dc2626;
+  /* Navbar colors */
+  --navbar-bg: #273172;
+  --navbar-text: #ffffff;
+
+  /* Brand colors */
+  --hia-blue: #273172;
+  --hia-light-blue: #3a449e;
+  --hia-blue-10: rgba(39, 49, 114, 0.06);
+  --hia-blue-20: rgba(39, 49, 114, 0.12);
 }
 
 :root[data-theme="dark"] {
+  --navbar-bg: #273172;
+  --navbar-text: #ffffff;
   /* Sidebar slide-in and overlay styles */
   #profile-sidebar {
     transform: translateX(-120%);
@@ -339,6 +363,22 @@ html.dark:root {
   #sidebar-overlay {
     display: none;
   }
+
+  /* Brand colors (HIA) for dark theme */
+  --hia-blue: #7a86ff;
+  --hia-light-blue: #9aa4ff;
+  --hia-blue-10: rgba(122, 134, 255, 0.06);
+  --hia-blue-20: rgba(122, 134, 255, 0.12);
+
+  /* Status badge tokens for dark theme (text colors tuned for dark backgrounds) */
+  --status-approved-text: #86efac;
+  --status-pending-text: #fde047;
+  --status-rejected-text: #fca5a5;
+  --status-inprogress-text: var(--blue-300);
+
+  /* Ensure buttons invert in dark theme per request */
+  --button-bg: #ffffff;
+  --button-text: #273172;
 
   body.sidebar-open #sidebar-overlay {
     display: block;
@@ -455,7 +495,7 @@ html.dark:root {
 
 @media (max-width: 640px) {
   #announcement-marquee {
-    font-size: 14px;
+    font-size: calc(var(--font-size-base) * 0.875);
     padding-left: 6px;
     padding-right: 6px;
   }
@@ -522,6 +562,22 @@ body.has-sticky-header {
   border: 1px solid var(--button-border) !important;
 }
 
+/* ===== Signup page button theming ===== */
+/* Enforce theme text color for the primary action on signup page,
+   overriding the global `body, body * { color: var(--text-primary) }` rule. */
+#publicSignupForm #createAccountBtn {
+  background: var(--button-bg) !important;
+  color: var(--button-text) !important;
+  border: 1px solid var(--button-border);
+}
+#publicSignupForm #createAccountBtn:hover {
+  background: var(--button-hover-bg) !important;
+}
+#publicSignupForm #createAccountBtn i,
+#publicSignupForm #createAccountBtn span {
+  color: var(--button-text) !important;
+}
+
 #announcementSaveBtn:hover {
   background: var(--button-hover-bg) !important;
 }
@@ -560,24 +616,24 @@ body.has-sticky-header {
 :root[data-theme="light"] #announcementSaveBtn,
 html:not([data-theme]) #announcementSaveBtn {
   background-color: transparent !important;
-  color: #273172 !important;
-  border: 1px solid #273172 !important;
+  color: var(--hia-blue) !important;
+  border: 1px solid var(--hia-blue) !important;
 }
 
 /* Dark theme: solid blue background with white text */
 :root[data-theme="dark"] #announcementSaveBtn,
 html.dark #announcementSaveBtn {
-  background-color: #273172 !important;
-  color: #ffffff !important;
-  border-color: #273172 !important;
+  background-color: var(--hia-blue) !important;
+  color: var(--white) !important;
+  border-color: var(--hia-blue) !important;
 }
 
 @media (prefers-color-scheme: dark) {
   /* system dark preference fallback */
   #announcementSaveBtn {
-    background-color: #273172 !important;
-    color: #ffffff !important;
-    border-color: #273172 !important;
+    background-color: var(--hia-blue) !important;
+    color: var(--white) !important;
+    border-color: var(--hia-blue) !important;
   }
 }
 
@@ -673,7 +729,7 @@ html.dark [data-theme-toggle] .icon-moon {
 
 /* Make the sun icon gold in the navbar toggle */
 [data-theme-toggle] .icon-sun {
-  color: #ffd700 !important;
+  color: var(--gold) !important;
 }
 
 /* Ensure navbar, desktop sidebar and mobile menu follow the active theme surface color */
@@ -708,15 +764,46 @@ html.dark .hover-lite:hover {
   /* light surface on dark */
 }
 
+/* Hamburger icon structure and animation */
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.hamburger-line {
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+/* Hamburger active state (when sidebar is open) */
+#sidebar-hamburger.active .hamburger-line:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+#sidebar-hamburger.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+#sidebar-hamburger.active .hamburger-line:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
 /* Explicit hamburger color per theme */
 :root[data-theme="light"] #sidebar-hamburger,
 html:not(.dark) #sidebar-hamburger {
-  color: #273172 !important;
+  color: var(--hia-blue) !important;
 }
 
 :root[data-theme="dark"] #sidebar-hamburger,
 html.dark #sidebar-hamburger {
-  color: #ffffff !important;
+  color: var(--white) !important;
 }
 
 /* Ensure sidebar section cards and item cards follow theme variables */
@@ -963,8 +1050,11 @@ html.dark #sidebar-hamburger {
 /* --- Global Toasts (shared) --- */
 #toastContainer {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  text-align: center;
+  justify-content: center;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -979,48 +1069,76 @@ html.dark #sidebar-hamburger {
   gap: 10px;
   background: var(--bg-surface);
   color: var(--text-primary);
-  border: 1px solid var(--button-border);
+  border: 1px solid var(--input-border);
   border-left: 4px solid var(--page-color);
   border-radius: 12px;
-  padding: 10px 12px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.08);
+  padding: 12px 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
   /* allow clicking close button */
-  min-width: 260px;
-  max-width: min(92vw, 420px);
+  min-width: 280px;
+  max-width: min(92vw, 500px);
   animation: toast-in 160ms ease-out;
 }
 
 .toast--success {
+  background: var(--success-color);
   border-left-color: var(--success-color);
+  color: var(--white);
+}
+
+.toast--success .toast-icon {
+  color: var(--success-color);
 }
 
 .toast--error {
+  background: var(--error-color);
   border-left-color: var(--error-color);
+  color: var(--white);
+}
+
+.toast--error .toast-icon {
+  color: var(--error-color);
 }
 
 .toast--info {
-  border-left-color: #3b82f6;
+  background: var(--button-bg);
+  border-left-color: var(--button-bg);
+  color: var(--button-text);
+}
+
+.toast--info .toast-icon {
+  color: var(--blue-strong);
 }
 
 .toast-icon {
   line-height: 1;
   margin-top: 2px;
+  font-size: 1.125rem;
 }
 
 .toast-body {
   flex: 1;
-  font-size: 0.925rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: inherit;
+  font-weight: 500;
 }
 
 .toast-close {
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   cursor: pointer;
   padding: 0 4px;
   margin-left: 6px;
+  opacity: 0.7;
+  transition: opacity 200ms ease;
+}
+
+.toast-close:hover {
+  opacity: 1;
 }
 
 @keyframes toast-in {
@@ -1199,7 +1317,7 @@ select:-webkit-autofill {
 .theme-toggle-slider .toggle-text {
   flex: 1;
   text-align: center;
-  font-size: 14px;
+  font-size: calc(var(--font-size-base) * 0.875);
   font-weight: 600;
   color: var(--text-primary);
   opacity: 0.5;
@@ -1438,7 +1556,7 @@ select:focus {
 #desktop-sidebar {
   width: 350px;
   max-width: 90vw;
-  background: #fff;
+  background: var(--white);
   box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
   transform: translateX(-100%);
   /* Smooth slide + fade for a gentler entrance/exit */
@@ -1460,22 +1578,26 @@ select:focus {
   opacity: 1 !important;
 }
 
-/* Shared layout main content behavior
-   - Desktop (>=768px): push content right and shrink width so it remains fully visible
-   - Mobile (<768px): overlay sidebar; content stays full width */
+/* Shared layout main content behavior */
 @media (min-width: 768px) {
-  body.sidebar-open #main-content {
+  body.sidebar-open #main-content:not(.admin-full-width) {
     margin-left: 350px;
     width: calc(100% - 350px);
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  body:not(.sidebar-open) #main-content {
+  body:not(.sidebar-open) #main-content:not(.admin-full-width) {
     margin-left: 0;
     width: 100%;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Admin pages can opt out of the push by adding `admin-full-width` to #main-content */
+  #main-content.admin-full-width {
+    margin-left: 0 !important;
+    width: 100% !important;
   }
 }
 
@@ -1563,6 +1685,96 @@ select:focus {
   border-color: var(--input-border);
 }
 
+/* HIA brand helper classes */
+.text-hia-blue {
+  color: var(--hia-blue) !important;
+}
+
+.bg-hia-blue {
+  background-color: var(--hia-blue);
+  color: var(--button-text);
+}
+
+.bg-hia-blue-10 {
+  background-color: var(--hia-blue-10);
+}
+
+.bg-hia-blue-20:hover {
+  background-color: var(--hia-blue-20);
+}
+
+/* Soft HIA button (used for inline action chips) */
+.btn-hia-soft {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--button-border);
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.btn-hia-soft:hover {
+  background-color: var(--button-hover-bg);
+}
+
+/* Ensure action buttons are always visible (show on all screen sizes) */
+.btn-hia-soft {
+  opacity: 1;
+  transition: opacity 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+.group:hover .btn-hia-soft {
+  opacity: 1;
+}
+
+/* Section header gentle gradient using brand colors */
+.section-header-gradient {
+  background: linear-gradient(
+    90deg,
+    var(--hia-blue-10),
+    rgba(58, 68, 158, 0.04)
+  );
+}
+
+/* Accent gradient for icons / avatars */
+.accent-gradient {
+  background: linear-gradient(135deg, var(--hia-blue), var(--hia-light-blue));
+  color: var(--white);
+}
+
+.avatar-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--hia-blue), var(--hia-light-blue));
+  color: var(--white);
+  border-radius: 0.375rem;
+}
+
+/* Stat card variants (subtle gradients + border) */
+.stat-card-blue {
+  background: linear-gradient(
+    135deg,
+    var(--hia-blue-10),
+    rgba(58, 68, 158, 0.03)
+  );
+  border-color: rgba(39, 99, 235, 0.12);
+}
+.stat-card-purple {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.06),
+    rgba(236, 72, 153, 0.03)
+  );
+  border-color: rgba(139, 92, 246, 0.12);
+}
+.stat-card-green {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.06),
+    rgba(20, 184, 166, 0.03)
+  );
+  border-color: rgba(16, 185, 129, 0.12);
+}
+
 #loginCarousel a,
 .forgot-password-link a,
 .sign-up-link a,
@@ -1599,17 +1811,6 @@ footer a:hover {
   );
 }
 
-/* Dynamic Background Image Layer */
-#backgroundLayer {
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
-  pointer-events: none;
-}
-
 /* Theme toggle button styles */
 #themeToggle {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1618,6 +1819,80 @@ footer a:hover {
 #themeToggle:hover {
   transform: translateY(-1px) scale(1.05);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Navbar logo scaling - enlarge visually without changing h-10/w-auto classes */
+#page-header img[src*="HIA_logo.png"],
+nav img[src*="HIA_logo.png"] {
+  /* Smaller screens: slightly enlarged (2x) to preserve layout */
+  transform: scale(2);
+  transform-origin: left center;
+}
+
+/* Desktop and larger: increase to 3x for better visibility */
+@media (min-width: 768px) {
+  #page-header img[src*="HIA_logo.png"],
+  nav img[src*="HIA_logo.png"] {
+    transform: scale(3);
+  }
+}
+
+/* ===== Footer Info Modal Animations ===== */
+@keyframes footer-modal-in {
+  0% {
+    transform: translateY(24px) scale(0.98);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes footer-modal-out {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(16px) scale(0.98);
+    opacity: 0;
+  }
+}
+
+@keyframes footer-overlay-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes footer-overlay-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Apply animations to the login footer modal elements */
+#footerInfoOverlay {
+  animation: footer-overlay-in 220ms ease-out both;
+}
+
+#footerInfoModal .modal-panel {
+  animation: footer-modal-in 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+#footerInfoModal.is-closing #footerInfoOverlay {
+  animation: footer-overlay-out 200ms ease-in forwards;
+}
+
+#footerInfoModal.is-closing .modal-panel {
+  animation: footer-modal-out 240ms ease-in forwards;
 }
 
 [data-theme="dark"] #themeToggle {
@@ -1650,14 +1925,14 @@ button#loginBtn,
 button#loginBtn *,
 button#loginBtn span,
 button#loginBtn i {
-  color: #ffffff !important;
+  color: var(--white) !important;
 }
 
 button#loginBtn:disabled,
 button#loginBtn:disabled *,
 button#loginBtn:disabled span,
 button#loginBtn:disabled i {
-  color: #ffffff !important;
+  color: var(--white) !important;
   opacity: 0.95;
 }
 
@@ -1665,27 +1940,35 @@ button#loginBtn:hover,
 button#loginBtn:hover *,
 button#loginBtn:focus,
 button#loginBtn:focus * {
-  color: #ffffff !important;
+  color: var(--white) !important;
 }
 
 /* Form input enhancements for dark mode */
 [data-theme="dark"] input:focus {
-  border-color: #60a5fa !important;
+  border-color: var(--blue-400) !important;
   box-shadow: 0 0 0 3px rgb(240, 241, 243) !important;
 }
 
 [data-theme="light"] input:focus {
-  border-color: #3b82f6 !important;
+  border-color: var(--blue-strong) !important;
   box-shadow: 0 0 0 3px rgb(224, 242, 254) !important;
 }
 
 /* Button hover states for both themes */
 [data-theme="dark"] .btn-primary:hover {
-  background: linear-gradient(135deg, #1e3a8a, #1e40af) !important;
+  background: linear-gradient(
+    135deg,
+    var(--indigo-800),
+    var(--indigo-900)
+  ) !important;
 }
 
 [data-theme="light"] .btn-primary:hover {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  background: linear-gradient(
+    135deg,
+    var(--blue-600),
+    var(--blue-500)
+  ) !important;
 }
 
 /* ===== Custom UI Utilities ===== */
@@ -1701,14 +1984,7 @@ button#loginBtn:focus * {
   border-radius: 9999px;
 }
 
-.avatar-initial {
-  background: #2563eb;
-  /* blue-600 */
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
-  border: 3px solid rgba(37, 99, 235, 0.12);
-}
+/* `.avatar-initial` removed — unused across the project. */
 
 .quick-action {
   display: flex;
@@ -1733,6 +2009,246 @@ button#loginBtn:focus * {
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
+}
+
+/* Permit analytics chart sizing to avoid overflow */
+.permit-status-wrapper {
+  width: 100%;
+  /* allow the chart to take full card width */
+  max-width: none;
+  height: 240px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Desktop grid view for permits: modern card layout */
+.permits-grid {
+  display: none;
+  gap: 1rem;
+  margin: 0 0 0.5rem 0;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/* Space between section header and permits content */
+#submittedPermitsContent {
+  padding-top: 1rem; /* adds breathing room below header */
+}
+
+.permit-card {
+  background: var(--section-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.permit-card .permit-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0.25rem 0 0.5rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.permit-card .permit-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Small sequential counter badge shown next to permit numbers */
+/* permit-number-counter and permit-number-text removed — header serial used instead */
+
+.permit-card .permit-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* subtle hover/focus effect for cards */
+.permit-card:hover,
+.permit-card:focus-within {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+  border-color: color-mix(in srgb, var(--hia-blue) 16%, var(--input-border));
+}
+
+@media (min-width: 641px) {
+  /* show grid and hide table on desktop */
+  .permits-grid {
+    display: grid;
+    /* Limit to a maximum of 4 columns for desktop row layout */
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  /* hide the table on desktop; desktop uses cards */
+  #permitsTable {
+    display: none !important;
+  }
+}
+
+/* Monthly trend should fill the card - provide a generous height */
+.monthly-trend-wrapper {
+  width: 100%;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.monthly-trend-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Approval time trend wrappers (average and fastest) */
+.approval-trend-wrapper {
+  width: 100%;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.approval-trend-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .approval-trend-wrapper {
+    height: 180px;
+  }
+}
+
+/* Ensure permit doughnut canvas fills its wrapper and remains responsive */
+.permit-status-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Responsive heights for permit doughnut wrapper */
+@media (min-width: 640px) {
+  .permit-status-wrapper {
+    height: 260px;
+  }
+}
+
+@media (max-width: 639px) {
+  .permit-status-wrapper {
+    /* Increase height on small screens so doughnut appears larger */
+    height: 260px;
+  }
+}
+
+/* Sparkline canvases: responsive small charts used in KPI cards */
+canvas[id$="Spark"] {
+  /* Allow sparkline to grow to available space but cap its maximum width */
+  width: 100% !important;
+  max-width: 140px !important;
+  height: 24px !important;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  align-self: center;
+}
+
+/* KPI label rows: keep labels and sparklines vertically aligned and prevent wrapping */
+.kpi-label-row {
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-label-row .kpi-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Ensure KPI cards content stacks consistently */
+#permitAnalyticsContent .grid > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* KPI title and sparkline layout */
+.kpi-title {
+  text-align: center;
+}
+.kpi-sparkline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Make sparkline canvases fill their KPI card area responsively */
+.kpi-sparkline {
+  width: 100%;
+  max-width: 140px; /* matches HTML utility class used in KPI cards */
+}
+.kpi-sparkline canvas {
+  width: 100% !important;
+  height: 24px !important; /* mobile default */
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .kpi-sparkline canvas {
+    height: 32px !important; /* slightly larger on desktop */
+  }
+}
+
+/* SVG sparklines match canvas sizing for crisp rendering */
+.kpi-sparkline svg {
+  width: 100% !important;
+  height: 24px !important;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .kpi-sparkline svg {
+    height: 32px !important;
+  }
+}
+
+/* On narrow screens (card layout), let sparklines fill the card width */
+@media (max-width: 640px) {
+  .kpi-sparkline {
+    max-width: none !important;
+    width: 100% !important;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  .kpi-sparkline canvas {
+    height: 40px !important; /* taller for touch/readability */
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  /* Ensure KPI card aligns sparkline and title vertically when stacked */
+  #permitAnalyticsContent .grid > div {
+    align-items: stretch;
+  }
 }
 
 /* Logout variant */
@@ -1786,62 +2302,14 @@ select.error {
 }
 
 /* Modal-specific override: ensure signup modal inputs show a clear red border when invalid */
-#signupModal input.invalid,
-#signupModal textarea.invalid,
-#signupModal select.invalid,
-#signupModal input.error,
-#signupModal textarea.error,
-#signupModal select.error {
-  border: 2px solid var(--error-color, #ef4444) !important;
-  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.1) !important;
-  background-clip: padding-box !important;
-}
-
-#signupModal input.invalid:focus,
-#signupModal textarea.invalid:focus,
-#signupModal select.invalid:focus,
-#signupModal input.error:focus,
-#signupModal textarea.error:focus,
-#signupModal select.error:focus {
-  outline: 4px solid rgba(239, 68, 68, 0.14) !important;
-  outline-offset: 2px !important;
-  border: 2px solid var(--error-color, #ef4444) !important;
-}
-
-/* Slightly stronger focus when invalid and focused */
-input.invalid:focus,
-textarea.invalid:focus,
-select.invalid:focus,
-input.error:focus,
-textarea.error:focus,
-select.error:focus {
-  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.12) !important;
-}
-
-/* Password toggle button enhancement */
-#togglePassword:hover {
-  transform: scale(1.1);
-}
-
-/* Login button spacing and positioning */
-#loginBtn {
-  margin-top: 2rem;
-  /* 24px - Increased spacing above login button */
-}
-
-/* Login button enhanced states */
-#loginBtn:disabled {
-  background: linear-gradient(135deg, #10b981, #059669) !important;
-  transform: scale(1) !important;
-}
-
-#loginBtn.success {
-  animation: pulse-success 1.2s 3;
-}
 
 /* Enhanced Button States */
 #loginBtn.loading {
-  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+  background: linear-gradient(
+    135deg,
+    var(--muted-500),
+    var(--muted-600)
+  ) !important;
   cursor: not-allowed;
 }
 
@@ -1849,7 +2317,7 @@ select.error:focus {
   content: "";
   width: 16px;
   height: 16px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--white);
   border-top: 2px solid transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1886,172 +2354,56 @@ select.error:focus {
   }
 }
 
-/* Toast styles for login page */
-#toastContainer {
-  max-width: 360px;
-  width: auto;
-  pointer-events: none;
-  /* container ignores pointer events; toasts opt-in */
-}
-
-.toast {
-  pointer-events: auto;
-  /* allow clicks on the toast itself */
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-  padding: 0.625rem 0.875rem;
-  border-radius: 0.6rem;
-  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.25);
-  background: rgba(255, 255, 255, 0.96);
-  color: var(--text-primary);
-  border-left: 4px solid var(--page-color);
-  font-size: 0.95rem;
-  line-height: 1.2;
-  min-width: 220px;
-  max-width: 360px;
-  overflow-wrap: anywhere;
-  transform: translateY(-8px);
-  animation: toast-in 260ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
-}
-
-.toast .toast-icon {
-  margin-top: 2px;
-  width: 18px;
-  flex: 0 0 18px;
-  text-align: center;
-}
-
-.toast .toast-body {
-  flex: 1 1 auto;
-}
-
-.toast--success {
-  background: rgba(15, 166, 103, 0.08);
-}
-
-.toast--error {
-  background: rgba(239, 68, 68, 0.06);
-}
-
-.toast .toast-close {
-  margin-left: 0.5rem;
-  opacity: 0.7;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  color: inherit;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-12px) scale(0.995);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes toast-out {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.995);
-  }
-}
-
-/* Dark-mode tweaks for toast */
-[data-theme="dark"] .toast {
-  background: rgba(16, 24, 40, 0.9);
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .toast--success {
-  background: rgba(34, 197, 94, 0.08);
-}
-
-[data-theme="dark"] .toast--error {
-  background: rgba(239, 68, 68, 0.06);
-}
-
-/* Explicit dark theme variables (in case user toggles mode manually) */
-:root[data-theme="dark"] {
-  --bg-surface: #1c1c28;
-  --text-primary: #ffffff;
-  --section-bg: #222436;
-  --button-bg: #3f4b9a;
-  --button-text: #ffffff;
-  --button-hover-bg: #5a66c5;
-  --button-border: #555;
-  --input-border: #555;
-  --input-bg: rgba(255, 255, 255, 0.07);
-  --input-focus-border: #7a86ff;
-  --error-color: #ff6b6b;
-  --success-color: #008000;
-  /* Danger buttons */
-  --danger-bg: #ef4444;
-  --danger-hover-bg: #f87171;
-  --danger-text: #1f2937;
-  --danger-border: #ef4444;
-}
-
 /* Status Badge Styling */
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 15px;
   font-weight: 600;
   text-transform: capitalize;
   white-space: nowrap;
 }
 
 .status-badge.approved {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: var(--status-approved-bg);
+  color: var(--status-approved-text);
 }
 
 .status-badge.pending {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--status-pending-bg);
+  color: var(--status-pending-text);
 }
 
 .status-badge.rejected {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--status-rejected-bg);
+  color: var(--status-rejected-text);
 }
 
 .status-badge.in-progress {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--status-inprogress-bg);
+  color: var(--status-inprogress-text);
 }
 
 /* Dark mode status badges */
 [data-theme="dark"] .status-badge.approved {
   background-color: rgba(34, 197, 94, 0.2);
-  color: #86efac;
+  color: var(--status-approved-text);
 }
 
 [data-theme="dark"] .status-badge.pending {
   background-color: rgba(251, 191, 36, 0.2);
-  color: #fde047;
+  color: var(--status-pending-text);
 }
 
 [data-theme="dark"] .status-badge.rejected {
   background-color: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  color: var(--status-rejected-text);
 }
 
 [data-theme="dark"] .status-badge.in-progress {
   background-color: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  color: var(--status-inprogress-text);
 }
 
 /* Permit Table Styling */
@@ -2101,75 +2453,344 @@ select.error:focus {
 }
 
 #permitTable tbody td a {
-  color: #2563eb;
+  color: var(--blue-500);
   text-decoration: underline;
   font-weight: 500;
   transition: color 0.15s ease;
 }
 
 #permitTable tbody td a:hover {
-  color: #1d4ed8;
+  color: var(--blue-600);
 }
 
 [data-theme="dark"] #permitTable tbody td a {
-  color: #60a5fa;
+  color: var(--blue-400);
 }
 
 [data-theme="dark"] #permitTable tbody td a:hover {
   color: #93c5fd;
 }
 
-/* Carousel rules removed */
-
 /* Signup modal theming: ensure form elements follow theme variables and
    floating labels don't carry a solid background so they blend with theme. */
-#signupModal .floating-label label,
-#signupModal legend {
-  background: transparent !important;
-  color: var(--text-primary) !important;
+/* Signup modal styles removed — signup UI has been removed from shared layout.
+   If you keep a standalone signup page, migrate any required styles into that
+   page's CSS or a dedicated signup stylesheet. */
+
+/* =====================
+   Admin page styles (merged from admin inline styles)
+   These were previously inlined in admin/admin.html — kept scoped to admin selectors.
+   Avoid duplicating rules already present in shared theme; these are minimal and
+   targeted to admin page components.
+*/
+.expandBtn i {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.expandBtn.active i {
+  transform: rotate(180deg);
+}
+.panel {
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
 }
 
-#signupModal input,
-#signupModal select,
-#signupModal textarea {
-  background: var(--input-bg) !important;
-  color: var(--text-primary) !important;
+/* Zebra striping and hover for admin tables */
+#usersTable tbody tr:nth-child(odd),
+#permitsTable tbody tr:nth-child(odd) {
+  background-color: rgba(15, 23, 42, 0.02);
+}
+#usersTable tbody tr:hover,
+#permitsTable tbody tr:hover {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  #usersTable tbody tr:nth-child(odd),
+  #permitsTable tbody tr:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+  #usersTable tbody tr:hover,
+  #permitsTable tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+}
+
+#usersTable,
+#permitsTable {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+#usersTable thead th,
+#permitsTable thead th {
+  border-bottom: 1px solid var(--input-border);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+#usersTable th,
+#usersTable td,
+#permitsTable th,
+#permitsTable td {
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+#usersTable tr th:last-child,
+#usersTable tr td:last-child,
+#permitsTable tr th:last-child,
+#permitsTable tr td:last-child {
+  border-right: none;
+}
+
+#usersTable tbody td:first-child,
+#permitsTable tbody td:first-child {
+  background-color: var(--bg-surface);
+  font-weight: 600;
+  padding-left: 1rem;
+  border-right: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+
+.stats-grid .text-center {
+  position: relative;
+  padding-top: 1.75rem;
+}
+.stats-grid .text-center .text-sm {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+.stats-grid .text-center .w-12,
+.stats-grid .text-center .text-2xl {
+  margin-top: 0.5rem;
+}
+
+#usersTable th,
+#usersTable td,
+#permitsTable th,
+#permitsTable td {
   border: 1px solid var(--input-border) !important;
 }
 
-#signupModal .error-message {
-  color: var(--error-color, #dc2626) !important;
+/* Allow permit number cell to wrap and break long tokens */
+#permitsTable td[data-label="Permit Number"],
+#permitsTable td[data-label="Permit Number"] a {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
 }
 
-#signupModal #signupBtn {
-  background: var(--button-bg) !important;
-  color: var(--button-text) !important;
-  border: 1px solid var(--button-border) !important;
+#usersTable,
+#permitsTable {
+  border: 1px solid var(--input-border);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 0.375rem;
+  overflow: hidden;
 }
 
-#signupModal #signupBtn:hover {
-  background: var(--button-hover-bg, var(--button-bg)) !important;
+/* Responsive: convert users table to stacked card layout on small screens */
+@media (max-width: 640px) {
+  /* hide headers and force table container to behave like a block list */
+  #usersTable thead,
+  #permitsTable thead {
+    display: none;
+  }
+
+  /* Force table and its sections to stop using table layout */
+  #usersTable,
+  #usersTable tbody,
+  #permitsTable,
+  #permitsTable tbody {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+  }
+
+  /* Prevent the overflow wrapper from adding horizontal scroll on mobile */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  /* Make each row a standalone card */
+  #usersTable tr,
+  #permitsTable tr {
+    display: block !important;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--input-border);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    background: var(--section-bg);
+    box-shadow: none;
+  }
+
+  /* Maintain gap between the (hidden) table header and the first card */
+  #usersTable,
+  #permitsTable {
+    padding-top: 0.6rem;
+  }
+
+  #usersTable tr:first-child,
+  #permitsTable tr:first-child {
+    margin-top: 0.25rem;
+  }
+
+  /* Each cell becomes a labeled inline line inside the card: "Label : Value" */
+  #usersTable td,
+  #permitsTable td {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100% !important;
+    padding: 0.35rem 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+    background: transparent;
+  }
+
+  #usersTable td:last-child,
+  #permitsTable td:last-child {
+    border-bottom: none !important;
+  }
+
+  /* Show label inline before the value as "Label :" */
+  #usersTable td::before,
+  #permitsTable td::before {
+    content: attr(data-label) " :";
+    display: inline-block;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+    flex: 0 0 auto;
+  }
 }
 
-/* Ensure modal scrollbar is visible and styled in dark/light themes */
-#signupModal .relative.overflow-auto {
-  scrollbar-width: thin;
-}
-#signupModal .relative.overflow-auto::-webkit-scrollbar {
-  height: 10px;
-  width: 10px;
-}
-#signupModal .relative.overflow-auto::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-}
-#signupModal .relative.overflow-auto::-webkit-scrollbar-track {
-  background: transparent;
+/* Center table cell data on desktop screens for a cleaner look */
+@media (min-width: 641px) {
+  /* Center table body cells horizontally and vertically for desktop */
+  #permitsTable tbody td,
+  #usersTable tbody td {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  /* Center header text */
+  #permitsTable thead th,
+  #usersTable thead th {
+    text-align: center;
+    vertical-align: middle;
+  }
 }
 
-/* Hide inline error messages inside signup/registration modals —
-   validation will be surfaced via toast notifications instead. */
-#registrationModal .error-message,
-#signupModal .error-message {
+/* Replace shorthand '#' label with 'Serial No.' on small screens */
+#usersTable td[data-label="#"]::before,
+#permitsTable td[data-label="#"]::before {
+  content: "Serial No." ":";
+}
+
+/* Arrange name line with avatar on the same row */
+#usersTable td[data-label="Name"],
+#permitsTable td[data-label="Requester"] {
+  display: flex !important;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Hide name/requester initials (avatar) on small screens per request */
+#usersTable td[data-label="Name"] .avatar-accent,
+#permitsTable td[data-label="Requester"] .avatar-accent {
   display: none !important;
+}
+
+/* Make action buttons full-width and prominent */
+#usersTable td[data-label="Actions"] .user-details-btn,
+#permitsTable td[data-label="Actions"] .btn-hia-soft {
+  width: 100%;
+  justify-content: center;
+  padding: 0.6rem 0.5rem;
+}
+
+/* Slightly smaller avatar inside a card */
+.avatar-accent {
+  width: 36px;
+  height: 36px;
+  font-size: 0.85rem;
+}
+
+/* Remove background colors from Role and Status columns (desktop + mobile) */
+#usersTable td[data-label="Role"],
+#usersTable td[data-label="Status"],
+#permitsTable td[data-label="Status"] {
+  background: transparent !important;
+}
+
+/* Ensure any badge or inline element inside those cells does not retain a colored background */
+#usersTable td[data-label="Status"] .status-badge,
+#permitsTable td[data-label="Status"] .status-badge,
+#usersTable td[data-label="Status"] span.inline-flex,
+#permitsTable td[data-label="Status"] span.inline-flex,
+#usersTable td[data-label="Role"] .status-badge,
+#permitsTable td[data-label="Role"] .status-badge,
+/* Target role badge spans that use inline-flex / Tailwind classes */
+#usersTable td[data-label="Role"] span.inline-flex,
+#usersTable td[data-label="Role"] span,
+#usersTable td[data-label="Role"] .inline-flex {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.section-card.collapsed .panel {
+  display: none !important;
+}
+
+/* approver stat icons */
+.stat-icon {
+  width: 80px;
+  height: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem; /* or keep square if desired */
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+/* `.stat-icon--*` color variants removed — not referenced elsewhere in repository. */
+
+/* Chart container sizing */
+.chart-container {
+  position: relative;
+  height: 250px;
+  max-height: 250px;
+}
+
+/* Hidden utility */
+.hidden {
+  display: none;
+}
+
+:root[data-theme="light"] #global-header {
+  background: var(--hia-blue);
+}
+
+:root[data-theme="light"] #global-header,
+:root[data-theme="light"] #global-header h1,
+:root[data-theme="light"] #global-header a,
+:root[data-theme="light"] #global-header .nav-link {
+  color: var(--white) !important;
+}
+
+/* Dark theme: ensure header text is white for readability */
+:root[data-theme="dark"] #global-header h1,
+:root[data-theme="dark"] #global-header,
+:root[data-theme="dark"] #global-header a,
+:root[data-theme="dark"] #global-header .nav-link {
+  color: var(--white) !important;
 }

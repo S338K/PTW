@@ -1,340 +1,248 @@
-import { API_BASE } from "../config.js";
+// Public signup page logic (theme toggling delegated to shared/theme-toggle.js)
+(function () {
+  const form = document.getElementById("publicSignupForm");
+  const btn = document.getElementById("createAccountBtn");
 
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("signupForm");
+  function showToast(type, message) {
+    if (typeof window.showToast === "function") {
+      window.showToast(type, message);
+    } else {
+      // Fallback if toast not loaded
+      alert(message);
+    }
+  }
 
-  const usernameEl = document.getElementById("signupName");
-  const companyEl = document.getElementById("companyName");
-  const emailEl = document.getElementById("signupEmail");
-  const phoneEl = document.getElementById("signupPhone");
-  const passwordEl = document.getElementById("signupPassword");
-  const confirmPasswordEl = document.getElementById("signupConfirmPassword");
-  const termsEl = document.getElementById("termsCheckbox");
-  const signupBtn = document.getElementById("signupBtn");
-
-  // Office Address fields
-  const buildingNoEl = document.getElementById("buildingNo");
-  const floorNoEl = document.getElementById("floorNo");
-  const streetNoEl = document.getElementById("streetNo");
-  const zoneEl = document.getElementById("zone");
-  const cityEl = document.getElementById("city");
-  const countryEl = document.getElementById("country");
-  const poBoxEl = document.getElementById("poBox");
-
-  // Validation rules
-  function validateName(value) {
-    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,50}$/.test(value.trim());
-  }
-  function validateCompany(value) {
-    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]{2,50}$/.test(value.trim());
-  }
-  function validateEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }
-  function validatePhone(value) {
-    // Remove spaces, dashes, and parentheses for validation
-    const cleanedPhone = value.replace(/[\s\-()]/g, "");
-    // Require +974 followed by at least 8 digits
-    return /^\+974\d{8,}$/.test(cleanedPhone);
-  }
-  function validatePassword(value, name, email) {
-    const strongPattern =
+  function validate() {
+    const alphaRe = /^[A-Za-z\s]+$/;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const phoneRe = /^\+974\d{8,}$/;
+    const passwordRe =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-    if (!strongPattern.test(value)) return false;
-    const lowerPass = value.toLowerCase();
-    if (name && lowerPass.includes(name.toLowerCase())) return false;
-    if (
-      validateEmail(email) &&
-      lowerPass.includes(email.split("@")[0].toLowerCase())
-    )
+    const fullName = form.fullName.value.trim();
+    const email = form.email.value.trim();
+    const phone = form.phone.value.trim().replace(/[\s\-()]/g, "");
+    const company = form.company.value.trim();
+    const password = form.password.value;
+    const confirmPassword = form.confirmPassword.value;
+    const termsAccepted = form.acceptTerms.checked;
+
+    if (!fullName) {
+      showToast("error", "Full name is required");
       return false;
+    }
+    if (!alphaRe.test(fullName)) {
+      showToast("error", "Full name should contain letters and spaces only");
+      return false;
+    }
+    if (!email) {
+      showToast("error", "Email is required");
+      return false;
+    }
+    if (!emailRe.test(email)) {
+      showToast("error", "Please enter a valid email address");
+      return false;
+    }
+    if (!phone) {
+      showToast("error", "Phone number is required");
+      return false;
+    }
+    if (!phoneRe.test(phone)) {
+      showToast("error", "Phone format: +974 followed by at least 8 digits");
+      return false;
+    }
+    if (company && !alphaRe.test(company)) {
+      showToast("error", "Company name should contain letters and spaces only");
+      return false;
+    }
+    if (!password) {
+      showToast("error", "Password is required");
+      return false;
+    }
+    if (!passwordRe.test(password)) {
+      showToast(
+        "error",
+        "Password must be at least 8 characters with uppercase, lowercase, number, and special character",
+      );
+      return false;
+    }
+    if (!confirmPassword) {
+      showToast("error", "Please confirm your password");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      showToast("error", "Passwords do not match");
+      return false;
+    }
+    if (!termsAccepted) {
+      showToast("error", "You must accept the terms and conditions");
+      return false;
+    }
     return true;
   }
-  function validateConfirmPassword(pass, confirm) {
-    return pass === confirm && confirm.length > 0;
-  }
-  function validateTerms(checked) {
-    return checked;
-  }
-  function validateBuildingNo(value) {
-    return /^\d{1,2}$/.test(value);
-  }
-  function validateFloorNo(value) {
-    return /^\d{1,2}$/.test(value);
-  }
-  function validateStreetNo(value) {
-    return /^\d{1,3}$/.test(value);
-  }
-  function validateZone(value) {
-    return /^\d{1,2}$/.test(value);
-  }
-  function validateCity(value) {
-    return /^[A-Za-z\s]+$/.test(value.trim());
-  }
-  function validateCountry(value) {
-    return /^[A-Za-z\s]+$/.test(value.trim());
-  }
-  function validatePoBox(value) {
-    return /^\d{1,6}$/.test(value);
-  }
 
-  // Show error under the field
-  function showError(inputEl, message) {
-    const group = inputEl.closest(".floating-label, .relative");
-    if (!group) return;
-    const span = group.querySelector(".error-message");
-    if (!span) return;
-    span.textContent = message || "";
-    if (message) {
-      inputEl.classList.add("invalid");
-      inputEl.setAttribute("aria-invalid", "true");
-      inputEl.classList.remove("valid");
-    } else {
-      inputEl.classList.remove("invalid");
-      inputEl.removeAttribute("aria-invalid");
-      inputEl.classList.add("valid");
+  async function submit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    // prevent double submissions
+    if (window._signupSubmitting) return;
+    window._signupSubmitting = true;
+
+    // Prevent submission if async checks flagged duplicates
+    if (window._signupEmailExists) {
+      showToast("error", "Email is already in use");
+      window._signupSubmitting = false;
+      return;
     }
-  }
-
-  // Validate a single field
-  function validateField(inputEl) {
-    let isValid = true;
-    switch (inputEl.id) {
-      case "signupName":
-        isValid = validateName(inputEl.value);
-        showError(inputEl, isValid ? "" : "Letters only (2–50 chars).");
-        break;
-      case "companyName":
-        isValid = validateCompany(inputEl.value);
-        showError(inputEl, isValid ? "" : "Letters/numbers only (2–50 chars).");
-        break;
-      case "signupEmail":
-        isValid = validateEmail(inputEl.value);
-        showError(inputEl, isValid ? "" : "Enter a valid email address 📧.");
-        break;
-      case "signupPhone":
-        isValid = validatePhone(inputEl.value);
-        showError(
-          inputEl,
-          isValid ? "" : "Enter a valid phone number (e.g., +974xxxxxxxx)."
-        );
-        break;
-      case "signupPassword":
-        isValid = validatePassword(
-          inputEl.value,
-          usernameEl.value,
-          emailEl.value
-        );
-        showError(
-          inputEl,
-          isValid
-            ? ""
-            : "Min 8 chars, 1 letter, 1 number, 1 special char. Name/Email not allowed."
-        );
-        break;
-      case "signupConfirmPassword":
-        isValid = validateConfirmPassword(passwordEl.value, inputEl.value);
-        showError(inputEl, isValid ? "" : "Passwords do not match 🔑.");
-        break;
-      case "buildingNo":
-        isValid = validateBuildingNo(inputEl.value);
-        showError(inputEl, isValid ? "" : "Building No. should be 1–2 digits.");
-        break;
-      case "floorNo":
-        isValid = validateFloorNo(inputEl.value);
-        showError(inputEl, isValid ? "" : "Floor No. should be 1–2 digits.");
-        break;
-      case "streetNo":
-        isValid = validateStreetNo(inputEl.value);
-        showError(inputEl, isValid ? "" : "Street No. should be 1–3 digits.");
-        break;
-      case "zone":
-        isValid = validateZone(inputEl.value);
-        showError(inputEl, isValid ? "" : "Zone should be 1–2 digits.");
-        break;
-      case "city":
-        isValid = validateCity(inputEl.value);
-        showError(inputEl, isValid ? "" : "City should be alphabetic.");
-        break;
-      case "country":
-        isValid = validateCountry(inputEl.value);
-        showError(inputEl, isValid ? "" : "Country should be alphabetic.");
-        break;
-      case "poBox":
-        isValid = validatePoBox(inputEl.value);
-        showError(inputEl, isValid ? "" : "P.O. Box should be 1–6 digits.");
-        break;
-      case "termsCheckbox":
-        isValid = validateTerms(inputEl.checked);
-        // For checkbox, look for error span in parent container
-        const checkboxGroup = inputEl.closest(".relative");
-        if (checkboxGroup) {
-          const checkboxSpan = checkboxGroup.querySelector(".error-message");
-          if (checkboxSpan) {
-            checkboxSpan.textContent = isValid
-              ? ""
-              : "Please accept the terms and conditions 📝.";
-          }
-        }
-        break;
+    if (window._signupPhoneExists) {
+      showToast("error", "Phone number is already in use");
+      window._signupSubmitting = false;
+      return;
     }
-    return isValid;
-  }
 
-  // Validate all fields on submit
-  function validateForm() {
-    let valid = true;
-    [
-      usernameEl,
-      companyEl,
-      emailEl,
-      phoneEl,
-      passwordEl,
-      confirmPasswordEl,
-      termsEl,
-      buildingNoEl,
-      floorNoEl,
-      streetNoEl,
-      zoneEl,
-      cityEl,
-      countryEl,
-      poBoxEl,
-    ].forEach((input) => {
-      if (!validateField(input)) valid = false;
-    });
-    return valid;
-  }
+    btn.disabled = true;
+    btn.classList.add("loading");
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating...';
 
-  // Real-time validation
-  [
-    usernameEl,
-    companyEl,
-    emailEl,
-    phoneEl,
-    passwordEl,
-    confirmPasswordEl,
-    buildingNoEl,
-    floorNoEl,
-    streetNoEl,
-    zoneEl,
-    cityEl,
-    countryEl,
-    poBoxEl,
-  ].forEach((input) => {
-    if (input) {
-      input.addEventListener("input", () => validateField(input));
-    }
-  });
-  if (termsEl) {
-    termsEl.addEventListener("change", () => validateField(termsEl));
-  }
+    const payload = {
+      username: form.fullName.value.trim(),
+      email: form.email.value.trim(),
+      phone: form.phone.value.trim(),
+      company: form.company.value.trim(),
+      password: form.password.value,
+      confirmPassword: form.confirmPassword.value,
+      role: "Requester",
+    };
 
-  // Submit validation
-  if (form) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
 
-      if (!validateForm()) {
-        const firstInvalid =
-          form.querySelector(".invalid") ||
-          form.querySelector("#termsCheckbox:not(:checked)");
-        if (firstInvalid) firstInvalid.focus();
-        return;
-      }
-
-      const username = usernameEl.value.trim();
-      const company = companyEl.value.trim();
-      const email = emailEl.value.trim();
-      const phone = phoneEl.value.trim();
-      const password = passwordEl.value.trim();
-      const confirmPassword = confirmPasswordEl.value.trim();
-      const buildingNo = buildingNoEl.value.trim();
-      const floorNo = floorNoEl.value.trim();
-      const streetNo = streetNoEl.value.trim();
-      const zone = zoneEl.value.trim();
-      const city = cityEl.value.trim();
-      const country = countryEl.value.trim();
-      const poBox = poBoxEl.value.trim();
-
-      try {
-        const res = await fetch(`${API_BASE}/api/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            username,
-            company,
-            email,
-            phone,
-            password,
-            confirmPassword,
-            buildingNo,
-            floorNo,
-            streetNo,
-            zone,
-            city,
-            country,
-            poBox,
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          if (data.message && data.message.toLowerCase().includes("email")) {
-            showError(emailEl, data.message);
-          } else {
-            alert(data.message || "Sign up failed.");
-          }
-          return;
-        }
-
-        signupBtn.style.transition =
-          "background-color 0.4s ease, color 0.4s ease";
-        signupBtn.textContent = "Registration Successful.";
-        signupBtn.style.backgroundColor = "#28a745";
-        signupBtn.style.borderColor = "#28a745";
-        signupBtn.style.color = "#fff";
-        signupBtn.disabled = true;
-
-        // Pulse glow animation
-        signupBtn.animate(
-          [
-            { boxShadow: "0 0 0 rgba(40, 167, 69, 0.7)" },
-            { boxShadow: "0 0 15px rgba(40, 167, 69, 0.9)" },
-            { boxShadow: "0 0 0 rgba(40, 167, 69, 0.7)" },
-          ],
-          {
-            duration: 1200,
-            iterations: 3,
-          }
+      if (res.ok) {
+        showToast(
+          "success",
+          data.message || "Registration successful! Redirecting to login...",
         );
-
-        // If the signup form is rendered inside a modal (login page), dispatch an event
-        // so the page can close the modal instead of redirecting. Otherwise, redirect.
-        const isModal = !!document.getElementById("signupModal");
-        if (isModal) {
-          try {
-            const evt = new CustomEvent("signup:success", {
-              detail: {
-                user: data && data.user,
-                message: data && data.message,
-              },
-            });
-            document.dispatchEvent(evt);
-          } catch (err) {
-            /* ignore */
-          }
-          // Do not redirect when in modal — allow page to decide.
-          return;
-        }
-
-        // Redirect after short delay (standalone signup page)
         setTimeout(() => {
           window.location.href = "../login/index.html";
-        }, 2000);
-      } catch (err) {
-        alert("Network error. Please try again.");
+        }, 1500);
+      } else {
+        showToast(
+          "error",
+          data.message ||
+            data.error ||
+            "Registration failed. Please try again.",
+        );
       }
+    } catch (err) {
+      console.error(err);
+      showToast(
+        "error",
+        "Network error. Please check your connection and try again.",
+      );
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove("loading");
+      btn.innerHTML = orig;
+      window._signupSubmitting = false;
+    }
+  }
+
+  form.addEventListener("submit", submit);
+  // Theme already initialized by shared/theme-toggle.js
+  // --- Async uniqueness checks ---
+  const emailEl = document.getElementById("email");
+  const phoneEl = document.getElementById("phone");
+
+  // small debounce helper to avoid rapid API calls
+  function debounce(fn, wait) {
+    let t = null;
+    return function (...args) {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => {
+        t = null;
+        try {
+          fn.apply(this, args);
+        } catch (e) {
+          console.warn("debounced fn error", e);
+        }
+      }, wait);
+    };
+  }
+
+  async function checkEmailUnique() {
+    try {
+      const v = emailEl && emailEl.value ? String(emailEl.value).trim() : "";
+      if (!v) {
+        window._signupEmailExists = false;
+        if (emailEl) emailEl.classList.remove("border-red-500");
+        return;
+      }
+      const res = await fetch(
+        `/api/check-email?email=${encodeURIComponent(v)}`,
+      );
+      if (!res.ok) return;
+      const j = await res.json();
+      window._signupEmailExists = !!j.exists;
+      if (j.exists) {
+        if (window.showToast)
+          window.showToast("error", "Email is already registered");
+        if (emailEl) emailEl.classList.add("border-red-500");
+      } else {
+        if (emailEl) emailEl.classList.remove("border-red-500");
+      }
+    } catch (e) {
+      // ignore transient errors
+      console.warn("checkEmailUnique error", e);
+    }
+  }
+
+  async function checkPhoneUnique() {
+    try {
+      const v = phoneEl && phoneEl.value ? String(phoneEl.value).trim() : "";
+      if (!v) {
+        window._signupPhoneExists = false;
+        if (phoneEl) phoneEl.classList.remove("border-red-500");
+        return;
+      }
+      const res = await fetch(
+        `/api/check-phone?phone=${encodeURIComponent(v)}`,
+      );
+      if (!res.ok) return;
+      const j = await res.json();
+      window._signupPhoneExists = !!j.exists;
+      if (j.exists) {
+        if (window.showToast)
+          window.showToast("error", "Phone number is already registered");
+        if (phoneEl) phoneEl.classList.add("border-red-500");
+      } else {
+        if (phoneEl) phoneEl.classList.remove("border-red-500");
+      }
+    } catch (e) {
+      console.warn("checkPhoneUnique error", e);
+    }
+  }
+
+  if (emailEl) {
+    const debouncedEmail = debounce(checkEmailUnique, 200);
+    emailEl.addEventListener("blur", debouncedEmail);
+    emailEl.addEventListener("input", () => {
+      window._signupEmailExists = false;
+      if (emailEl) emailEl.classList.remove("border-red-500");
     });
   }
-});
+  if (phoneEl) {
+    const debouncedPhone = debounce(checkPhoneUnique, 200);
+    phoneEl.addEventListener("blur", debouncedPhone);
+    phoneEl.addEventListener("input", () => {
+      window._signupPhoneExists = false;
+      if (phoneEl) phoneEl.classList.remove("border-red-500");
+    });
+  }
+})();

@@ -1,75 +1,24 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard UI</title>
-  <script>
-    (function () {
-      try {
-        // Helper to detect templating placeholders left in the HTML (e.g., {{USER_ID}})
-        const isPlaceholder = (v) => !v || (/\{\{.*\}\}/).test(v) || v.trim() === '';
-
-        const m = document.querySelector('meta[name="user-id"]');
-        if (m && m.content && !isPlaceholder(m.content)) {
-          window.__USER_ID__ = m.content;
-        }
-
-        // populate common profile slots used in the sidebar/layout only when the
-        // meta tag contains a real value (not a placeholder). This ensures the
-        // shared template file can be served statically without accidentally
-        // populating the layout with the last served user's info.
-        const keys = ['fullname', 'email', 'company', 'phone', 'memberSince', 'lastLogin', 'ip'];
-        const nameMap = {
-          fullname: 'fullName',
-          email: 'email',
-          company: 'company',
-          phone: 'phone',
-          memberSince: 'memberSince',
-          lastLogin: 'lastLogin',
-          ip: 'ipAddress'
-        };
-
-        keys.forEach(k => {
-          try {
-            const meta = document.querySelector(`meta[name="user-${k}"]`);
-            if (!meta || isPlaceholder(meta.content)) return;
-            const value = meta.content;
-            const field = nameMap[k];
-            if (!field) return;
-            document.querySelectorAll(`[data-user-field="${field}"]`).forEach(el => {
-              try { el.textContent = value || ''; } catch (e) { }
-            });
-          } catch (e) { /* ignore individual failures */ }
-        });
-      } catch (e) { /* fail quietly */ }
-    })();
-  </script>
-  <script>
-    // Ensure front-end fetches target the correct backend in production when not
-    // explicitly overridden. This can be overridden by setting window.__API_BASE__
-    // (e.g. injected by server) or localStorage.API_BASE in dev/debug scenarios.
-    if (!window.__API_BASE__ && !localStorage.getItem('API_BASE')) {
-      // Default production backend URL — change if your production backend differs.
-      window.__API_BASE__ = 'https://ptw-yu8u.onrender.com';
-    }
-  </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="../theme.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 </head>
 
 <body class="transition-colors duration-300">
-
   <!-- Navigation Bar -->
-  <nav class="fixed top-0 inset-x-0 z-30 h-16 flex items-center border-b border-[var(--button-border)]">
+  <nav
+    class="fixed top-0 inset-x-0 z-30 h-16 flex items-center border-b border-[var(--button-border)] bg-[var(--navbar-bg)] text-[var(--navbar-text)]">
     <div class="flex items-center justify-between w-full">
-
       <!-- Left: Hamburger icon -->
       <button id="sidebar-hamburger"
-        class="p-2 rounded-lg text-[var(--text-primary)] h-full flex items-center justify-center icon-btn bg-transparent hover:bg-transparent focus:bg-transparent"
+        class="p-2 rounded-lg text-[var(--navbar-text)] h-full flex items-center justify-center icon-btn bg-transparent hover:bg-transparent focus:bg-transparent"
         aria-label="Toggle sidebar">
         <span class="sr-only">Toggle sidebar</span>
         <span class="hamburger-icon" aria-hidden="true">
@@ -79,28 +28,31 @@
         </span>
       </button>
 
+      <!-- Logo (hidden on authenticated pages; visible on login/signup standalone pages) -->
+      <div class="flex items-center pl-2 shrink-0 w-24 sm:w-28 md:w-24 lg:w-32">
+        <img id="nav-logo" src="../images/HIA_logo.png" alt="HIA Logo" class="h-10 w-auto hidden" aria-hidden="true" />
+      </div>
+
       <!-- Right: Desktop Navigation Icons -->
       <div class="flex items-center space-x-2 md:space-x-4 ml-auto">
-
-        <!-- Announcement button (admin only). Hidden by default and revealed by layout.js when role=Admin -->
         <button id="announcement-button" type="button" title="Announcements" data-admin-only
-          class="hidden flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full text-[var(--text-primary)] icon-btn hover-lite"
+          class="hidden h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-full text-[var(--navbar-text)] icon-btn hover-lite"
           aria-label="Manage announcements">
           <i class="fas fa-bullhorn text-xl md:text-2xl"></i>
         </button>
 
         <button id="theme-toggle" type="button" data-theme-toggle
-          class="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full text-[var(--text-primary)] icon-btn hover-lite"
+          class="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full text-[var(--navbar-text)] icon-btn hover-lite"
           aria-label="Toggle theme">
-          <!-- show both icons in DOM; CSS (and the `dark` class on <html>) controls which is visible -->
+
           <i class="fas fa-sun icon-sun text-xl md:text-2xl"></i>
           <i class="fas fa-moon icon-moon text-xl md:text-2xl"></i>
         </button>
 
         <!-- Notification Bell with Badge and Dropdown -->
-        <div class="relative" id="notification-container">
+        <div class="relative" id="notification-container" data-role-visibility="Requester,PreApprover,Approver">
           <button id="notification-bell" type="button"
-            class="relative h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-full text-[var(--text-primary)] icon-btn hover-lite"
+            class="relative h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-full text-[var(--navbar-text)] icon-btn hover-lite"
             aria-label="Notifications" aria-expanded="false" aria-haspopup="true">
             <i class="fas fa-bell text-xl md:text-2xl"></i>
             <span id="notification-badge"
@@ -111,10 +63,13 @@
           <div id="notification-dropdown"
             class="hidden absolute right-0 mt-2 w-80 md:w-96 max-h-[70vh] bg-[var(--bg-surface)] text-[var(--text-primary)] rounded-lg shadow-2xl border border-[var(--input-border)] overflow-hidden z-50">
             <div class="px-4 py-3 border-b border-[var(--input-border)] flex items-center justify-between">
-              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Notifications</h3>
+              <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+                Notifications
+              </h3>
               <button id="mark-all-read" type="button"
-                class="text-xs text-[var(--text-primary)] opacity-80 hover:opacity-100 hover:underline">Mark all
-                as read</button>
+                class="text-xs text-[var(--text-primary)] opacity-80 hover:opacity-100 hover:underline">
+                Mark all as read
+              </button>
             </div>
             <div id="notification-list" class="overflow-y-auto max-h-96">
               <!-- Notifications will be inserted here -->
@@ -143,7 +98,6 @@
     class="hidden md:block fixed left-0 top-16 h-[calc(100vh-64px)] w-[350px] border-r border-[var(--button-border)] shadow-2xl z-40 transform -translate-x-full transition-transform duration-300 rounded-tr-xl">
     <div class="p-4 space-y-4">
       <div class="rounded-lg border border-[var(--button-border)] bg-[var(--bg-surface)]">
-
         <button type="button"
           class="accordion-toggle flex w-full items-center justify-between px-4 py-3 text-left text-[var(--text-primary)] font-semibold"
           data-target="desktop-personal-section" aria-controls="desktop-personal-section" aria-expanded="false"
@@ -159,7 +113,6 @@
           class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
           <div class="px-4 pb-4 pt-1 text-sm text-[var(--text-primary)]/85">
             <div class="space-y-2">
-
               <div
                 class="flex items-center gap-3 rounded-xl border border-[var(--button-border)] bg-[var(--bg-surface)] px-3 py-2 shadow-sm">
                 <div
@@ -167,7 +120,9 @@
                   <i class="fas fa-id-card"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">Full Name</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    Full Name
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="fullName"
                     data-placeholder=""></p>
                 </div>
@@ -180,7 +135,9 @@
                   <i class="fas fa-envelope"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">Email</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    Email
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="email"
                     data-placeholder=""></p>
                 </div>
@@ -193,7 +150,9 @@
                   <i class="fas fa-building"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">Company</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    Company
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="company"
                     data-placeholder=""></p>
                 </div>
@@ -206,7 +165,9 @@
                   <i class="fas fa-phone"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">Phone</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    Phone
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="phone"
                     data-placeholder=""></p>
                 </div>
@@ -219,7 +180,9 @@
                   <i class="fas fa-calendar-alt"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">Member Since</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    Member Since
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="memberSince"
                     data-placeholder=""></p>
                 </div>
@@ -232,7 +195,9 @@
                   <i class="fas fa-clock"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">Last Login</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    Last Login
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="lastLogin"
                     data-placeholder=""></p>
                 </div>
@@ -245,12 +210,13 @@
                   <i class="fas fa-globe"></i>
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">IP Address</p>
+                  <p class="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/70">
+                    IP Address
+                  </p>
                   <p class="text-sm font-medium text-[var(--text-primary)] truncate" data-user-field="ipAddress"
                     data-placeholder=""></p>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -271,10 +237,15 @@
         <div id="desktop-actions-section"
           class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
           <div class="px-4 pb-4 pt-1 space-y-2 text-sm text-[var(--text-primary)]/85" data-quick-actions="desktop">
-            <a href="#" data-action="submit-new-request"
+            <a href="#" data-action="submit-new-request" data-role-visibility="Requester,Admin"
               class="flex items-center gap-3 px-3 py-2 rounded-lg hover-lite">
               <span class="text-green-500"><i class="fas fa-plus-circle"></i></span>
               <span>Submit New Request</span>
+            </a>
+            <a href="#" data-action="register-new-user" data-admin-only
+              class="hidden flex items-center gap-3 px-3 py-2 rounded-lg hover-lite">
+              <span class="text-blue-500"><i class="fas fa-user-plus"></i></span>
+              <span>Register New User</span>
             </a>
             <a href="#" data-action="openReportModal" class="flex items-center gap-3 px-3 py-2 rounded-lg hover-lite">
               <span class="text-purple-500"><i class="fas fa-download"></i></span>
@@ -282,7 +253,6 @@
             </a>
           </div>
         </div>
-
       </div>
 
       <div class="rounded-lg border border-[var(--button-border)] bg-[var(--bg-surface)]">
@@ -306,7 +276,6 @@
             </a>
           </div>
         </div>
-
       </div>
     </div>
   </aside>
@@ -327,12 +296,10 @@
           </span>
         </button>
         <div id="mobile-personal-section"
-          class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
-        </div>
+          class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0"></div>
       </div>
 
       <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-
         <button type="button"
           class="accordion-toggle flex w-full items-center justify-between px-4 py-3 text-left text-gray-800 dark:text-white font-semibold"
           data-target="mobile-actions-section" aria-controls="mobile-actions-section" aria-expanded="false"
@@ -346,6 +313,22 @@
 
         <div id="mobile-actions-section"
           class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
+          <div class="px-3 py-2 space-y-2" data-quick-actions="mobile">
+            <a href="#" data-action="submit-new-request" data-role-visibility="Requester,Admin"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg hover-lite">
+              <span class="text-green-500"><i class="fas fa-plus-circle"></i></span>
+              <span>Submit New Request</span>
+            </a>
+            <a href="#" data-action="register-new-user" data-admin-only
+              class="hidden flex items-center gap-3 px-3 py-2 rounded-lg hover-lite">
+              <span class="text-blue-500"><i class="fas fa-user-plus"></i></span>
+              <span>Register New User</span>
+            </a>
+            <a href="#" data-action="openReportModal" class="flex items-center gap-3 px-3 py-2 rounded-lg hover-lite">
+              <span class="text-purple-500"><i class="fas fa-download"></i></span>
+              <span>Download Reports</span>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -362,14 +345,13 @@
         </button>
 
         <div id="mobile-account-section"
-          class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0">
-        </div>
+          class="accordion-content overflow-hidden transition-[max-height] duration-300 ease-in-out max-h-0"></div>
       </div>
     </div>
   </div>
 
   <!-- Main content slot -->
-  <main id="main-content" class="container mx-auto px-4 py-8 transition-all duration-300" data-layout-wrapper>
+  <main id="main-content" class="container mx-auto px-4 py-8 mt-10 transition-all duration-300" data-layout-wrapper>
     <div data-layout-slot class="h-full w-full"></div>
   </main>
 
@@ -386,9 +368,12 @@
         </div>
 
         <div class="flex-1 space-y-2">
-          <h2 id="logout-modal-title" class="text-lg font-semibold text-[var(--text-primary)]">Sign out?</h2>
+          <h2 id="logout-modal-title" class="text-lg font-semibold text-[var(--text-primary)]">
+            Sign out?
+          </h2>
           <p class="text-sm text-[var(--text-primary)]/80">
-            You’re about to end this session. Any unsaved changes will be lost. Do you want to continue?
+            You’re about to end this session. Any unsaved changes will be
+            lost. Do you want to continue?
           </p>
           <p data-logout-status class="hidden text-sm text-[var(--error-color)]"></p>
         </div>
@@ -419,21 +404,173 @@
           <i class="fas fa-bullhorn text-xl"></i>
         </div>
         <div class="flex-1">
-          <h2 id="publish-confirm-title" class="text-lg font-semibold text-[var(--text-primary)]">Confirm publish change
+          <h2 id="publish-confirm-title" class="text-lg font-semibold text-[var(--text-primary)]">
+            Confirm publish change
           </h2>
-          <p id="publish-confirm-message" class="text-sm text-[var(--text-primary)]/80 mt-2">Are you sure you want to
-            publish/unpublish this announcement?</p>
+          <p id="publish-confirm-message" class="text-sm text-[var(--text-primary)]/80 mt-2">
+            Are you sure you want to publish/unpublish this announcement?
+          </p>
         </div>
       </div>
       <div class="flex items-center justify-end gap-3 mt-4">
         <button id="publishCancelBtn"
-          class="px-4 py-2 rounded-lg border border-[var(--button-border)] bg-transparent text-[var(--text-primary)]">Cancel</button>
+          class="px-4 py-2 rounded-lg border border-[var(--button-border)] bg-transparent text-[var(--text-primary)]">
+          Cancel
+        </button>
         <button id="publishConfirmBtn"
-          class="px-4 py-2 rounded-lg bg-[var(--button-bg)] text-[var(--button-text)] font-semibold">Confirm</button>
+          class="px-4 py-2 rounded-lg bg-[var(--button-bg)] text-[var(--button-text)] font-semibold">
+          Confirm
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Register New User Modal (Admin Only) -->
+  <div id="register-user-modal" class="fixed inset-0 z-[1003] hidden" role="dialog" aria-modal="true"
+    aria-labelledby="register-user-title">
+    <div class="absolute inset-0 bg-[var(--overlay-bg)] backdrop-blur-sm" data-register-overlay></div>
+    <div
+      class="relative mx-auto my-8 w-[min(92vw,600px)] max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--bg-surface)] shadow-2xl border border-[var(--input-border)]">
+      <!-- Header -->
+      <div
+        class="sticky top-0 bg-gradient-to-r from-[#273172] to-[#3a449e] px-6 py-4 flex items-center justify-between border-b border-[var(--input-border)] z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-user-plus text-xl text-white"></i>
+          </div>
+          <h2 id="register-user-title" class="text-xl font-bold text-white">
+            Register New User
+          </h2>
+        </div>
+        <button type="button" data-register-close class="text-white/80 hover:text-white transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Form Content -->
+      <form id="registerUserForm" class="p-6 space-y-5">
+        <!-- Full Name -->
+        <div class="form-group">
+          <label for="register_fullName" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-user text-[#273172] mr-2"></i>
+            Full Name <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="register_fullName" name="fullName" required placeholder="Enter full name"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+          <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="register_email" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-envelope text-[#273172] mr-2"></i>
+            Email Address <span class="text-red-500">*</span>
+          </label>
+          <input type="email" id="register_email" name="email" required placeholder="user@example.com"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+          <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="form-group">
+          <label for="register_mobile" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-phone text-[#273172] mr-2"></i>
+            Phone Number <span class="text-red-500">*</span>
+          </label>
+          <input type="tel" id="register_mobile" name="mobile" required placeholder="+974XXXXXXXX"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+          <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+        </div>
+
+        <!-- Company -->
+        <div class="form-group">
+          <label for="register_company" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-building text-[#273172] mr-2"></i>
+            Company
+          </label>
+          <input type="text" id="register_company" name="company" placeholder="Company name (optional)"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+        </div>
+
+        <!-- Department -->
+        <div class="form-group">
+          <label for="register_department" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-sitemap text-[#273172] mr-2"></i>
+            Department
+          </label>
+          <input type="text" id="register_department" name="department" placeholder="Department (optional)"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+        </div>
+
+        <!-- Designation -->
+        <div class="form-group">
+          <label for="register_designation" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-id-badge text-[#273172] mr-2"></i>
+            Designation
+          </label>
+          <input type="text" id="register_designation" name="designation" placeholder="Job title (optional)"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+        </div>
+
+        <!-- Role -->
+        <div class="form-group">
+          <label for="register_role" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-user-tag text-[#273172] mr-2"></i>
+            Role <span class="text-red-500">*</span>
+          </label>
+          <select id="register_role" name="role" required
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300">
+            <option value="">Select role</option>
+            <option value="Requester">Requester</option>
+            <option value="PreApprover">Pre-Approver</option>
+            <option value="Approver">Approver</option>
+            <option value="Admin">Admin</option>
+          </select>
+          <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="register_password" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-lock text-[#273172] mr-2"></i>
+            Password <span class="text-red-500">*</span>
+          </label>
+          <input type="password" id="register_password" name="password" required
+            placeholder="Min 8 chars, uppercase, lowercase, number, special char"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+          <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="register_confirmPassword" class="block text-sm font-semibold text-[var(--text-primary)] mb-2">
+            <i class="fas fa-lock text-[#273172] mr-2"></i>
+            Confirm Password <span class="text-red-500">*</span>
+          </label>
+          <input type="password" id="register_confirmPassword" name="confirmPassword" required
+            placeholder="Re-enter password"
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border-2 border-[var(--input-border)] rounded-xl text-[var(--text-primary)] placeholder-gray-400 focus:border-[#273172] focus:outline-none focus:ring-2 focus:ring-[#273172]/20 transition-all duration-300" />
+          <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-[var(--input-border)]">
+          <button type="button" data-register-cancel
+            class="px-6 py-3 rounded-lg border border-[var(--button-border)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]/10 transition-colors font-semibold">
+            Cancel
+          </button>
+          <button type="submit" id="registerSubmitBtn"
+            class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#273172] to-[#3a449e] hover:shadow-lg text-white font-semibold transition-all duration-200 transform hover:scale-[1.02]">
+            <i class="fas fa-user-plus mr-2"></i>
+            Register User
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- Signup modal fragment removed per project cleanup (signup moved/archived or deleted).
+       If you need to restore this modal later, use the standalone signup module and ensure wiring
+       is added intentionally in layout.js. -->
   <!-- Idle timeout warning modal -->
   <div id="idle-timeout-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true"
     aria-labelledby="idle-timeout-title">
@@ -447,13 +584,16 @@
         </div>
 
         <div class="flex-1 space-y-2">
-          <h2 id="idle-timeout-title" class="text-lg font-semibold text-[var(--text-primary)]">Session is about to
-            expire</h2>
+          <h2 id="idle-timeout-title" class="text-lg font-semibold text-[var(--text-primary)]">
+            Session is about to expire
+          </h2>
           <p class="text-sm text-[var(--text-primary)]/80">
-            For your security, your session will end soon due to inactivity. Do you want to continue your session?
+            For your security, your session will end soon due to inactivity.
+            Do you want to continue your session?
           </p>
           <p class="text-sm text-[var(--text-primary)]/80">
-            Time remaining: <span data-idle-countdown class="font-semibold">120</span> seconds
+            Time remaining:
+            <span data-idle-countdown class="font-semibold">120</span> seconds
           </p>
           <p data-idle-status class="hidden text-sm text-[var(--error-color)]"></p>
         </div>
@@ -473,8 +613,8 @@
   </div>
 
   <!-- Global toast container (shared across all pages using this layout) -->
-  <div id="toastContainer" aria-live="polite"
-    class="fixed z-50 top-4 right-4 flex flex-col gap-2 items-end pointer-events-none"></div>
+  <div id="toastContainer" aria-live="polite" class="fixed z-50 flex flex-col gap-2 items-center pointer-events-none">
+  </div>
 
   <!-- Update Password Modal (shared) -->
   <div id="update-password-modal" class="fixed inset-0 z-[1000] hidden" role="dialog" aria-modal="true"
@@ -488,29 +628,38 @@
           <i class="fas fa-key text-xl"></i>
         </div>
         <div class="flex-1">
-          <h2 id="update-password-title" class="text-lg font-semibold text-[var(--text-primary)]">Change Password</h2>
-          <p class="text-sm text-[var(--text-primary)]/70">Verify your current password, then choose a new one that
-            meets the complexity policy.</p>
+          <h2 id="update-password-title" class="text-lg font-semibold text-[var(--text-primary)]">
+            Change Password
+          </h2>
+          <p class="text-sm text-[var(--text-primary)]/70">
+            Verify your current password, then choose a new one that meets the
+            complexity policy.
+          </p>
         </div>
         <button type="button" data-update-password-close
-          class="text-[var(--text-primary)] hover:text-[var(--button-bg)]"><i class="fas fa-times text-xl"></i></button>
+          class="text-[var(--text-primary)] hover:text-[var(--button-bg)]">
+          <i class="fas fa-times text-xl"></i>
+        </button>
       </div>
 
       <form id="updatePasswordFormShared" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Current Password</label>
           <input type="password" id="currentPasswordShared" autocomplete="current-password"
-            class="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--button-bg)]/50 focus:border-[var(--button-bg)] transition-all duration-200">
-          <p id="currentPasswordHintShared" class="mt-2 text-xs text-[var(--text-primary)]/70">Enter your current
-            password to continue.</p>
-          <p id="currentPasswordErrorShared" class="mt-2 text-sm text-red-500 hidden">Current password is incorrect.</p>
+            class="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--button-bg)]/50 focus:border-[var(--button-bg)] transition-all duration-200" />
+          <p id="currentPasswordHintShared" class="mt-2 text-xs text-[var(--text-primary)]/70">
+            Enter your current password to continue.
+          </p>
+          <p id="currentPasswordErrorShared" class="mt-2 text-sm text-red-500 hidden">
+            Current password is incorrect.
+          </p>
         </div>
 
         <div id="newPasswordSectionShared" class="space-y-3 hidden">
           <div>
             <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">New Password</label>
             <input type="password" id="newPasswordShared" autocomplete="new-password"
-              class="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--button-bg)]/50 focus:border-[var(--button-bg)] transition-all duration-200">
+              class="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--button-bg)]/50 focus:border-[var(--button-bg)] transition-all duration-200" />
             <div class="mt-2">
               <div class="h-2 w-full rounded-full bg-[var(--input-border)]/40 overflow-hidden">
                 <div id="passwordStrengthBarShared" class="h-full w-0 rounded-full transition-all duration-300"></div>
@@ -524,17 +673,22 @@
           <div>
             <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">Confirm New Password</label>
             <input type="password" id="confirmNewPasswordShared" autocomplete="new-password"
-              class="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--button-bg)]/50 focus:border-[var(--button-bg)] transition-all duration-200">
-            <p id="confirmErrorShared" class="mt-2 text-sm text-red-500 hidden">Passwords do not match.</p>
+              class="w-full px-4 py-3 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--button-bg)]/50 focus:border-[var(--button-bg)] transition-all duration-200" />
+            <p id="confirmErrorShared" class="mt-2 text-sm text-red-500 hidden">
+              Passwords do not match.
+            </p>
           </div>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-2">
           <button type="button" data-update-password-cancel
-            class="px-4 py-2 rounded-lg border border-[var(--button-border)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]/10 transition-colors">Cancel</button>
+            class="px-4 py-2 rounded-lg border border-[var(--button-border)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]/10 transition-colors">
+            Cancel
+          </button>
           <button id="updatePasswordSubmitShared" type="submit" disabled
-            class="px-4 py-2 rounded-lg border border-[var(--button-border)] bg-[var(--button-bg)] text-[var(--button-text)] hover:opacity-90 font-semibold transition-colors">Update
-            Password</button>
+            class="px-4 py-2 rounded-lg border border-[var(--button-border)] bg-[var(--button-bg)] text-[var(--button-text)] hover:opacity-90 font-semibold transition-colors">
+            Update Password
+          </button>
         </div>
       </form>
     </div>
@@ -560,7 +714,9 @@
           <div class="space-y-6">
             <div>
               <h3 class="text-xl font-semibold">Permit Request</h3>
-              <p class="text-sm">Fill in the details below to submit a new request.</p>
+              <p class="text-sm">
+                Fill in the details below to submit a new request.
+              </p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
               <!-- Requester Details -->
@@ -627,7 +783,9 @@
                     <div class="md-input">
                       <label for="terminal">Terminal</label>
                       <select id="terminal" name="terminal">
-                        <option value="" disabled selected>Select the Terminal</option>
+                        <option value="" disabled selected>
+                          Select the Terminal
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -637,7 +795,9 @@
                     <div class="md-input">
                       <label for="facility">Facility</label>
                       <select id="facility" name="facility">
-                        <option value="" disabled selected>Select the Facility</option>
+                        <option value="" disabled selected>
+                          Select the Facility
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -663,7 +823,9 @@
                     <div class="md-input">
                       <label for="impact">Impact on Operation</label>
                       <select id="impact" name="impact">
-                        <option value="" disabled selected>Will there be any impact on operations?</option>
+                        <option value="" disabled selected>
+                          Will there be any impact on operations?
+                        </option>
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
                       </select>
@@ -675,7 +837,9 @@
                     <div class="md-input">
                       <label for="levelOfImpact">Level of Impact</label>
                       <select id="levelOfImpact" name="levelOfImpact">
-                        <option value="" disabled selected>Select Level of Impact</option>
+                        <option value="" disabled selected>
+                          Select Level of Impact
+                        </option>
                         <option value="Low">Low</option>
                         <option value="Medium">Medium</option>
                         <option value="High">High</option>
@@ -689,7 +853,9 @@
                     <div class="md-input">
                       <label for="equipmentTypeInput">Type of Affected Equipment</label>
                       <select id="equipmentTypeInput" name="equipmentTypeInput">
-                        <option value="" disabled selected>Select Equipment Type</option>
+                        <option value="" disabled selected>
+                          Select Equipment Type
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -707,7 +873,9 @@
                     <div class="md-input">
                       <label for="natureOfWork">Nature of Work</label>
                       <select id="natureOfWork" name="natureOfWork">
-                        <option value="" disabled selected>Select Nature of Work</option>
+                        <option value="" disabled selected>
+                          Select Nature of Work
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -719,7 +887,6 @@
                       <textarea id="workDescription" name="workDescription" placeholder=" "></textarea>
                     </div>
                   </div>
-
                 </fieldset>
               </section>
 
@@ -733,8 +900,10 @@
 
                   <div class="form-group">
                     <label>e-Permit Available?</label>
-                    <input type="radio" id="ePermitYes" name="ePermit" value="Yes"> Yes
-                    <input type="radio" id="ePermitNo" name="ePermit" value="No"> No
+                    <input type="radio" id="ePermitYes" name="ePermit" value="Yes" />
+                    Yes
+                    <input type="radio" id="ePermitNo" name="ePermit" value="No" />
+                    No
                     <div id="ePermitDetails" class="hidden">
                       <div class="md-input">
                         <input type="text" id="ePermitReason" name="ePermitReason" placeholder=" " />
@@ -745,8 +914,10 @@
 
                   <div class="form-group">
                     <label>FMM Workorder Available?</label>
-                    <input type="radio" id="fmmWorkorderYes" name="fmmWorkorder" value="Yes"> Yes
-                    <input type="radio" id="fmmWorkorderNo" name="fmmWorkorder" value="No"> No
+                    <input type="radio" id="fmmWorkorderYes" name="fmmWorkorder" value="Yes" />
+                    Yes
+                    <input type="radio" id="fmmWorkorderNo" name="fmmWorkorder" value="No" />
+                    No
                     <div id="fmmwrkordr" class="hidden">
                       <div class="md-input">
                         <input type="text" id="noFmmWorkorder" name="noFmmWorkorder" placeholder=" " />
@@ -757,8 +928,10 @@
 
                   <div class="form-group">
                     <label>HSE Risk Assessment Available?</label>
-                    <input type="radio" id="hseRiskYes" name="hseRisk" value="Yes"> Yes
-                    <input type="radio" id="hseRiskNo" name="hseRisk" value="No"> No
+                    <input type="radio" id="hseRiskYes" name="hseRisk" value="Yes" />
+                    Yes
+                    <input type="radio" id="hseRiskNo" name="hseRisk" value="No" />
+                    No
                     <div id="hseassmnt" class="hidden">
                       <div class="md-input">
                         <input type="text" id="noHseRiskAssessmentReason" name="noHseRiskAssessmentReason"
@@ -770,8 +943,10 @@
 
                   <div class="form-group">
                     <label>Operations Risk Assessment Available?</label>
-                    <input type="radio" id="opRiskYes" name="opRisk" value="Yes"> Yes
-                    <input type="radio" id="opRiskNo" name="opRisk" value="No"> No
+                    <input type="radio" id="opRiskYes" name="opRisk" value="Yes" />
+                    Yes
+                    <input type="radio" id="opRiskNo" name="opRisk" value="No" />
+                    No
                     <div id="opsassmnt" class="hidden">
                       <div class="md-input">
                         <input type="text" id="noOpsRiskAssessmentReason" name="noOpsRiskAssessmentReason"
@@ -782,7 +957,9 @@
                   </div>
 
                   <fieldset>
-                    <legend id="fileUploadLegend" class="hidden">File Upload</legend>
+                    <legend id="fileUploadLegend" class="hidden">
+                      File Upload
+                    </legend>
                     <div id="fileUploadSection" class="hidden">
                       <div
                         class="form-group file-upload border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
@@ -838,15 +1015,30 @@
                   <div class="space-y-2">
                     <p>I confirm that:</p>
                     <ul class="list-disc pl-6 space-y-1">
-                      <li>I have read this Permit to Work and fully understand on which equipment I am permitted to work
-                        and the work to be carried out.</li>
-                      <li>No attempt will be made by me or anyone under my charge to carry out any other work or work on
-                        other equipment.</li>
-                      <li>Should the requirements change, I will inform voluntarily to the permit issuer to advise of
-                        any changes necessary.</li>
-                      <li>I agree to the working window and will ensure that all staff and equipment vacate the area
-                        prior to this time.</li>
-                      <li>I have been made aware of the risks involved with working on this equipment.</li>
+                      <li>
+                        I have read this Permit to Work and fully understand
+                        on which equipment I am permitted to work and the work
+                        to be carried out.
+                      </li>
+                      <li>
+                        No attempt will be made by me or anyone under my
+                        charge to carry out any other work or work on other
+                        equipment.
+                      </li>
+                      <li>
+                        Should the requirements change, I will inform
+                        voluntarily to the permit issuer to advise of any
+                        changes necessary.
+                      </li>
+                      <li>
+                        I agree to the working window and will ensure that all
+                        staff and equipment vacate the area prior to this
+                        time.
+                      </li>
+                      <li>
+                        I have been made aware of the risks involved with
+                        working on this equipment.
+                      </li>
                     </ul>
                   </div>
                   <div class="form-group">
@@ -884,8 +1076,9 @@
           <i class="fas fa-info-circle text-xl"></i>
         </div>
         <div class="flex-1">
-          <h2 id="notification-detail-title" class="text-lg font-semibold text-gray-800 dark:text-white">Notification
-            Details</h2>
+          <h2 id="notification-detail-title" class="text-lg font-semibold text-gray-800 dark:text-white">
+            Notification Details
+          </h2>
           <p id="notification-detail-time" class="text-xs text-gray-500 dark:text-gray-400 mt-1"></p>
         </div>
         <button type="button" data-notification-detail-close
@@ -928,13 +1121,13 @@
           <label class="block text-sm font-medium mb-1">Start Date</label>
           <input type="text" id="reportStartDate" name="startDate"
             class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
-            readonly>
+            readonly />
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">End Date</label>
           <input type="text" id="reportEndDate" name="endDate"
             class="w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]"
-            readonly>
+            readonly />
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Format</label>
@@ -947,9 +1140,13 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" id="cancelReportDownload"
-            class="px-4 py-2 rounded border border-[var(--button-border)] bg-transparent text-[var(--text-primary)]">Cancel</button>
+            class="px-4 py-2 rounded border border-[var(--button-border)] bg-transparent text-[var(--text-primary)]">
+            Cancel
+          </button>
           <button type="submit"
-            class="px-4 py-2 rounded border bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)] text-[var(--button-text)] font-semibold">Download</button>
+            class="px-4 py-2 rounded border bg-[var(--button-bg)] hover:bg-[var(--button-hover-bg)] text-[var(--button-text)] font-semibold">
+            Download
+          </button>
         </div>
       </form>
     </div>
@@ -959,8 +1156,8 @@
   <script src="../shared/toast.js" defer></script>
   <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-  <script src="layout.js" defer></script>
-
+  <script src="validators.js" defer></script>
+  <script src="../shared/layout.js" defer></script>
 </body>
 
 </html>

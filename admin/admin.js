@@ -1,3053 +1,2032 @@
-// Initialize admin page after shared layout is mounted.
-// admin-specific behaviors when the layout is available.
-function initAdmin() {
+function markAsAdminPage() {
   try {
-    if (typeof checkSession === "function") checkSession();
-    if (typeof initIdleTimer === "function") initIdleTimer();
-  } catch (err) {
-    console.warn("session/initIdleTimer error", err);
-  }
-
-  // Defer loading of page data — loadUsers and loadRolesIntoSelect are
-  // declared later in this file (function declarations are hoisted).
-  try {
-    if (typeof loadUsers === "function") loadUsers();
-  } catch (e) {
-    console.warn("loadUsers failed", e);
-  }
-  try {
-    if (typeof loadRolesIntoSelect === "function") loadRolesIntoSelect();
-  } catch (e) {
-    console.warn("loadRolesIntoSelect failed", e);
-  }
-  try {
-    if (typeof setupAnnouncementHandlers === "function")
-      setupAnnouncementHandlers();
-  } catch (e) {
-    console.warn("setupAnnouncementHandlers failed", e);
-  }
-}
-
-// Ensure cards start collapsed when their content is hidden (runs once)
-(function applyInitialCollapsedState() {
-  try {
-    document
-      .querySelectorAll('[data-action="toggleSection"]')
-      .forEach((btn) => {
-        try {
-          const section = btn.dataset.section;
-          const card = btn.closest(".section-card");
-          const content = document.getElementById(`${section}Content`);
-          if (card)
-            card.classList.toggle(
-              "collapsed",
-              !!(content && content.classList.contains("hidden"))
-            );
-        } catch (e) {
-          /* ignore per-item */
-        }
-      });
-  } catch (e) {
-    /* ignore */
-  }
-})();
-
-if (document.querySelector("[data-layout-wrapper]")) {
-  // Layout already present (maybe pre-mounted) — run on next frame.
-  window.requestAnimationFrame(initAdmin);
-} else {
-  // Wait for the shared layout to be injected by layout.mount.js
-  window.addEventListener("layout:mounted", initAdmin, { once: true });
-}
-// ===== Skeleton loader helpers =====
-function showSkeleton(tableId, show = true) {
-  const skeleton = document.getElementById(tableId + "Skeleton");
-  const body = document.getElementById(tableId + "Body");
-  if (skeleton) skeleton.style.display = show ? "" : "none";
-  if (body) body.style.display = show ? "none" : "";
-}
-
-// ===== Status chip rendering =====
-function statusChip(status) {
-  if (!status) return "";
-  const norm = String(status).toLowerCase();
-  let chipClass = "status-chip";
-  if (norm === "active") chipClass += " active";
-  else if (norm === "disabled") chipClass += " disabled";
-  else if (norm === "pending") chipClass += " pending";
-  else if (norm === "in progress" || norm === "inprogress")
-    chipClass += " inprogress";
-  else if (norm === "expired") chipClass += " expired";
-  return `<span class="${chipClass}">${status}</span>`;
-}
-import { checkSession, initIdleTimer, logoutUser } from "../session.js";
-import { formatDate24, formatLastLogin } from "../date-utils.js";
-import { API_BASE } from "../config.js";
-
-/* ===== Constants ===== */
-
-/* ===== Role normalization (fix Pre-Approver mismatch) =====
- */
-const ROLE_MAP = {
-  admin: "Admin",
-  approver: "Approver",
-  "pre-approver": "PreApprover",
-  preapprover: "PreApprover",
-  "pre approver": "PreApprover",
-  requester: "Requester",
-  user: "User",
-};
-
-/* ===== Toast ===== */
-function showToast(message, type = "success", duration = 3000) {
-  // Prefer shared global toast if available (signature: showToast(type, message, opts))
-  if (typeof window !== "undefined" && typeof window.showToast === "function") {
-    try {
-      window.showToast(type, message, { timeout: duration });
-      return;
-    } catch (e) {
-      // fall through to local fallback
-      console.warn("shared showToast failed, falling back", e);
+    const layoutWrapper = document.querySelector("[data-layout-wrapper]");
+    if (layoutWrapper) {
+      layoutWrapper.classList.remove("container");
+      layoutWrapper.classList.add("w-full");
     }
-  }
 
-  // Local fallback (simple inline element)
-  // Create a lightweight toast container and element similar to shared/toast.js
-  const ensureContainer = () => {
-    let c = document.getElementById("toastContainer");
-    if (!c) {
-      c = document.createElement("div");
-      c.id = "toastContainer";
-      c.setAttribute("aria-live", "polite");
-      Object.assign(c.style, {
-        position: "fixed",
-        top: "16px",
-        right: "16px",
-        zIndex: "9999",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-        pointerEvents: "none",
-      });
-      document.body.appendChild(c);
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) {
+      mainContent.classList.remove("admin-full-width");
     }
-    return c;
-  };
 
-  const container = ensureContainer();
-  // remove existing toasts
-  Array.from(container.querySelectorAll(".toast")).forEach((el) => {
+    // Also ensure the page <main> element is full width
+    const mainElement = document.querySelector("main");
+    if (mainElement) {
+      // ensure the inner <main> has full width utilities but allow the shared layout to control shifting
+      mainElement.classList.add("w-full");
+      mainElement.classList.remove("admin-full-width");
+    }
+  } catch (e) {
+    console.warn("markAsAdminPage failed:", e);
+  }
+}
+
+// Load users list and admin stats, populate the users table
+function resolveApiBase() {
+  try {
+    // Prefer globally exposed helpers
+    if (typeof getApiBase === "function") return getApiBase();
+    if (typeof window.getApiBase === "function") return window.getApiBase();
+
+    // LocalStorage override
     try {
-      el.remove();
+      const ls = localStorage.getItem("API_BASE");
+      if (ls && ls.trim()) return ls.trim();
     } catch (_) {}
-  });
 
-  const t = document.createElement("div");
-  t.className = `toast toast--${type}`;
-  t.setAttribute("role", "status");
-  t.setAttribute("aria-live", "polite");
-  Object.assign(t.style, {
-    padding: "12px 14px",
-    borderRadius: "10px",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    pointerEvents: "auto",
-    minWidth: "220px",
-    maxWidth: "420px",
-    opacity: "0",
-    transition: "opacity 160ms ease, transform 200ms cubic-bezier(.2,.9,.2,1)",
-    transform: "translateY(-6px)",
-  });
-  t.innerHTML = `
-        <div style="flex:0 0 auto; font-size:18px;line-height:1">${
-          type === "success"
-            ? '<i class="fas fa-check-circle"></i>'
-            : type === "info"
-            ? '<i class="fas fa-info-circle"></i>'
-            : '<i class="fas fa-exclamation-circle"></i>'
-        }</div>
-        <div style="flex:1 1 auto; font-size:14px; line-height:1.2">${String(
-          message
-        )}</div>
-        <button style="flex:0 0 auto; background:transparent; border:none; color:inherit; font-size:18px; cursor:pointer;" class="toast-close" aria-label="Dismiss">&times;</button>
-    `;
-  const closeBtn = t.querySelector(".toast-close");
-  closeBtn.addEventListener("click", () => {
+    // Meta tag injection
     try {
-      t.remove();
+      const meta = document.querySelector('meta[name="api-base"]');
+      if (meta && meta.content && meta.content.trim())
+        return meta.content.trim();
     } catch (_) {}
-  });
-  container.insertBefore(t, container.firstChild);
-  requestAnimationFrame(() => {
-    t.style.opacity = "1";
-    t.style.transform = "translateY(0)";
-  });
-  const timeout = duration || (type === "success" ? 2200 : 4800);
-  let to = setTimeout(() => {
+
+    // Fallback: same-origin (avoid returning empty which leads to malformed URLs)
+    const { protocol, hostname, port } = window.location;
+    const origin = `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+    return origin;
+  } catch (e) {
+    // Absolute safest fallback: current origin
     try {
-      t.remove();
-    } catch (_) {}
-  }, timeout);
-  t.addEventListener("mouseenter", () => {
-    if (to) {
-      clearTimeout(to);
-      to = null;
+      return window.location.origin;
+    } catch (_) {
+      return ""; // last resort
     }
-  });
-  t.addEventListener("mouseleave", () => {
-    if (!to) {
-      to = setTimeout(() => {
-        try {
-          t.remove();
-        } catch (_) {}
-      }, 1600);
-    }
-  });
+  }
 }
+// last fetched users cache (for modal lookups)
+let _lastUsers = [];
+let _usersCurrentPage = 1;
+let _usersPerPage = 10;
+let _usersSortField = null;
+let _usersSortOrder = "asc";
 
-/* ===== Shared confirmation modal helper =====
-   Uses the existing `publish-confirm-modal` element (shared in layout)
-   to show a title/message and optional input. Returns a Promise that
-   resolves to an object: { confirmed: boolean, value?: string }
-*/
-function showConfirmModal({
-  title = "Confirm",
-  message = "",
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  input = null,
-} = {}) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById("publish-confirm-modal");
-    if (!modal) {
-      // No shared modal available — do not use native confirm; resolve as not confirmed
-      return resolve({ confirmed: false });
-    }
+async function loadUsers() {
+  const tbody = document.getElementById("usersTableBody");
+  if (!tbody) return;
 
-    const titleEl = modal.querySelector("#publish-confirm-title");
-    const msgEl = modal.querySelector("#publish-confirm-message");
-    const confirmBtn = modal.querySelector("#publishConfirmBtn");
-    const cancelBtn = modal.querySelector("#publishCancelBtn");
+  try {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="p-8 text-center"><div class="flex items-center justify-center gap-2 text-[var(--text-secondary)]"><i class="fas fa-spinner fa-spin"></i><span>Loading users...</span></div></td></tr>';
 
-    if (titleEl) titleEl.textContent = title;
-    if (msgEl) {
-      msgEl.textContent = "";
-      if (message) msgEl.appendChild(document.createTextNode(message));
-    }
-
-    // If an input is requested, insert it into the message area
-    let inputEl = null;
-    if (input && msgEl) {
-      inputEl = document.createElement("input");
-      inputEl.type = input.type || "text";
-      inputEl.placeholder = input.placeholder || "";
-      inputEl.className =
-        "mt-2 w-full px-3 py-2 bg-[var(--input-bg)] border border-[var(--input-border)] rounded text-[var(--text-primary)]";
-      msgEl.appendChild(document.createElement("br"));
-      msgEl.appendChild(inputEl);
-      // focus on next frame
-      setTimeout(() => {
-        try {
-          inputEl.focus();
-        } catch (_) {}
-      }, 50);
-    }
-
-    if (confirmBtn) confirmBtn.textContent = confirmText;
-    if (cancelBtn) cancelBtn.textContent = cancelText;
-
-    const cleanup = () => {
-      modal.classList.add("hidden");
-      // remove any input we added
-      if (inputEl && inputEl.parentNode) {
-        try {
-          inputEl.parentNode.removeChild(inputEl);
-        } catch (_) {}
+    const base = resolveApiBase();
+    const usersEndpoint = `${base.replace(/\/$/, "")}/admin/users`;
+    // Guard: if base accidentally resolved to 'null' or an empty string, log and abort early
+    if (!base || base === "null") {
+      console.error("[Admin Debug] Invalid API base resolved:", base);
+      if (typeof window.showToast === "function") {
+        window.showToast(
+          "error",
+          "Invalid API base; set localStorage.API_BASE to http://localhost:5000"
+        );
       }
-    };
-
-    const onConfirm = () => {
-      cleanup();
-      resolve({ confirmed: true, value: inputEl ? inputEl.value : undefined });
-    };
-
-    const onCancel = () => {
-      cleanup();
-      resolve({ confirmed: false });
-    };
-
-    // Attach handlers once
-    if (confirmBtn)
-      confirmBtn.addEventListener("click", onConfirm, { once: true });
-    if (cancelBtn)
-      cancelBtn.addEventListener("click", onCancel, { once: true });
-
-    // show modal
-    modal.classList.remove("hidden");
-  });
-}
-
-/* ===== Announcements (Admin UI) ===== */
-async function fetchAdminAnnouncements() {
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/system-messages`, {
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="p-4 text-center text-sm text-red-600">Invalid API base. Open DevTools console for instructions.</td></tr>';
+      return;
+    }
+    const res = await fetch(usersEndpoint, {
       credentials: "include",
+      headers: { Accept: "application/json" },
     });
-    if (!res.ok) throw new Error("Failed to fetch");
-    return await res.json();
-  } catch (err) {
-    console.warn("fetchAdminAnnouncements failed", err);
-    return [];
-  }
-}
 
-// Translation removed — no client-side translateText function anymore
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`HTTP ${res.status}: ${txt}`);
+    }
 
-function debounce(fn, wait = 300) {
-  let t = null;
-  return function (...args) {
-    clearTimeout(t);
-    t = setTimeout(() => fn.apply(this, args), wait);
-  };
-}
+    const users = await res.json();
+    _lastUsers = users || [];
 
-// Detect presence of strong RTL characters (Arabic, Hebrew ranges)
-function containsRTL(s) {
-  if (!s) return false;
-  return /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/.test(String(s));
-}
-
-function renderAnnouncementList(items = []) {
-  const list = document.getElementById("announcementList");
-  if (!list) return;
-  list.innerHTML = "";
-  if (!items || items.length === 0) {
-    list.innerHTML =
-      '<div class="text-sm text-[var(--text-secondary)]">No announcements yet.</div>';
-    return;
-  }
-  items.forEach((it) => {
-    const el = document.createElement("div");
-    el.className = "p-3 border rounded hover-lite";
-    const defaultMsg = (it.message || "").slice(0, 240);
-    el.innerHTML = `
-            <div>
-                <div class="text-sm font-semibold">${(it.title || "").slice(
-                  0,
-                  80
-                )}</div>
-                <div class="text-sm text-[var(--text-secondary)] whitespace-pre-line">${defaultMsg}</div>
-                <div class="mt-2 flex items-center gap-2">
-                    <button data-action="edit" data-id="${
-                      it.id
-                    }" class="text-xs text-[var(--link-color)]">Edit</button>
-                    <button data-action="delete" data-id="${
-                      it.id
-                    }" class="text-xs text-red-600">Delete</button>
-                    <button data-action="toggle" data-id="${
-                      it.id
-                    }" class="text-xs">${
-      it.isActive ? "Unpublish" : "Publish"
-    }</button>
-                    <span class="ml-auto text-xs text-[var(--text-secondary)]">${new Date(
-                      it.updatedAt || it.createdAt
-                    ).toLocaleString()}</span>
-                </div>
-            </div>
-        `;
-    list.appendChild(el);
-  });
-}
-
-function openAnnouncementModal(data = null) {
-  const modal = document.getElementById("announcement-modal");
-  if (!modal) return;
-  const id = document.getElementById("announcement_id");
-  const title = document.getElementById("announcement_title");
-  const editor = document.getElementById("announcement_editor");
-  const hiddenMsg = document.getElementById("announcement_message");
-  const active = document.getElementById("announcement_active");
-
-  if (data) {
-    id.value = data.id || "";
-    title.value = data.title || "";
-    if (editor) editor.innerHTML = data.message || "";
-    if (hiddenMsg) hiddenMsg.value = data.message || "";
-    // icons removed from modal; ignore any existing icon field
-    active.checked = !!data.isActive;
-  } else {
-    id.value = "";
-    title.value = "";
-    if (editor) editor.innerHTML = "";
-    if (hiddenMsg) hiddenMsg.value = "";
-    // icons removed
-    active.checked = true;
-  }
-  modal.classList.remove("hidden");
-
-  // Setup editor live translation and icon select
-  try {
-    // Ensure handlers are wired and apply language orientation for existing data
-    setupAnnouncementHandlers();
-    // If we have a language stored on the message use it, otherwise detect from content
+    // Default: sort users alphabetically by username for consistent display
     try {
-      const langSel = document.getElementById("announcement_lang");
-      const titleEl = document.getElementById("announcement_title");
-      const editorEl = document.getElementById("announcement_editor");
-      if (langSel) {
-        if (data && data.lang) {
-          langSel.value = data.lang;
+      _lastUsers.sort((a, b) => {
+        const aName = (a.username || a.fullName || "").toLowerCase();
+        const bName = (b.username || b.fullName || "").toLowerCase();
+        if (aName < bName) return -1;
+        if (aName > bName) return 1;
+        return 0;
+      });
+    } catch (e) {
+      // ignore sort failures
+    }
+
+    // Load stats
+    try {
+      const statsRes = await fetch(`${resolveApiBase()}/admin/stats`, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (statsRes.ok) {
+        const stats = await statsRes.json();
+        const n = (v) => (typeof v === "number" ? v : v || "—");
+        document.getElementById("statUsers")?.textContent &&
+          (document.getElementById("statUsers").textContent = n(
+            stats.totalUsers
+          ));
+        document.getElementById("statActiveUsers")?.textContent &&
+          (document.getElementById("statActiveUsers").textContent = n(
+            stats.activeUsers
+          ));
+        document.getElementById("statInactiveUsers")?.textContent &&
+          (document.getElementById("statInactiveUsers").textContent = n(
+            stats.inactiveUsers
+          ));
+        document.getElementById("statAdmins")?.textContent &&
+          (document.getElementById("statAdmins").textContent = n(stats.admins));
+        document.getElementById("statApprovers")?.textContent &&
+          (document.getElementById("statApprovers").textContent = n(
+            stats.approvers || 0
+          ));
+        document.getElementById("statPreApprovers")?.textContent &&
+          (document.getElementById("statPreApprovers").textContent = n(
+            stats.preApprovers || 0
+          ));
+
+        // Calculate requesters
+        const requesters =
+          stats.totalUsers -
+          stats.admins -
+          (stats.approvers || 0) -
+          (stats.preApprovers || 0);
+        document.getElementById("statRequesters")?.textContent &&
+          (document.getElementById("statRequesters").textContent = n(
+            requesters > 0 ? requesters : 0
+          ));
+      }
+    } catch (err) {
+      console.warn("Failed to load user stats:", err);
+    }
+
+    renderUsersTable();
+    setupUsersFilters();
+  } catch (err) {
+    console.error("Failed to load users:", err);
+    if (typeof window.showToast === "function")
+      window.showToast("error", "Failed to load users");
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="p-4 text-center text-sm text-red-600">Error loading users</td></tr>';
+  }
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById("usersTableBody");
+  if (!tbody) return;
+
+  // Apply filters
+  const searchTerm =
+    document.getElementById("usersSearchInput")?.value.toLowerCase() || "";
+  const roleFilter = document.getElementById("usersRoleFilter")?.value || "";
+  const statusFilter =
+    document.getElementById("usersStatusFilter")?.value || "";
+
+  let filtered = _lastUsers.filter((u) => {
+    const matchesSearch =
+      !searchTerm ||
+      (u.username && u.username.toLowerCase().includes(searchTerm)) ||
+      (u.email && u.email.toLowerCase().includes(searchTerm)) ||
+      (u.role && u.role.toLowerCase().includes(searchTerm));
+
+    const matchesRole = !roleFilter || u.role === roleFilter;
+    const matchesStatus = !statusFilter || u.status === statusFilter;
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  // Apply sorting
+  if (_usersSortField) {
+    filtered.sort((a, b) => {
+      // Map sortable field names from headers to actual object properties
+      const field = _usersSortField;
+      let aVal = "";
+      let bVal = "";
+
+      if (field === "registered") {
+        aVal =
+          a.registered && a.registered !== "—"
+            ? new Date(a.registered).getTime()
+            : 0;
+        bVal =
+          b.registered && b.registered !== "—"
+            ? new Date(b.registered).getTime()
+            : 0;
+      } else {
+        // header 'name' corresponds to username/fullName
+        if (field === "name") {
+          aVal = (a.username || a.fullName || "").toString().toLowerCase();
+          bVal = (b.username || b.fullName || "").toString().toLowerCase();
+        } else if (field === "email") {
+          aVal = (a.email || "").toString().toLowerCase();
+          bVal = (b.email || "").toString().toLowerCase();
+        } else if (field === "role") {
+          aVal = (a.role || "").toString().toLowerCase();
+          bVal = (b.role || "").toString().toLowerCase();
+        } else if (field === "status") {
+          aVal = (a.status || "").toString().toLowerCase();
+          bVal = (b.status || "").toString().toLowerCase();
         } else {
-          // infer from content
-          const sample = (data && (data.message || data.title)) || "";
-          langSel.value = containsRTL(sample) ? "ar" : "en";
+          aVal = String(a[field] || "").toLowerCase();
+          bVal = String(b[field] || "").toLowerCase();
         }
-        // apply orientation
-        const applyLang = (l) => {
-          const isAr = String(l) === "ar";
-          const dir = isAr ? "rtl" : "ltr";
-          if (titleEl) {
-            titleEl.dir = dir;
-            titleEl.style.textAlign = isAr ? "right" : "left";
-          }
-          if (editorEl) {
-            editorEl.dir = dir;
-            editorEl.style.textAlign = isAr ? "right" : "left";
-          }
-          const hidden = document.getElementById("announcement_message");
-          if (hidden) hidden.dir = dir;
-        };
-        applyLang(langSel.value);
       }
-    } catch (e) {
-      /* ignore */
-    }
-  } catch (e) {
-    console.debug("setupAnnouncementHandlers", e);
+
+      if (aVal < bVal) return _usersSortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return _usersSortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
   }
+
+  // Pagination
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / _usersPerPage);
+  const start = (_usersCurrentPage - 1) * _usersPerPage;
+  const end = start + _usersPerPage;
+  const paginated = filtered.slice(start, end);
+
+  // Update counts
+  document.getElementById("usersShowingCount").textContent = paginated.length;
+  document.getElementById("usersTotalCount").textContent = total;
+
+  if (paginated.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="p-8 text-center text-sm text-[var(--text-secondary)]"><i class="fas fa-inbox text-3xl mb-2 opacity-30"></i><div>No users found</div></td></tr>';
+  } else {
+    tbody.innerHTML = paginated
+      .map((u) => {
+        const registered =
+          u.registered && u.registered !== "—"
+            ? new Date(u.registered).toLocaleString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—";
+        const phone = u.phone || "—";
+        const role = u.role || "—";
+        const status = u.status || "—";
+        const name = u.username || "—";
+
+        // Role badge colors
+        let roleBadge =
+          "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+        if (role === "Admin")
+          roleBadge =
+            "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300";
+        else if (role === "Approver")
+          roleBadge =
+            "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
+        else if (role === "PreApprover")
+          roleBadge =
+            "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300";
+        else if (role === "Requester")
+          roleBadge =
+            "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300";
+
+        // Status badge
+        const statusBadge =
+          status === "Active"
+            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+
+        return `
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+            <td data-label="Name" class="px-4 py-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full avatar-accent flex items-center justify-center text-white font-semibold text-xs">
+                  ${escapeHtml(name.charAt(0).toUpperCase())}
+                </div>
+                <div class="font-medium text-[var(--text-primary)]">${escapeHtml(
+                  name
+                )}</div>
+              </div>
+            </td>
+            <td data-label="Email" class="px-4 py-3.5 text-sm text-[var(--text-secondary)]">${escapeHtml(
+              u.email || "—"
+            )}</td>
+            <td data-label="Phone" class="px-4 py-3.5 text-sm text-[var(--text-secondary)]">
+              <div class="flex items-center gap-1.5">
+                <i class="fas fa-phone text-xs"></i>
+                ${escapeHtml(phone)}
+              </div>
+            </td>
+            <td data-label="Role" class="px-4 py-3.5">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge}">
+                ${escapeHtml(role)}
+              </span>
+            </td>
+            <td data-label="Status" class="px-4 py-3.5">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge}">
+                <i class="fas ${
+                  status === "Active" ? "fa-check-circle" : "fa-times-circle"
+                } text-xs"></i>
+                ${escapeHtml(status)}
+              </span>
+            </td>
+            <td data-label="Registered" class="px-4 py-3.5 text-sm text-[var(--text-secondary)]">
+              <div class="flex items-center gap-1.5">
+                <i class="far fa-calendar text-xs"></i>
+                ${registered}
+              </div>
+            </td>
+            <td data-label="Actions" class="px-4 py-3.5 text-center min-w-[100px]">
+              <button class="user-details-btn px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5" data-user-id="${
+                u.id
+              }" title="View Details">
+                <i class="fas fa-eye"></i>
+                <span>Details</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  // Render pagination
+  renderUsersPagination(totalPages);
 }
 
-function closeAnnouncementModal() {
-  const modal = document.getElementById("announcement-modal");
-  if (!modal) return;
-  modal.classList.add("hidden");
-}
+function renderUsersPagination(totalPages) {
+  const container = document.getElementById("usersPagination");
+  if (!container) return;
 
-async function saveAnnouncement() {
-  const id = document.getElementById("announcement_id").value;
-  const title = document.getElementById("announcement_title").value.trim();
-  const message = (
-    document.getElementById("announcement_editor")?.innerHTML ||
-    document.getElementById("announcement_message")?.value ||
-    ""
-  ).trim();
-  // keep hidden textarea in sync (for progressive enhancement)
-  const hiddenMsgEl = document.getElementById("announcement_message");
-  if (hiddenMsgEl) hiddenMsgEl.value = message;
-  const isActive = document.getElementById("announcement_active").checked;
-  const lang = document.getElementById("announcement_lang")
-    ? document.getElementById("announcement_lang").value
-    : "en";
-  const start = document.getElementById("announcement_start")
-    ? document.getElementById("announcement_start").value.trim()
-    : "";
-  const end = document.getElementById("announcement_end")
-    ? document.getElementById("announcement_end").value.trim()
-    : "";
-
-  // Normalize message: strip HTML and check visible text to avoid saving empty content like <br> or &nbsp;
-  const getPlainTextFromHtml = (html) => {
-    try {
-      const tmp = document.createElement("div");
-      tmp.innerHTML = html || "";
-      return (tmp.textContent || tmp.innerText || "").replace(/\u00A0/g, "");
-    } catch (e) {
-      return String(html || "").replace(/<[^>]*>/g, "");
-    }
-  };
-  const plainMessage = getPlainTextFromHtml(message).trim();
-  if (!plainMessage) {
-    showToast("Message is required", "error");
+  if (totalPages <= 1) {
+    container.innerHTML = "";
     return;
   }
 
-  // Date validation: ensure start/end (if provided) are future dates and end >= start
-  const parseLocalDateTime = (s) => {
-    if (!s) return null;
-    // convert 'YYYY-MM-DD HH:mm' to 'YYYY-MM-DDTHH:mm' for reliable parsing
-    const iso = s.replace(" ", "T");
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? null : d;
-  };
+  let html = [];
 
-  const now = new Date();
-  if (start) {
-    const sd = parseLocalDateTime(start);
-    if (!sd) {
-      showToast("Start date format is invalid", "error");
-      return;
-    }
-    if (sd <= now) {
-      showToast("Start date must be in the future", "error");
-      return;
-    }
-  }
-  if (end) {
-    const ed = parseLocalDateTime(end);
-    if (!ed) {
-      showToast("End date format is invalid", "error");
-      return;
-    }
-    if (ed <= now) {
-      showToast("End date must be in the future", "error");
-      return;
-    }
-    if (start) {
-      const sd = parseLocalDateTime(start);
-      if (sd && ed < sd) {
-        showToast("End date must be the same as or after start date", "error");
-        return;
-      }
-    }
+  // Previous button
+  html.push(`
+    <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium transition-colors ${
+      _usersCurrentPage === 1
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-[var(--input-bg)]"
+    }" 
+      ${_usersCurrentPage === 1 ? "disabled" : ""} 
+      onclick="changeUsersPage(${_usersCurrentPage - 1})">
+      <i class="fas fa-chevron-left text-xs"></i>
+    </button>
+  `);
+
+  // Page numbers
+  for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+    html.push(`
+      <button class="px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+        i === _usersCurrentPage
+          ? "bg-hia-blue text-white border-hia-blue"
+          : "border-[var(--input-border)] hover:bg-[var(--input-bg)]"
+      }" 
+        onclick="changeUsersPage(${i})">
+        ${i}
+      </button>
+    `);
   }
 
-  try {
-    const payload = {
-      title,
-      message,
-      isActive,
-      lang,
-    };
-    if (start) payload.startAt = start;
-    if (end) payload.endAt = end;
-
-    if (id) {
-      const res = await fetch(`${API_BASE}/api/system-message/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Update failed");
-      showToast("Announcement updated", "success");
-    } else {
-      const res = await fetch(`${API_BASE}/api/system-message`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Create failed");
-      showToast("Announcement created", "success");
-    }
-    // refresh list
-    await loadAnnouncementsIntoModal();
-    closeAnnouncementModal();
-  } catch (err) {
-    console.error("saveAnnouncement error", err);
-    showToast("Failed to save announcement", "error");
+  if (totalPages > 5) {
+    html.push('<span class="px-2 text-[var(--text-secondary)]">...</span>');
+    html.push(`
+      <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium hover:bg-[var(--input-bg)] transition-colors" 
+        onclick="changeUsersPage(${totalPages})">
+        ${totalPages}
+      </button>
+    `);
   }
+
+  // Next button
+  html.push(`
+    <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium transition-colors ${
+      _usersCurrentPage === totalPages
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-[var(--input-bg)]"
+    }" 
+      ${_usersCurrentPage === totalPages ? "disabled" : ""} 
+      onclick="changeUsersPage(${_usersCurrentPage + 1})">
+      <i class="fas fa-chevron-right text-xs"></i>
+    </button>
+  `);
+
+  container.innerHTML = html.join("");
 }
 
-async function deleteAnnouncement(id) {
-  // confirmation should be handled by the caller (UI delegate) via modal.
-  // If called directly, show the shared confirm modal as a fallback.
-  const resp = await showConfirmModal({
-    title: "Confirm delete",
-    message: "Delete this announcement? This action cannot be undone.",
-    confirmText: "Delete",
-    cancelText: "Cancel",
+function changeUsersPage(page) {
+  _usersCurrentPage = page;
+  renderUsersTable();
+}
+
+function setupUsersFilters() {
+  // Search input
+  const searchInput = document.getElementById("usersSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      _usersCurrentPage = 1;
+      renderUsersTable();
+    });
+  }
+
+  // Role filter
+  const roleFilter = document.getElementById("usersRoleFilter");
+  if (roleFilter) {
+    roleFilter.addEventListener("change", () => {
+      _usersCurrentPage = 1;
+      renderUsersTable();
+    });
+  }
+
+  // Status filter
+  const statusFilter = document.getElementById("usersStatusFilter");
+  if (statusFilter) {
+    statusFilter.addEventListener("change", () => {
+      _usersCurrentPage = 1;
+      renderUsersTable();
+    });
+  }
+
+  // Sortable headers
+  document.querySelectorAll("#usersTable th[data-sort]").forEach((th) => {
+    th.addEventListener("click", () => {
+      const field = th.dataset.sort;
+      if (_usersSortField === field) {
+        _usersSortOrder = _usersSortOrder === "asc" ? "desc" : "asc";
+      } else {
+        _usersSortField = field;
+        _usersSortOrder = "asc";
+      }
+
+      // Update sort icons
+      document
+        .querySelectorAll("#usersTable th[data-sort] i")
+        .forEach((icon) => {
+          icon.className = "fas fa-sort text-[var(--text-secondary)] text-xs";
+        });
+
+      const icon = th.querySelector("i");
+      if (icon) {
+        icon.className = `fas fa-sort-${
+          _usersSortOrder === "asc" ? "up" : "down"
+        } text-hia-blue text-xs`;
+      }
+      // Re-render table with new sort
+      renderUsersTable();
+    });
   });
-  if (!resp || !resp.confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/system-message/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error("Delete failed");
-    showToast("Announcement deleted", "success");
-    await loadAnnouncementsIntoModal();
-  } catch (err) {
-    console.error("deleteAnnouncement error", err);
-    showToast("Failed to delete announcement", "error");
+}
+
+// ===== User Detail Modal Logic (global) =====
+function openUserModal(userId) {
+  const modal = document.getElementById("user-detail-modal");
+  if (!modal) return;
+
+  const user = _lastUsers.find((u) => String(u.id) === String(userId));
+  if (!user) return;
+
+  setUserModalStaticFields(user);
+  populateEditForm(user);
+
+  const idInput = document.getElementById("userModalId");
+  if (idInput) idInput.value = user.id;
+
+  const avatar = document.getElementById("userModalAvatar");
+  if (avatar) {
+    avatar.textContent = (user.username || user.fullName || "U")
+      .charAt(0)
+      .toUpperCase();
+  }
+
+  const subtitle = document.getElementById("userModalSubtitle");
+  if (subtitle) {
+    subtitle.textContent = `${user.role || "—"} • ${
+      user.status || user.userStatus || "—"
+    }`;
+  }
+
+  setUserModalEditMode(false);
+  updateStatusButton(user);
+
+  modal.classList.remove("hidden");
+}
+
+function setUserModalStaticFields(user) {
+  const safe = (v) => escapeHtml(v || "—");
+  document.getElementById("userField_fullName").innerHTML = safe(
+    user.username || user.fullName
+  );
+  document.getElementById("userField_email").innerHTML = safe(user.email);
+  document.getElementById("userField_phone").innerHTML = safe(
+    user.phone || user.mobile || "—"
+  );
+  document.getElementById("userField_company").innerHTML = safe(user.company);
+  document.getElementById("userField_department").innerHTML = safe(
+    user.department
+  );
+  document.getElementById("userField_designation").innerHTML = safe(
+    user.designation
+  );
+  document.getElementById("userField_role").innerHTML = safe(user.role);
+
+  const status = user.status || user.userStatus || "Active";
+  const statusBadge =
+    status === "Active"
+      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+      : "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+
+  document.getElementById(
+    "userField_status"
+  ).innerHTML = `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${statusBadge}"><i class="fas ${
+    status === "Active" ? "fa-check-circle" : "fa-times-circle"
+  }"></i> ${escapeHtml(status)}</span>`;
+
+  const regEl = document.getElementById("userField_registered");
+  const loginEl = document.getElementById("userField_lastLogin");
+  const registered =
+    user.registered && user.registered !== "—"
+      ? new Date(user.registered).toLocaleString()
+      : "—";
+  const lastLogin =
+    user.lastLogin && user.lastLogin !== "—"
+      ? new Date(user.lastLogin).toLocaleString()
+      : "—";
+  if (regEl) regEl.textContent = registered;
+  if (loginEl) loginEl.textContent = lastLogin;
+}
+
+function populateEditForm(user) {
+  const setVal = (id, v) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v || "";
+  };
+  setVal("userInput_fullName", user.username || user.fullName || "");
+  setVal("userInput_email", user.email || "");
+  setVal("userInput_phone", user.phone || user.mobile || "");
+  setVal("userInput_company", user.company || "");
+  setVal("userInput_department", user.department || "");
+  setVal("userInput_designation", user.designation || "");
+  const roleSelect = document.getElementById("userInput_role");
+  if (roleSelect) roleSelect.value = user.role || "Requester";
+  const statusEl = document.getElementById("userEdit_status");
+  if (statusEl) {
+    statusEl.innerHTML = document.getElementById("userField_status").innerHTML;
   }
 }
 
-async function toggleAnnouncement(id, publish) {
+function setUserModalEditMode(edit) {
+  const form = document.getElementById("userEditForm");
+  const fieldsContainer = document.getElementById("userModalFields");
+  const editBtn = document.getElementById("userModalEditSaveBtn");
+  if (!form || !fieldsContainer || !editBtn) return;
+
+  if (edit) {
+    form.classList.remove("hidden");
+    fieldsContainer.classList.add("hidden");
+    editBtn.querySelector("i").className = "fas fa-save mr-2";
+    editBtn.querySelector("span").textContent = "Save";
+  } else {
+    form.classList.add("hidden");
+    fieldsContainer.classList.remove("hidden");
+    editBtn.querySelector("i").className = "fas fa-edit mr-2";
+    editBtn.querySelector("span").textContent = "Edit";
+  }
+  editBtn.dataset.editing = edit ? "1" : "0";
+}
+
+function updateStatusButton(user) {
+  const btn = document.getElementById("userModalStatusBtn");
+  if (!btn) return;
+  const status = user.status || user.userStatus || "Active";
+  const active = status === "Active";
+  btn.innerHTML = `<i class="fas fa-toggle-${
+    active ? "on" : "off"
+  } mr-2"></i><span>${active ? "Set Inactive" : "Set Active"}</span>`;
+  btn.dataset.active = active ? "1" : "0";
+}
+
+async function toggleUserStatus(userId) {
   try {
-    const res = await fetch(`${API_BASE}/api/system-message/${id}`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: publish }),
-    });
-    if (!res.ok) throw new Error("Toggle failed");
-    showToast(
-      publish ? "Announcement published" : "Announcement unpublished",
-      "success"
+    const res = await fetch(
+      `${resolveApiBase()}/admin/toggle-status/${userId}`,
+      { method: "POST", credentials: "include" }
     );
-    await loadAnnouncementsIntoModal();
-  } catch (err) {
-    console.error("toggleAnnouncement error", err);
-    showToast("Failed to update status", "error");
+    if (!res.ok) throw new Error("Failed to toggle status");
+    if (typeof window.showToast === "function") {
+      window.showToast("success", "Status updated");
+    }
+    await loadUsers();
+    openUserModal(userId);
+  } catch (e) {
+    console.error(e);
+    if (typeof window.showToast === "function") {
+      window.showToast("error", "Failed to update status");
+    }
   }
 }
 
-async function loadAnnouncementsIntoModal() {
-  const items = await fetchAdminAnnouncements();
-  renderAnnouncementList(items);
-}
-
-function setupAnnouncementHandlers() {
-  // navbar button
-  const btn = document.getElementById("announcement-button");
-  if (btn)
-    btn.addEventListener("click", async (e) => {
-      // Admin page will open modal; non-admins will get 403 from API if they try to save
-      await loadAnnouncementsIntoModal();
-      openAnnouncementModal(null);
-    });
-
-  // modal close
-  const closeBtn = document.getElementById("announcementModalClose");
-  if (closeBtn) closeBtn.addEventListener("click", closeAnnouncementModal);
-
-  // new button
-  const newBtn = document.getElementById("announcementNewBtn");
-  if (newBtn)
-    newBtn.addEventListener("click", () => openAnnouncementModal(null));
-
-  // save
-  const saveBtn = document.getElementById("announcementSaveBtn");
-  if (saveBtn) saveBtn.addEventListener("click", saveAnnouncement);
-
-  // language select: set orientation of title/editor based on selected language
+async function saveUserEdits() {
+  const userId = document.getElementById("userModalId").value;
+  const updates = {
+    fullName: document.getElementById("userInput_fullName").value.trim(),
+    email: document.getElementById("userInput_email").value.trim(),
+    mobile: document.getElementById("userInput_phone").value.trim(),
+    company: document.getElementById("userInput_company").value.trim(),
+    department: document.getElementById("userInput_department").value.trim(),
+    designation: document.getElementById("userInput_designation").value.trim(),
+    role: document.getElementById("userInput_role").value.trim(),
+  };
   try {
-    const langSel = document.getElementById("announcement_lang");
-    const titleEl = document.getElementById("announcement_title");
-    const editorEl = document.getElementById("announcement_editor");
-    const hidden = document.getElementById("announcement_message");
-    if (langSel) {
-      const applyLang = (l) => {
-        const isAr = String(l) === "ar";
-        const dir = isAr ? "rtl" : "ltr";
-        if (titleEl) {
-          titleEl.dir = dir;
-          titleEl.style.textAlign = isAr ? "right" : "left";
-        }
-        if (editorEl) {
-          editorEl.dir = dir;
-          editorEl.style.textAlign = isAr ? "right" : "left";
-        }
-        if (hidden) hidden.dir = dir;
-      };
-      langSel.addEventListener("change", (ev) => {
-        try {
-          applyLang(langSel.value);
-        } catch (_) {}
-      });
-      // apply initial value
-      applyLang(langSel.value);
+    await updateUser(userId, updates);
+    if (typeof window.showToast === "function") {
+      window.showToast("success", "User updated");
     }
+    await loadUsers();
+    openUserModal(userId);
   } catch (e) {
-    /* ignore */
-  }
-
-  // rich-text toolbar
-  try {
-    const toolbar = document.getElementById("announcement_toolbar");
-    const editor = document.getElementById("announcement_editor");
-    if (toolbar && editor) {
-      toolbar.addEventListener("click", (ev) => {
-        const btn = ev.target.closest("button[data-cmd]");
-        if (!btn) return;
-        const cmd = btn.getAttribute("data-cmd");
-        try {
-          document.execCommand(cmd);
-        } catch (e) {
-          /* ignore */
-        }
-        editor.focus();
-      });
+    console.error(e);
+    if (typeof window.showToast === "function") {
+      window.showToast("error", "Failed to update user");
     }
-  } catch (e) {
-    /* ignore */
-  }
-
-  // initialize flatpickr for schedule inputs if available
-  try {
-    if (window.flatpickr) {
-      const s = document.getElementById("announcement_start");
-      const e = document.getElementById("announcement_end");
-      // Use minDate:'today' to prevent selecting past dates and use dropdown
-      // month selector for a consistent UX. Flatpickr will render month/year
-      // controls which we theme via CSS.
-      if (s && !s._flatpickr)
-        flatpickr(s, {
-          enableTime: true,
-          dateFormat: "Y-m-d H:i",
-          minDate: "today",
-          monthSelectorType: "dropdown",
-        });
-      if (e && !e._flatpickr)
-        flatpickr(e, {
-          enableTime: true,
-          dateFormat: "Y-m-d H:i",
-          minDate: "today",
-          monthSelectorType: "dropdown",
-        });
-    }
-  } catch (e) {
-    /* ignore */
-  }
-
-  // Icon select and live translation wiring
-  try {
-    // icons removed from modal; skip icon select wiring
-    // Translation removed — no live translation wiring
-  } catch (e) {
-    /* ignore */
-  }
-
-  // delegate list actions
-  const list = document.getElementById("announcementList");
-  if (list) {
-    let pendingPublish = null;
-
-    list.addEventListener("click", (ev) => {
-      const a = ev.target.closest("button[data-action]");
-      if (!a) return;
-      const action = a.getAttribute("data-action");
-      const id = a.getAttribute("data-id");
-      if (action === "edit") {
-        // find item data from DOM by id via list of announcements
-        (async () => {
-          try {
-            const items = await fetchAdminAnnouncements();
-            const it = items.find((x) => String(x.id) === String(id));
-            if (it) openAnnouncementModal(it);
-          } catch (e) {
-            console.warn(e);
-          }
-        })();
-      } else if (action === "delete") {
-        // Use shared confirmation modal if available for a consistent UX
-        (async () => {
-          const confirmModal = document.getElementById("publish-confirm-modal");
-          if (confirmModal) {
-            const titleEl = confirmModal.querySelector(
-              "#publish-confirm-title"
-            );
-            const msg = confirmModal.querySelector("#publish-confirm-message");
-            const confirmBtn = confirmModal.querySelector("#publishConfirmBtn");
-            const cancelBtn = confirmModal.querySelector("#publishCancelBtn");
-            if (titleEl) titleEl.textContent = "Confirm delete";
-            if (msg)
-              msg.textContent =
-                "Delete this announcement? This action cannot be undone.";
-            confirmModal.classList.remove("hidden");
-            const onConfirm = async () => {
-              confirmModal.classList.add("hidden");
-              try {
-                await deleteAnnouncement(id);
-              } catch (e) {
-                console.error(e);
-              }
-            };
-            const onCancel = () => {
-              confirmModal.classList.add("hidden");
-            };
-            if (confirmBtn)
-              confirmBtn.addEventListener("click", onConfirm, { once: true });
-            if (cancelBtn)
-              cancelBtn.addEventListener("click", onCancel, { once: true });
-          } else {
-            // fallback to simple confirm
-            deleteAnnouncement(id);
-          }
-        })();
-      } else if (action === "toggle") {
-        (async () => {
-          const items = await fetchAdminAnnouncements();
-          const it = items.find((x) => String(x.id) === String(id));
-          if (!it) return;
-          const publish = !it.isActive;
-          pendingPublish = { id, publish };
-
-          // Resolve modal elements fresh at click time (shared layout may be mounted later)
-          const publishModal = document.getElementById("publish-confirm-modal");
-          if (publishModal) {
-            const msg = publishModal.querySelector("#publish-confirm-message");
-            if (msg)
-              msg.textContent = publish
-                ? "Publish this announcement and make it visible on the login carousel?"
-                : "Unpublish this announcement and hide it from the login carousel?";
-            // show modal
-            publishModal.classList.remove("hidden");
-
-            const confirmBtn = publishModal.querySelector("#publishConfirmBtn");
-            const cancelBtn = publishModal.querySelector("#publishCancelBtn");
-
-            const cleanup = () => {
-              pendingPublish = null;
-            };
-
-            if (confirmBtn) {
-              const onConfirm = async () => {
-                publishModal.classList.add("hidden");
-                try {
-                  await toggleAnnouncement(id, publish);
-                } catch (e) {
-                  console.error(e);
-                }
-                cleanup();
-              };
-              confirmBtn.addEventListener("click", onConfirm, { once: true });
-            }
-            if (cancelBtn) {
-              const onCancel = () => {
-                publishModal.classList.add("hidden");
-                cleanup();
-              };
-              cancelBtn.addEventListener("click", onCancel, { once: true });
-            }
-          } else {
-            // fallback: act immediately
-            await toggleAnnouncement(id, publish);
-            pendingPublish = null;
-          }
-        })();
-      }
-    });
   }
 }
 
-/* ===== Validation helpers ===== */
-function showFieldError(input, message) {
-  const msgEl = input.nextElementSibling;
-  if (msgEl && msgEl.classList.contains("error-msg")) {
-    msgEl.textContent = message;
-    msgEl.classList.add("active");
-    input.classList.add("error");
+async function deleteUserFromModal() {
+  const userId = document.getElementById("userModalId").value;
+  if (!confirm("Delete this user? This action cannot be undone.")) return;
+  try {
+    await deleteUser(userId);
+    if (typeof window.showToast === "function") {
+      window.showToast("success", "User deleted");
+    }
+    document.getElementById("user-detail-modal").classList.add("hidden");
+    await loadUsers();
+  } catch (e) {
+    console.error(e);
+    if (typeof window.showToast === "function") {
+      window.showToast("error", "Failed to delete user");
+    }
+  }
+}
+
+// Event delegation for opening modal
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".user-details-btn");
+  if (!btn) return;
+  const id = btn.getAttribute("data-user-id");
+  if (!id) return;
+  openUserModal(id);
+});
+
+// Modal close (header X, footer Close, backdrop)
+document.addEventListener("click", (e) => {
+  const closeBtn = e.target.closest("#userModalClose");
+  const isOverlay = e.target.hasAttribute("data-user-modal-overlay");
+  if (!closeBtn && !isOverlay) return;
+
+  const modal = document.getElementById("user-detail-modal");
+  if (modal) modal.classList.add("hidden");
+});
+
+document
+  .getElementById("userModalEditSaveBtn")
+  ?.addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    const editing = btn.dataset.editing === "1";
+    if (!editing) {
+      setUserModalEditMode(true);
+    } else {
+      saveUserEdits();
+    }
+  });
+
+document.getElementById("userModalStatusBtn")?.addEventListener("click", () => {
+  const idInput = document.getElementById("userModalId");
+  const userId = idInput ? idInput.value : null;
+  if (userId) toggleUserStatus(userId);
+});
+
+document
+  .getElementById("userModalDeleteBtn")
+  ?.addEventListener("click", () => deleteUserFromModal());
+
+// Expose for potential external usage
+window.openUserModal = openUserModal;
+
+async function deleteUser(id) {
+  const res = await fetch(`${resolveApiBase()}/admin/users/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    let errMsg = `HTTP ${res.status}`;
     try {
-      input.setAttribute("aria-invalid", "true");
-    } catch (e) {
-      /* ignore */
-    }
+      const j = await res.json();
+      if (j && j.error) errMsg = j.error;
+    } catch (_) {}
+    throw new Error(errMsg);
   }
-}
-function clearFieldError(input) {
-  const msgEl = input.nextElementSibling;
-  if (msgEl && msgEl.classList.contains("error-msg")) {
-    msgEl.textContent = "";
-    msgEl.classList.remove("active");
-    input.classList.remove("error");
-    try {
-      input.removeAttribute("aria-invalid");
-    } catch (e) {
-      /* ignore */
-    }
-  }
-}
-function validateField(form, input) {
-  const value = input.value.trim();
-  const label =
-    form?.querySelector(`label[for="${input.id}"]`)?.textContent || input.name;
-
-  if (input.hasAttribute("required") && !value) {
-    showFieldError(input, `${label} is required`);
-    return false;
-  }
-  if (
-    input.type === "email" &&
-    value &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-  ) {
-    showFieldError(input, `Please enter a valid ${label}`);
-    return false;
-  }
-  if (input.name === "mobile" && value) {
-    const cleaned = value.replace(/[\s\-()]/g, "");
-    if (!/^\+974\d{8,}$/.test(cleaned)) {
-      showFieldError(
-        input,
-        `Please enter a valid ${label} (start with +974 and at least 8 digits)`
-      );
-      return false;
-    }
-  }
-  if (input.name === "confirmPassword") {
-    const pw = form?.querySelector('[name="password"]')?.value || "";
-    if (value && value !== pw) {
-      showFieldError(input, "Passwords do not match");
-      return false;
-    }
-  }
-  clearFieldError(input);
   return true;
 }
 
-/* ===== Count-up animation ===== */
-function countUp(el, target, duration = 800) {
-  if (!el) return;
-  const start = Number(el.textContent) || 0;
-  const startTime = performance.now();
-  const diff = target - start;
-
-  function tick(now) {
-    const progress = Math.min((now - startTime) / duration, 1);
-    const value = Math.round(start + diff * progress);
-    el.textContent = String(value);
-    el.setAttribute("data-value", String(value));
-    if (progress < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-/* ===== Theme colors for charts ===== */
-function getThemeColors() {
-  const root = document.documentElement;
-  const getVar = (name) =>
-    getComputedStyle(root).getPropertyValue(name).trim() || "";
-  return {
-    text: getVar("--text-primary") || "#273172",
-    primary: getVar("--button-bg") || "#273172",
-    surface: getVar("--bg-surface") || "#ffffff",
-    success: getVar("--success-color") || "#10b981",
-    error: getVar("--error-color") || "#ef4444",
-    warning: getVar("--warning-color") || "#f59e0b",
-    inprogress: getVar("--inprogress-color") || "#9333ea",
-    muted: getVar("--text-secondary") || "#6b7280",
-  };
-}
-
-/* ===== Compatibility helper =====
-   Returns the first existing element for a list of id alternatives.
-   Usage: const el = $id('pdName', 'hoverName', 'profileDisplayName');
-*/
-function $id(...ids) {
-  for (const id of ids) {
-    if (!id) continue;
-    const el = document.getElementById(id);
-    if (el) return el;
-  }
-  return null;
-}
-
-// ...existing code...
-
-/* ===== Wait for Chart.js (since HTML loads it after admin.js) ===== */
-function waitForChart(maxWaitMs = 3000) {
-  return new Promise((resolve, reject) => {
-    const started = performance.now();
-    (function check() {
-      if (window.Chart) return resolve(window.Chart);
-      if (performance.now() - started > maxWaitMs) return resolve(null);
-      setTimeout(check, 50);
-    })();
+// Update user via PATCH
+async function updateUser(id, updates) {
+  const res = await fetch(`${resolveApiBase()}/admin/users/${id}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
   });
-}
-
-// Simple in-memory cache of the most recently loaded users to avoid refetching and
-// to ensure identity comparisons match the table dataset ids.
-let usersCache = [];
-// store original user for cancel revert
-let modalOriginalUser = null;
-let modalEditMode = false;
-
-function setModalEditable(enable) {
-  const ids = [
-    "view_fullName",
-    "view_email",
-    "view_mobile",
-    "view_company",
-    "view_department",
-    "view_designation",
-    "view_role",
-  ];
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (enable) {
-      el.removeAttribute("disabled");
-    } else {
-      el.setAttribute("disabled", "");
-    }
-  });
-  // no dedicated save button: Update Profile handles submit when in edit mode
-}
-
-function enterEditMode() {
-  modalEditMode = true;
-  setModalEditable(true);
-  const editBtn = document.getElementById("viewEditBtn");
-  if (editBtn) {
-    editBtn.textContent = "Cancel";
-    editBtn.classList.add("bg-red-600");
-  }
-}
-
-function exitEditMode() {
-  modalEditMode = false;
-  setModalEditable(false);
-  const editBtn = document.getElementById("viewEditBtn");
-  if (editBtn) {
-    editBtn.textContent = "Edit";
-    editBtn.classList.remove("bg-red-600");
-  }
-  // revert values from original user snapshot
-  if (modalOriginalUser) populateViewModal(modalOriginalUser);
-}
-
-function toggleEditMode() {
-  if (modalEditMode) exitEditMode();
-  else enterEditMode();
-}
-
-/* ===== Users table ===== */
-async function loadUsers() {
-  const table = document.getElementById("usersTable");
-  const tbody = document.getElementById("usersTableBody");
-  const thead = table?.querySelector("thead");
-  if (!table || !tbody || !thead) return;
-
-  showSkeleton("usersTable", true);
-  tbody.innerHTML = "";
-  // Read header keys: prefer explicit data-key attribute, otherwise normalize the header text
-  const headers = Array.from(thead.querySelectorAll("th")).map((th) => {
-    const dk = th.getAttribute("data-key");
-    if (dk) return dk.trim().toLowerCase();
-    const txt = th.textContent.trim().toLowerCase();
-    const normalized = txt.replace(/\s+/g, "-").replace(/[^\w-]/g, "");
-    // common mappings
-    if (normalized.includes("serial") || normalized === "id") return "serial";
-    if (normalized.includes("submitted")) return "submitted";
-    if (normalized.includes("title")) return "title";
-    if (normalized.includes("status")) return "status";
-    if (
-      normalized.includes("permit") &&
-      (normalized.includes("no") ||
-        normalized.includes("number") ||
-        normalized.includes("permitnumber") ||
-        normalized.includes("permit-number"))
-    )
-      return "permit-number";
-    if (normalized.includes("action")) return "actions";
-    return normalized;
-  });
-
-  try {
-    // Attach per-tab Authorization header if we have an access token so this tab remains authenticated even if the browser session cookie is replaced by another tab.
-    const reqHeaders = {};
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
     try {
-      const at = sessionStorage.getItem("accessToken");
-      if (at) reqHeaders["Authorization"] = `Bearer ${at}`;
+      const j = await res.json();
+      if (j && j.error) msg = j.error;
     } catch (_) {}
-    let res = await fetch(`${API_BASE}/admin/users`, {
-      credentials: "include",
-      headers: reqHeaders,
-    });
-
-    if (res && (res.status === 401 || res.status === 403)) {
-      try {
-        if (typeof window.ptwRefreshToken === "function") {
-          const ok = await window.ptwRefreshToken();
-          if (ok) {
-            try {
-              const at = sessionStorage.getItem("accessToken");
-              if (at) reqHeaders["Authorization"] = `Bearer ${at}`;
-            } catch (_) {}
-            res = await fetch(`${API_BASE}/admin/users`, {
-              credentials: "include",
-              headers: reqHeaders,
-            });
-          }
-        }
-      } catch (_) {
-        /* ignore refresh errors */
-      }
-    }
-
-    if (!res.ok) {
-      // Handle 403 (not authorized) with a friendly inline message
-      if (res.status === 403) {
-        showSkeleton("usersTable", false);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="${thead.querySelectorAll("th").length}">
-                    <div class="py-6 text-center text-sm text-[var(--text-secondary)]">
-                      You must be signed in as an administrator to view this data. 
-                      <a href="/login/index.html" class="text-[var(--link-color)] underline">Sign in</a>
-                    </div>
-                  </td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-      throw new Error("Failed to load users");
-    }
-    const users = await res.json();
-    // store into cache for faster single-user loads
-    usersCache = Array.isArray(users) ? users : [];
-
-    showSkeleton("usersTable", false);
-    users.forEach((u) => {
-      const tr = document.createElement("tr");
-      tr.classList.add("border-b", "border-[var(--input-border)]");
-      headers.forEach((h) => {
-        const td = document.createElement("td");
-        td.classList.add(
-          "border",
-          "border-[var(--input-border)]",
-          "px-4",
-          "py-2"
-        );
-        switch (h) {
-          case "name":
-            td.textContent = u.fullName || u.username || "—";
-            break;
-          case "email":
-            td.textContent = u.email || u.contactEmail || u.username || "—";
-            break;
-          case "phone":
-            td.textContent = u.phone || u.mobile || u.contact || "—";
-            break;
-          case "role":
-            td.textContent = u.role || "—";
-            break;
-          case "status":
-            td.innerHTML = statusChip(u.status || "—");
-            break;
-          case "registered": {
-            const regVal =
-              u.registered || u.createdAt || u.registeredAt || u.created_at;
-            if (regVal && typeof regVal === "string" && regVal.trim() !== "—") {
-              const parsed = new Date(regVal);
-              if (!isNaN(parsed.getTime()))
-                td.textContent = formatLastLogin(parsed);
-              else td.textContent = String(regVal);
-            } else if (regVal instanceof Date) {
-              td.textContent = formatLastLogin(regVal);
-            } else {
-              td.textContent = "—";
-            }
-            break;
-          }
-          case "last login":
-          case "last-login": {
-            const lastVal =
-              u.lastLogin ||
-              u.last_login ||
-              u.lastSeen ||
-              u.last_seen ||
-              u.lastActivity ||
-              u.last_activity;
-            if (
-              lastVal &&
-              typeof lastVal === "string" &&
-              lastVal.trim() !== "—"
-            ) {
-              const parsed = new Date(lastVal);
-              if (!isNaN(parsed.getTime()))
-                td.textContent = formatLastLogin(parsed);
-              else td.textContent = String(lastVal);
-            } else if (lastVal instanceof Date) {
-              td.textContent = formatLastLogin(lastVal);
-            } else {
-              td.textContent = "—";
-            }
-            break;
-          }
-          case "actions":
-            td.classList.add("actions");
-            const idAttr = u.id || u._id;
-            td.innerHTML = `
-                            <button class="btn btn-sm btn-outline reset" data-id="${idAttr}" title="Reset password">Reset</button>
-                            <button class="btn btn-sm btn-primary view" data-id="${idAttr}" title="View profile">View</button>
-                            <button class="btn btn-sm btn-warning toggle" data-id="${idAttr}" data-status="${
-              u.status || ""
-            }" title="${u.status === "Active" ? "Disable" : "Enable"}">
-                                ${u.status === "Active" ? "Disable" : "Enable"}
-                            </button>`;
-            break;
-          default:
-            td.textContent = "—";
-        }
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-
-    // Wire actions
-    tbody
-      .querySelectorAll(".btn.reset")
-      .forEach((b) =>
-        b.addEventListener("click", () => resetPassword(b.dataset.id))
-      );
-    tbody
-      .querySelectorAll(".btn.view")
-      .forEach((b) =>
-        b.addEventListener("click", () => viewProfile(b.dataset.id))
-      );
-    tbody
-      .querySelectorAll(".btn.toggle")
-      .forEach((b) =>
-        b.addEventListener("click", () =>
-          toggleUser(b.dataset.id, b.dataset.status)
-        )
-      );
-  } catch (err) {
-    showSkeleton("usersTable", false);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="${
-      thead.querySelectorAll("th").length
-    }">Failed to load users</td>`;
-    tbody.appendChild(tr);
-    showToast("Failed to load users", "error");
+    throw new Error(msg);
   }
+  return res.json();
 }
 
-/* ===== Live polling for users (secure, uses global fetch wrapper) =====
-   Polls `/admin/users` periodically and triggers a UI refresh when the
-   dataset changes. Uses the existing fetch override which attaches
-   Authorization from sessionStorage and performs silent refreshes.
-*/
-let __liveUsersPollingId = null;
-function startLiveUsersPolling(intervalMs = 30000) {
-  try {
-    if (__liveUsersPollingId) return; // already running
-    __liveUsersPollingId = setInterval(async () => {
-      try {
-        // light-weight fetch to check for changes
-        const res = await fetch(`${API_BASE}/admin/users`, {
-          credentials: "include",
-        });
-        if (!res || !res.ok) return;
-        const data = await res.json().catch(() => []);
-        const arr = Array.isArray(data) ? data : [];
-        // quick change detection: length or id mismatch
-        const old = Array.isArray(usersCache) ? usersCache : [];
-        let changed = false;
-        if (arr.length !== old.length) changed = true;
-        else {
-          for (let i = 0; i < arr.length; i++) {
-            const aId = String(arr[i]?.id || arr[i]?._id || "");
-            const oId = String(old[i]?.id || old[i]?._id || "");
-            if (aId !== oId) {
-              changed = true;
-              break;
-            }
-          }
-        }
-        if (changed) {
-          // update cache and re-render (use existing rendering path)
-          usersCache = arr;
-          try {
-            await loadUsers();
-          } catch (_) {
-            /* best-effort */
-          }
-        }
-      } catch (e) {
-        // non-fatal; just log in debug
-        try {
-          console.debug("[live-users] poll error", e);
-        } catch (_) {}
-      }
-    }, Number(intervalMs) || 30000);
-  } catch (e) {
-    console.debug("[live-users] start failed", e);
-  }
+// Small HTML escape helper to avoid injection from backend strings
+function escapeHtml(s) {
+  if (!s && s !== 0) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function stopLiveUsersPolling() {
-  try {
-    if (!__liveUsersPollingId) return;
-    clearInterval(__liveUsersPollingId);
-    __liveUsersPollingId = null;
-  } catch (e) {
-    console.debug("[live-users] stop failed", e);
-  }
-}
+// Permits data and state
+let _lastPermits = [];
+let _permitsCurrentPage = 1;
+let _permitsPerPage = 15;
+let _permitsSortField = null;
+let _permitsSortOrder = "desc";
 
-/* ===== Fetch roles dynamically and populate role select ===== */
-async function loadRolesIntoSelect() {
-  const roleSelect = document.getElementById("role");
-  if (!roleSelect) return;
-  try {
-    const res = await fetch(`${API_BASE}/admin/roles`, {
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error("Failed to load roles");
-    const roles = await res.json();
-    roleSelect.innerHTML = "";
-    roles.forEach((r) => {
-      const opt = document.createElement("option");
-      opt.value = r.value;
-      opt.textContent = r.label;
-      roleSelect.appendChild(opt);
-    });
-  } catch (err) {
-    // fallback to existing options
-    console.warn("Could not fetch roles, using defaults");
-  }
-}
-
-/* ===== Modal accessibility: focus trap and ESC close ===== */
-function trapFocus(modal) {
-  const focusable = Array.from(
-    modal.querySelectorAll(
-      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
-    )
-  ).filter((el) => !el.hasAttribute("disabled"));
-  if (focusable.length === 0) return () => {};
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-  function keyHandler(e) {
-    if (e.key === "Tab") {
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    } else if (e.key === "Escape") {
-      closeUserModal();
-    }
-  }
-  document.addEventListener("keydown", keyHandler);
-  // focus first element
-  setTimeout(() => first.focus(), 10);
-  return () => document.removeEventListener("keydown", keyHandler);
-}
-
-let releaseFocusTrap = null;
-function openUserModal() {
-  const modal = document.getElementById("userModal");
-  if (!modal) return;
-  // Always force show modal
-  modal.classList.remove("hidden");
-  modal.style.display = "flex";
-  modal.classList.add("show");
-  // Remove any lingering 'hidden' class from parent chain
-  let parent = modal.parentElement;
-  while (parent) {
-    if (parent.classList && parent.classList.contains("hidden")) {
-      parent.classList.remove("hidden");
-    }
-    parent = parent.parentElement;
-  }
-  // Debug log
-  console.debug("[openUserModal] Modal should now be visible");
-  releaseFocusTrap = trapFocus(modal);
-}
-function closeUserModal() {
-  const modal = document.getElementById("userModal");
-  if (!modal) return;
-  modal.classList.remove("show");
-  modal.classList.add("hidden");
-  modal.style.display = "none";
-  if (typeof releaseFocusTrap === "function") releaseFocusTrap();
-}
-
-/* ===== Toast wrapper for DOM creation if missing ===== */
-function ensureToast() {
-  let toast = document.getElementById("toast");
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "toast";
-    document.body.appendChild(toast);
-  }
-  return toast;
-}
-
-/* ===== Permits table ===== */
+// Load permits list and populate the permits table
 async function loadPermits() {
-  const table = document.getElementById("permitsTable");
   const tbody = document.getElementById("permitsTableBody");
-  const thead = table?.querySelector("thead");
-  if (!table || !tbody || !thead) return;
-
-  showSkeleton("permitsTable", true);
-  tbody.innerHTML = "";
-  const headers = Array.from(thead.querySelectorAll("th")).map((th) => {
-    const dk = th.getAttribute("data-key");
-    if (dk) return dk.trim().toLowerCase();
-    return th.textContent.trim().toLowerCase();
-  });
+  const skeleton = document.getElementById("permitsTableSkeleton");
+  if (!tbody) return;
 
   try {
-    // Prefer per-tab access token if available to avoid cookie clobbering across tabs.
-    const pHeaders = {};
-    try {
-      const at = sessionStorage.getItem("accessToken");
-      if (at) pHeaders["Authorization"] = `Bearer ${at}`;
-    } catch (_) {}
-    let res = await fetch(`${API_BASE}/api/permits`, {
+    // Show skeleton
+    if (skeleton) skeleton.classList.remove("hidden");
+    if (tbody) tbody.classList.add("hidden");
+
+    // Use AbortController to avoid an indefinite loading state
+    const controller = new AbortController();
+    const timeoutMs = 10000; // 10s
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(`${resolveApiBase()}/api/permits?limit=500`, {
       credentials: "include",
-      headers: pHeaders,
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
     });
-    if (res && (res.status === 401 || res.status === 403)) {
-      try {
-        if (typeof window.ptwRefreshToken === "function") {
-          const ok = await window.ptwRefreshToken();
-          if (ok) {
-            try {
-              const at = sessionStorage.getItem("accessToken");
-              if (at) pHeaders["Authorization"] = `Bearer ${at}`;
-            } catch (_) {}
-            res = await fetch(`${API_BASE}/api/permits`, {
-              credentials: "include",
-              headers: pHeaders,
-            });
-          }
-        }
-      } catch (_) {}
-    }
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
-      if (res.status === 403) {
-        showSkeleton("permitsTable", false);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="${thead.querySelectorAll("th").length}">
-                    <div class="py-6 text-center text-sm text-[var(--text-secondary)]">
-                      You must be signed in to view permits. <a href="/login/index.html" class="text-[var(--link-color)] underline">Sign in</a>
-                    </div>
-                  </td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-      throw new Error("Failed to load permits");
-    }
-    const payload = await res.json();
-    // backend may return either an array or an object { permits, pagination }
-    const permits = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.permits)
-      ? payload.permits
-      : [];
-
-    showSkeleton("permitsTable", false);
-    if (!permits || permits.length === 0) {
-      const trEmpty = document.createElement("tr");
-      trEmpty.innerHTML = `<td colspan="${
-        thead.querySelectorAll("th").length
-      }">No permits found</td>`;
-      tbody.appendChild(trEmpty);
-    } else {
-      permits.forEach((p) => {
-        const tr = document.createElement("tr");
-        headers.forEach((h) => {
-          const td = document.createElement("td");
-          td.classList.add(
-            "border",
-            "border-[var(--input-border)]",
-            "px-4",
-            "py-2"
-          );
-          switch (h) {
-            case "serial":
-              td.textContent = p.serial || p.id || p._id || "—";
-              break;
-            case "title":
-              td.textContent = p.title || p.permitTitle || "—";
-              break;
-            case "permit-number":
-              td.textContent = p.permitNumber || "—";
-              break;
-            case "submitted":
-              td.textContent = p.submitted
-                ? formatDate24(p.submitted)
-                : p.createdAt
-                ? formatDate24(p.createdAt)
-                : "—";
-              break;
-            case "status":
-              td.innerHTML = statusChip(p.status || "—");
-              break;
-            case "actions":
-              td.classList.add("actions");
-              td.innerHTML = `<button class="btn btn-sm btn-primary view" data-id="${
-                p.id || p._id
-              }" title="View permit">View</button>`;
-              break;
-            default:
-              td.textContent = "—";
-          }
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
+      const txt = await res.text();
+      throw new Error(`HTTP ${res.status}: ${txt}`);
     }
 
-    tbody
-      .querySelectorAll(".btn.view")
-      .forEach((b) =>
-        b.addEventListener("click", () => viewPermit(b.dataset.id))
-      );
-  } catch (err) {
-    showSkeleton("permitsTable", false);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="${
-      thead.querySelectorAll("th").length
-    }">Failed to load permits</td>`;
-    tbody.appendChild(tr);
-    showToast("⚠️ Failed to load permits", "error");
-  }
-}
+    const data = await res.json();
+    _lastPermits = data.permits || [];
 
-/* ===== Stats + Charts ===== */
-let charts = {
-  userStatusChart: null,
-  userRoleChart: null,
-  permitStatusChart: null,
-  monthlyTrendChart: null,
-};
-
-/**
- * Update existing Chart.js instances to use current theme colors.
- * Called when theme changes so charts update without page refresh.
- */
-function updateChartTheme() {
-  try {
-    const theme = getThemeColors();
-
-    // monthlyTrendChart (line)
-    const m = charts.monthlyTrendChart;
-    if (m) {
-      if (m.data && m.data.datasets) {
-        if (m.data.datasets[0]) {
-          m.data.datasets[0].borderColor = theme.primary;
-          m.data.datasets[0].backgroundColor = theme.primary;
-        }
-        if (m.data.datasets[1]) {
-          m.data.datasets[1].borderColor = theme.success;
-          m.data.datasets[1].backgroundColor = theme.success;
-        }
-      }
-      if (m.options) {
-        if (
-          m.options.plugins &&
-          m.options.plugins.legend &&
-          m.options.plugins.legend.labels
-        )
-          m.options.plugins.legend.labels.color = theme.text;
-        if (m.options.scales) {
-          if (m.options.scales.x && m.options.scales.x.ticks)
-            m.options.scales.x.ticks.color = theme.text;
-          if (m.options.scales.y && m.options.scales.y.ticks)
-            m.options.scales.y.ticks.color = theme.text;
-        }
-      }
-      m.update();
-    }
-
-    // userStatusChart (doughnut)
-    const us = charts.userStatusChart;
-    if (us) {
-      if (us.data && us.data.datasets && us.data.datasets[0]) {
-        us.data.datasets[0].backgroundColor = [theme.success, theme.error];
-        us.data.datasets[0].borderColor = theme.surface;
-      }
-      if (
-        us.options &&
-        us.options.plugins &&
-        us.options.plugins.legend &&
-        us.options.plugins.legend.labels
-      )
-        us.options.plugins.legend.labels.color = theme.text;
-      us.update();
-    }
-
-    // userRoleChart (bar)
-    const ur = charts.userRoleChart;
-    if (ur) {
-      if (ur.data && ur.data.datasets && ur.data.datasets[0]) {
-        const roleColorsUpdate = [
-          theme.primary,
-          theme.inprogress || "#7c3aed",
-          theme.success,
-          theme.muted || "#f97373",
-        ];
-        ur.data.datasets[0].backgroundColor = roleColorsUpdate;
-        ur.data.datasets[0].borderColor = roleColorsUpdate;
-      }
-      if (ur.options && ur.options.scales) {
-        if (ur.options.scales.x && ur.options.scales.x.ticks)
-          ur.options.scales.x.ticks.color = theme.text;
-        if (ur.options.scales.y && ur.options.scales.y.ticks)
-          ur.options.scales.y.ticks.color = theme.text;
-      }
-      ur.update();
-    }
-
-    // permitStatusChart (bar)
-    const ps = charts.permitStatusChart;
-    if (ps) {
-      if (ps.data && ps.data.datasets && ps.data.datasets[0]) {
-        ps.data.datasets[0].backgroundColor = [
-          theme.warning,
-          theme.inprogress,
-          theme.success,
-          theme.error,
-          theme.muted,
-        ];
-        ps.data.datasets[0].borderColor = theme.surface;
-      }
-      if (ps.options && ps.options.scales) {
-        if (ps.options.scales.x && ps.options.scales.x.ticks)
-          ps.options.scales.x.ticks.color = theme.text;
-        if (ps.options.scales.y && ps.options.scales.y.ticks)
-          ps.options.scales.y.ticks.color = theme.text;
-      }
-      ps.update();
-    }
-
-    // userTypeChart removed — nothing to update
-  } catch (err) {
-    // non-fatal
-    console.debug("updateChartTheme error", err);
-  }
-}
-
-async function loadStats() {
-  try {
-    const res = await fetch(`${API_BASE}/admin/stats`, {
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error("Failed to load stats");
-    const stats = await res.json();
-
-    // Ensure numeric defaults to avoid NaN and chart errors
-    stats.totalUsers = Number(stats.totalUsers || 0);
-    stats.totalPermits = Number(stats.totalPermits || 0);
-    stats.activeUsers = Number(stats.activeUsers || 0);
-    stats.requesters = Number(stats.requesters || 0);
-    stats.preApprovers = Number(stats.preApprovers || 0);
-    stats.approvers = Number(stats.approvers || 0);
-    stats.pending = Number(stats.pending || 0);
-    stats.inProgress = Number(stats.inProgress || 0);
-    stats.approved = Number(stats.approved || 0);
-    stats.rejected = Number(stats.rejected || 0);
-    stats.closedPermits = Number(stats.closedPermits || 0);
-
-    // --- Fetch permit list to compute accurate permit-related stats (status breakdown) and monthly trend
-    let permitsList = [];
+    // Default: sort permits by submitted date (newest first)
     try {
-      const pRes = await fetch(`${API_BASE}/api/permits?limit=10000&page=1`, {
-        credentials: "include",
+      _lastPermits.sort((a, b) => {
+        const aTime = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime; // newest first
       });
-      if (pRes.ok) {
-        const pPayload = await pRes.json();
-        permitsList = Array.isArray(pPayload)
-          ? pPayload
-          : Array.isArray(pPayload?.permits)
-          ? pPayload.permits
-          : [];
-        // compute counts by status
-        const permitCounts = {
-          Pending: 0,
-          "In Progress": 0,
-          Approved: 0,
-          Rejected: 0,
-          Closed: 0,
-        };
-        permitsList.forEach((p) => {
-          const st = String(p.status || "").trim();
-          if (!st) return;
-          if (/pending/i.test(st)) permitCounts.Pending += 1;
-          else if (/in\s*progress/i.test(st) || /inprogress/i.test(st))
-            permitCounts["In Progress"] += 1;
-          else if (/approved/i.test(st)) permitCounts.Approved += 1;
-          else if (/rejected/i.test(st)) permitCounts.Rejected += 1;
-          else if (/closed/i.test(st)) permitCounts.Closed += 1;
-          else {
-            // categorize unknown as Pending to ensure totals match
-            permitCounts.Pending += 1;
-          }
-        });
-
-        // merge into stats (prefer computed counts)
-        stats.pending = permitCounts.Pending;
-        stats.inProgress = permitCounts["In Progress"];
-        stats.approved = permitCounts.Approved;
-        stats.rejected = permitCounts.Rejected;
-        stats.closedPermits = permitCounts.Closed;
-        // total permits: prefer pagination total if present
-        const totalPermitsFromPayload = Number(
-          pPayload?.pagination?.total ||
-            pPayload?.total ||
-            permitsList.length ||
-            0
-        );
-        stats.totalPermits = totalPermitsFromPayload || permitsList.length;
-      }
-    } catch (err) {
-      // non-fatal, keep server-provided values
-      console.debug("[stats-debug] could not fetch permits for breakdown", err);
-    }
-
-    // Build monthlyTrend (last 6 months) from permitsList: submitted and approved counts per month
-    try {
-      if (
-        !stats.monthlyTrend ||
-        !Array.isArray(stats.monthlyTrend) ||
-        stats.monthlyTrend.length === 0
-      ) {
-        const now = new Date();
-        const months = [];
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          months.push({
-            label: d.toLocaleString(undefined, { month: "short" }),
-            year: d.getFullYear(),
-            month: d.getMonth(),
-            submitted: 0,
-            approved: 0,
-          });
-        }
-
-        permitsList.forEach((p) => {
-          const created = p.createdAt
-            ? new Date(p.createdAt)
-            : p.submitted
-            ? new Date(p.submitted)
-            : null;
-          const approvedAt = p.approvedAt ? new Date(p.approvedAt) : null;
-          if (created && !isNaN(created.getTime())) {
-            const m = months.find(
-              (x) =>
-                x.year === created.getFullYear() &&
-                x.month === created.getMonth()
-            );
-            if (m) m.submitted += 1;
-          }
-          if (approvedAt && !isNaN(approvedAt.getTime())) {
-            const m2 = months.find(
-              (x) =>
-                x.year === approvedAt.getFullYear() &&
-                x.month === approvedAt.getMonth()
-            );
-            if (m2) m2.approved += 1;
-          }
-        });
-
-        stats.monthlyTrend = months.map((m) => ({
-          label: m.label,
-          submitted: m.submitted,
-          approved: m.approved,
-        }));
-      }
-    } catch (err) {
-      console.debug("[stats-debug] could not compute monthlyTrend", err);
-    }
-
-    const setVal = (id, val) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = val;
-      el.setAttribute("data-value", val);
-    };
-
-    // Derive role counts robustly (support different backend payload shapes)
-    const roleCounts = {
-      Admin: Number(stats.admins || stats.adminsCount || 0),
-      Approver: Number(stats.approvers || stats.approversCount || 0),
-      PreApprover: Number(stats.preApprovers || stats.preApproversCount || 0),
-      Requester: Number(
-        stats.requesters || stats.requestersCount || stats.requesterCount || 0
-      ),
-    };
-
-    // If server returned a breakdown object (roles, roleCounts, userRoles, etc.), merge it
-    const breakdownSources =
-      stats.roles ||
-      stats.roleCounts ||
-      stats.userRoles ||
-      stats.roleBreakdown ||
-      stats.userRoleCounts;
-    if (breakdownSources && typeof breakdownSources === "object") {
-      Object.entries(breakdownSources).forEach(([k, v]) => {
-        const key = String(k || "")
-          .trim()
-          .toLowerCase();
-        const mapped = ROLE_MAP[key] || key;
-        // normalize mapped to our keys
-        if (mapped.toLowerCase().includes("admin"))
-          roleCounts.Admin = Number(v || 0);
-        else if (
-          mapped.toLowerCase().includes("approver") &&
-          mapped.toLowerCase().includes("pre")
-        )
-          roleCounts.PreApprover = Number(v || 0);
-        else if (mapped.toLowerCase().includes("approver"))
-          roleCounts.Approver = Number(v || 0);
-        else if (
-          mapped.toLowerCase().includes("requester") ||
-          mapped.toLowerCase().includes("user")
-        )
-          roleCounts.Requester = Number(v || 0);
-      });
-    }
-
-    // If totalUsers is missing or zero, derive from sum of roleCounts
-    const sumRoles = Object.values(roleCounts).reduce(
-      (a, b) => a + Number(b || 0),
-      0
-    );
-    if (!stats.totalUsers && sumRoles > 0) stats.totalUsers = sumRoles;
-    // If Requester count not provided, derive from totalUsers minus known roles
-    if (!roleCounts.Requester || Number(roleCounts.Requester) === 0) {
-      const inferred =
-        Number(stats.totalUsers || 0) -
-        Number(roleCounts.Admin || 0) -
-        Number(roleCounts.Approver || 0) -
-        Number(roleCounts.PreApprover || 0);
-      roleCounts.Requester = Math.max(
-        0,
-        Number(roleCounts.Requester || 0) || inferred
-      );
-    }
-
-    // Write derived counts back into stats so other code paths stay consistent
-    stats.admins = Number(roleCounts.Admin || 0);
-    stats.approvers = Number(roleCounts.Approver || 0);
-    stats.preApprovers = Number(roleCounts.PreApprover || 0);
-    stats.requesters = Number(roleCounts.Requester || 0);
-
-    // Totals (with count-up)
-    const totalUsersEl = document.getElementById("statUsers");
-    if (totalUsersEl) {
-      totalUsersEl.setAttribute("data-value", stats.totalUsers);
-      countUp(totalUsersEl, stats.totalUsers);
-    }
-
-    const totalPermitsEl = document.getElementById("statPermits");
-    if (totalPermitsEl) {
-      totalPermitsEl.setAttribute("data-value", stats.totalPermits);
-      countUp(totalPermitsEl, stats.totalPermits);
-    }
-
-    // User-type specific stats (use derived roleCounts)
-    const adminsEl = document.getElementById("statAdmins");
-    if (adminsEl) {
-      adminsEl.setAttribute("data-value", Number(roleCounts.Admin || 0));
-      countUp(adminsEl, Number(roleCounts.Admin || 0));
-    }
-    const approversEl = document.getElementById("statApprovers");
-    if (approversEl) {
-      approversEl.setAttribute("data-value", Number(roleCounts.Approver || 0));
-      countUp(approversEl, Number(roleCounts.Approver || 0));
-    }
-    const preApproversEl = document.getElementById("statPreApprovers");
-    if (preApproversEl) {
-      preApproversEl.setAttribute(
-        "data-value",
-        Number(roleCounts.PreApprover || 0)
-      );
-      countUp(preApproversEl, Number(roleCounts.PreApprover || 0));
-    }
-    const requestersEl = document.getElementById("statRequesters");
-    if (requestersEl) {
-      requestersEl.setAttribute(
-        "data-value",
-        Number(roleCounts.Requester || 0)
-      );
-      countUp(requestersEl, Number(roleCounts.Requester || 0));
-    }
-
-    // Breakdown with count-up animation for each stat
-    // Compute active/inactive robustly: prefer explicit fields, else derive and clamp
-    let computedActive = Number(stats.activeUsers || stats.active || 0);
-    let computedInactive = Number(
-      stats.inactiveUsers ?? Number(stats.totalUsers || 0) - computedActive
-    );
-    if (isNaN(computedInactive) || computedInactive < 0) computedInactive = 0;
-    // If the server stats disagree with the actual user records, prefer the authoritative user list.
-    try {
-      const usersRes = await fetch(`${API_BASE}/admin/users`, {
-        credentials: "include",
-      });
-      if (usersRes.ok) {
-        const usersList = await usersRes.json();
-        const activeFromList = Array.isArray(usersList)
-          ? usersList.reduce(
-              (acc, u) =>
-                acc +
-                (String(u.status || "").toLowerCase() === "active" ? 1 : 0),
-              0
-            )
-          : 0;
-        if (
-          typeof activeFromList === "number" &&
-          activeFromList >= 0 &&
-          activeFromList !== computedActive
-        ) {
-          console.debug(
-            "[stats-debug] active mismatch, using user list count",
-            { computedActive, activeFromList }
-          );
-          computedActive = activeFromList;
-          computedInactive = Math.max(
-            0,
-            Number(stats.totalUsers || 0) - computedActive
-          );
-        }
-      }
-    } catch (err) {
-      // non-fatal — keep server-provided values
-      console.debug(
-        "[stats-debug] failed to fetch users for authoritative active count",
-        err
-      );
-    }
-
-    // reflect computed active/inactive in stats for consistency
-    stats.activeUsers = Number(computedActive);
-    stats.inactiveUsers = Number(computedInactive);
-
-    // Debug: helpful during development — remove or guard in production if desired
-    console.debug(
-      "[stats-debug] roleCounts:",
-      roleCounts,
-      "computedActive:",
-      computedActive,
-      "computedInactive:",
-      computedInactive,
-      "stats.totalUsers:",
-      stats.totalUsers
-    );
-
-    const activeEl = document.getElementById("statActiveUsers");
-    if (activeEl) {
-      activeEl.setAttribute("data-value", computedActive);
-      countUp(activeEl, computedActive);
-    }
-    const inactiveEl = document.getElementById("statInactiveUsers");
-    if (inactiveEl) {
-      inactiveEl.setAttribute("data-value", computedInactive);
-      countUp(inactiveEl, computedInactive);
-    }
-
-    const pendingEl = document.getElementById("statPending");
-    if (pendingEl) {
-      pendingEl.setAttribute("data-value", stats.pending);
-      countUp(pendingEl, stats.pending);
-    }
-    const inProgressEl = document.getElementById("statInProgress");
-    if (inProgressEl) {
-      inProgressEl.setAttribute("data-value", stats.inProgress);
-      countUp(inProgressEl, stats.inProgress);
-    }
-    const approvedEl = document.getElementById("statApproved");
-    if (approvedEl) {
-      approvedEl.setAttribute("data-value", stats.approved);
-      countUp(approvedEl, stats.approved);
-    }
-    const rejectedEl = document.getElementById("statRejected");
-    if (rejectedEl) {
-      rejectedEl.setAttribute("data-value", stats.rejected);
-      countUp(rejectedEl, stats.rejected);
-    }
-
-    // Wait for Chart.js (HTML loads it after admin.js)
-    const ChartLib = await waitForChart();
-    const theme = getThemeColors();
-
-    // Monthly Trend Chart
-    const monthlyCtx = document.getElementById("monthlyTrendChart");
-    if (monthlyCtx) {
-      if (charts.monthlyTrendChart?.destroy) charts.monthlyTrendChart.destroy();
-      const ChartCtorMonth = ChartLib || window.Chart;
-      if (!ChartCtorMonth) throw new Error("Chart.js not available");
-
-      // Prefer server-provided monthly trend if available
-      let labels = null;
-      let submittedData = null;
-      let approvedData = null;
-      if (
-        stats.monthlyTrend &&
-        Array.isArray(stats.monthlyTrend) &&
-        stats.monthlyTrend.length > 0
-      ) {
-        // Expect stats.monthlyTrend = [{ label: 'Jan', submitted: 5, approved: 4 }, ...]
-        labels = stats.monthlyTrend.map((m) => m.label);
-        submittedData = stats.monthlyTrend.map((m) => Number(m.submitted || 0));
-        approvedData = stats.monthlyTrend.map((m) => Number(m.approved || 0));
-      } else {
-        // Fallback: generate last 6 month labels and zero data so charts render empty state
-        const now = new Date();
-        const months = [];
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          months.push(d.toLocaleString(undefined, { month: "short" }));
-        }
-        labels = months;
-        submittedData = Array(labels.length).fill(0);
-        approvedData = Array(labels.length).fill(0);
-      }
-
-      charts.monthlyTrendChart = new ChartCtorMonth(monthlyCtx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "Permits Submitted",
-              data: submittedData,
-              borderColor: theme.primary,
-              backgroundColor: theme.primary,
-              tension: 0.35,
-              fill: false,
-              pointRadius: 3,
-            },
-            {
-              label: "Permits Approved",
-              data: approvedData,
-              borderColor: theme.success,
-              backgroundColor: theme.success,
-              tension: 0.35,
-              fill: false,
-              pointRadius: 3,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: "top", labels: { color: theme.text } },
-          },
-          scales: {
-            x: { ticks: { color: theme.text } },
-            y: { ticks: { color: theme.text }, beginAtZero: true },
-          },
-        },
-      });
-    }
-
-    // User Status doughnut
-    const userStatusCanvas = document.getElementById("userStatusChart");
-    if (userStatusCanvas) {
-      if (charts.userStatusChart?.destroy) charts.userStatusChart.destroy();
-      const ChartCtor = ChartLib || window.Chart;
-      if (!ChartCtor) throw new Error("Chart.js not available");
-      charts.userStatusChart = new ChartCtor(userStatusCanvas, {
-        type: "doughnut",
-        data: {
-          labels: ["Active", "Inactive"],
-          datasets: [
-            {
-              data: [computedActive, computedInactive],
-              backgroundColor: [theme.success, theme.error],
-              borderColor: theme.surface,
-              borderWidth: 2,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: "bottom", labels: { color: theme.text } },
-          },
-        },
-      });
-    }
-
-    // User Roles bar (include Admins as well)
-    const userRoleCanvas = document.getElementById("userRoleChart");
-    if (userRoleCanvas) {
-      if (charts.userRoleChart?.destroy) charts.userRoleChart.destroy();
-      const ChartCtor2 = ChartLib || window.Chart;
-      if (!ChartCtor2) throw new Error("Chart.js not available");
-      // Use a multi-color palette for each role so bars are visually distinct
-      const roleColors = [
-        theme.primary,
-        theme.inprogress || "#7c3aed",
-        theme.success,
-        theme.muted || "#f97373",
-      ];
-      charts.userRoleChart = new ChartCtor2(userRoleCanvas, {
-        type: "bar",
-        data: {
-          labels: ["Admin", "Approver", "Pre‑Approver", "Requester"],
-          datasets: [
-            {
-              label: "Users",
-              data: [
-                roleCounts.Admin,
-                roleCounts.Approver,
-                roleCounts.PreApprover,
-                roleCounts.Requester,
-              ],
-              backgroundColor: roleColors,
-              borderColor: roleColors,
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: theme.text } },
-            y: { ticks: { color: theme.text } },
-          },
-        },
-      });
-    }
-
-    // Permit Status bar
-    const permitStatusCanvas = document.getElementById("permitStatusChart");
-    if (permitStatusCanvas) {
-      if (charts.permitStatusChart?.destroy) charts.permitStatusChart.destroy();
-      const ChartCtor3 = ChartLib || window.Chart;
-      if (!ChartCtor3) throw new Error("Chart.js not available");
-      charts.permitStatusChart = new ChartCtor3(permitStatusCanvas, {
-        type: "bar",
-        data: {
-          labels: ["Pending", "In Progress", "Approved", "Rejected", "Closed"],
-          datasets: [
-            {
-              label: "Permits",
-              data: [
-                stats.pending,
-                stats.inProgress,
-                stats.approved,
-                stats.rejected,
-                stats.closedPermits,
-              ],
-              backgroundColor: [
-                theme.warning,
-                theme.inprogress,
-                theme.success,
-                theme.error,
-                theme.muted,
-              ],
-              borderColor: theme.surface,
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: theme.text } },
-            y: { ticks: { color: theme.text } },
-          },
-        },
-      });
-    }
-
-    // userTypeChart removed from UI; no initialization
-  } catch (err) {
-    showToast("⚠️ Failed to load stats", "error");
-  }
-}
-
-/* ===== Expand/Collapse Panels (exposed globally for inline onclick) ===== */
-function toggleDetails(id, btn) {
-  const panel = document.getElementById(id);
-  if (!panel) return;
-  const isOpening = !panel.classList.contains("open");
-
-  if (btn) {
-    btn.classList.toggle("active", isOpening);
-    // Keep buttons icon-only; do not inject text content here.
-    btn.setAttribute("aria-expanded", isOpening ? "true" : "false");
-    // Update chevron icon inside the button (make behavior match profile.toggleSection)
-    try {
-      const icon = btn.querySelector("i") || btn.querySelector(".chevron-icon");
-      if (icon) {
-        icon.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
-        if (isOpening) {
-          icon.classList.remove("fa-chevron-down");
-          icon.classList.add("fa-chevron-up");
-          icon.style.transform = "rotate(180deg)";
-        } else {
-          icon.classList.remove("fa-chevron-up");
-          icon.classList.add("fa-chevron-down");
-          icon.style.transform = "rotate(0deg)";
-        }
-      }
     } catch (e) {
-      console.debug("toggleDetails icon update failed", e);
+      // ignore sort failures
+    }
+
+    // Hide skeleton, show table body
+    if (skeleton) skeleton.classList.add("hidden");
+    if (tbody) tbody.classList.remove("hidden");
+
+    renderPermitsTable();
+    setupPermitsFilters();
+
+    // Load permit stats
+    await loadPermitStats();
+  } catch (err) {
+    console.error("Failed to load permits:", err);
+    const isAbort =
+      err && (err.name === "AbortError" || err.code === "ECONNABORTED");
+    if (typeof window.showToast === "function")
+      window.showToast(
+        "error",
+        isAbort ? "Timed out loading permits" : "Failed to load permits"
+      );
+
+    if (skeleton) skeleton.classList.add("hidden");
+    if (tbody) {
+      tbody.classList.remove("hidden");
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="p-8 text-center text-sm text-red-600"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><div>Error loading permits</div></td></tr>';
     }
   }
+}
 
-  if (isOpening) {
-    panel.classList.add("open");
-    panel.style.opacity = "1";
-    panel.style.maxHeight = "0px";
-    panel.offsetHeight; // force reflow
-    panel.style.maxHeight = `${panel.scrollHeight}px`;
+async function loadPermitStats() {
+  try {
+    const pending = _lastPermits.filter((p) => p.status === "Pending").length;
+    const inProgress = _lastPermits.filter(
+      (p) => p.status === "In Progress"
+    ).length;
+    const approved = _lastPermits.filter((p) => p.status === "Approved").length;
+    const rejected = _lastPermits.filter((p) => p.status === "Rejected").length;
 
-    panel.addEventListener("transitionend", function onEnd(e) {
-      if (e.propertyName === "max-height") {
-        panel.style.maxHeight = "none";
-        panel.removeEventListener("transitionend", onEnd);
+    document.getElementById("statPending")?.textContent &&
+      (document.getElementById("statPending").textContent = pending);
+    document.getElementById("statInProgress")?.textContent &&
+      (document.getElementById("statInProgress").textContent = inProgress);
+    document.getElementById("statApproved")?.textContent &&
+      (document.getElementById("statApproved").textContent = approved);
+    document.getElementById("statRejected")?.textContent &&
+      (document.getElementById("statRejected").textContent = rejected);
+  } catch (err) {
+    console.warn("Failed to update permit stats:", err);
+  }
+}
+
+function renderPermitsTable() {
+  const tbody = document.getElementById("permitsTableBody");
+  if (!tbody) return;
+
+  // Apply filters
+  const searchTerm =
+    document.getElementById("permitsSearchInput")?.value.toLowerCase() || "";
+  const statusFilter =
+    document.getElementById("permitsStatusFilter")?.value || "";
+
+  let filtered = _lastPermits.filter((p) => {
+    const matchesSearch =
+      !searchTerm ||
+      (p.permitTitle && p.permitTitle.toLowerCase().includes(searchTerm)) ||
+      (p.permitNumber && p.permitNumber.toLowerCase().includes(searchTerm)) ||
+      (p.requester?.username &&
+        p.requester.username.toLowerCase().includes(searchTerm)) ||
+      (p.requester?.fullName &&
+        p.requester.fullName.toLowerCase().includes(searchTerm));
+
+    const matchesStatus = !statusFilter || p.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Apply sorting
+  if (_permitsSortField) {
+    filtered.sort((a, b) => {
+      let aVal, bVal;
+
+      if (_permitsSortField === "submitted") {
+        aVal = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        bVal = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      } else if (_permitsSortField === "title") {
+        aVal = (a.permitTitle || "").toLowerCase();
+        bVal = (b.permitTitle || "").toLowerCase();
+      } else if (_permitsSortField === "status") {
+        aVal = (a.status || "").toLowerCase();
+        bVal = (b.status || "").toLowerCase();
+      } else {
+        aVal = (a[_permitsSortField] || "").toString().toLowerCase();
+        bVal = (b[_permitsSortField] || "").toString().toLowerCase();
       }
+
+      if (aVal < bVal) return _permitsSortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return _permitsSortOrder === "asc" ? 1 : -1;
+      return 0;
     });
   } else {
-    if (getComputedStyle(panel).maxHeight === "none") {
-      panel.style.maxHeight = `${panel.scrollHeight}px`;
-    }
-    panel.offsetHeight;
-    panel.style.maxHeight = "0px";
-    panel.style.opacity = "0";
-
-    panel.addEventListener("transitionend", function onEnd(e) {
-      if (e.propertyName === "max-height") {
-        panel.classList.remove("open");
-        panel.removeEventListener("transitionend", onEnd);
-      }
+    // Default sort by submitted date (newest first)
+    filtered.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
     });
   }
+
+  // Pagination
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / _permitsPerPage);
+  const start = (_permitsCurrentPage - 1) * _permitsPerPage;
+  const end = start + _permitsPerPage;
+  const paginated = filtered.slice(start, end);
+
+  // Update counts
+  document.getElementById("permitsShowingCount").textContent = paginated.length;
+  document.getElementById("permitsTotalCount").textContent = total;
+
+  if (paginated.length === 0) {
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="p-8 text-center text-sm text-[var(--text-secondary)]"><i class="fas fa-inbox text-3xl mb-2 opacity-30"></i><div>No permits found</div></td></tr>';
+  } else {
+    tbody.innerHTML = paginated
+      .map((permit, index) => {
+        const globalIndex = start + index + 1;
+        const submittedDate = permit.createdAt
+          ? new Date(permit.createdAt).toLocaleString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "—";
+        const title = permit.permitTitle || "—";
+        const status = permit.status || "—";
+        const permitNumber = permit.permitNumber || "—";
+        const requester =
+          permit.requester?.fullName || permit.requester?.username || "—";
+
+        // Status badge color with icons
+        let statusBadge =
+          "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+        let statusIcon = "fa-circle";
+
+        if (status === "Approved") {
+          statusBadge =
+            "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+          statusIcon = "fa-check-circle";
+        } else if (status === "Rejected") {
+          statusBadge =
+            "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+          statusIcon = "fa-times-circle";
+        } else if (status === "Pending") {
+          statusBadge =
+            "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+          statusIcon = "fa-clock";
+        } else if (status === "In Progress") {
+          statusBadge =
+            "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
+          statusIcon = "fa-spinner";
+        }
+
+        return `
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+            <td data-label="#" class="px-4 py-3.5 text-sm font-semibold text-[var(--text-secondary)]">
+              #${globalIndex}
+            </td>
+            <td data-label="Submitted" class="px-4 py-3.5 text-sm text-[var(--text-secondary)]">
+              <div class="flex items-center gap-1.5">
+                <i class="far fa-clock text-xs"></i>
+                <span class="whitespace-nowrap">${escapeHtml(
+                  submittedDate
+                )}</span>
+              </div>
+            </td>
+            <td data-label="Title" class="px-4 py-3.5">
+              <div class="font-medium text-[var(--text-primary)] line-clamp-2" title="${escapeHtml(
+                title
+              )}">
+                ${escapeHtml(title)}
+              </div>
+            </td>
+            <td data-label="Requester" class="px-4 py-3.5 text-sm">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full avatar-accent flex items-center justify-center text-white font-semibold text-xs">
+                  ${escapeHtml(requester.charAt(0).toUpperCase())}
+                </div>
+                <span class="text-[var(--text-secondary)]">${escapeHtml(
+                  requester
+                )}</span>
+              </div>
+            </td>
+            <td data-label="Status" class="px-4 py-3.5">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge}">
+                <i class="fas ${statusIcon} text-xs"></i>
+                ${escapeHtml(status)}
+              </span>
+            </td>
+            <td data-label="Permit No" class="px-4 py-3.5 text-sm">
+              <div class="font-mono text-[var(--text-secondary)]">${escapeHtml(
+                permitNumber
+              )}</div>
+            </td>
+            <td data-label="Actions" class="px-4 py-3.5 text-center">
+              <button 
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg btn-hia-soft font-medium text-sm transition-all"
+                onclick="viewPermitDetails('${permit._id}')"
+                title="View permit details"
+              >
+                <i class="fas fa-eye text-xs"></i>
+                <span>View</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  // Render pagination
+  renderPermitsPagination(totalPages);
 }
-// Expose globally for inline HTML onclick
-// Initialize any existing .expandBtn icons to reflect current aria-expanded state
-(function initExpandBtns() {
-  try {
-    const btns = document.querySelectorAll(".expandBtn");
-    btns.forEach((btn) => {
-      try {
-        const icon =
-          btn.querySelector("i") || btn.querySelector(".chevron-icon");
-        if (!icon) return;
-        icon.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
-        const expanded =
-          btn.getAttribute("aria-expanded") === "true" ||
-          btn.classList.contains("active");
-        // Sync icon
-        if (expanded) {
-          icon.classList.remove("fa-chevron-down");
-          icon.classList.add("fa-chevron-up");
-          icon.style.transform = "rotate(180deg)";
-          btn.classList.add("active");
-        } else {
-          icon.classList.remove("fa-chevron-up");
-          icon.classList.add("fa-chevron-down");
-          icon.style.transform = "rotate(0deg)";
-          btn.classList.remove("active");
-        }
 
-        // If the button declares a target panel, ensure the panel's maxHeight/opacity reflect the state
-        try {
-          const target = btn.dataset && btn.dataset.target;
-          if (target) {
-            const panel = document.getElementById(target);
-            if (panel) {
-              if (expanded) {
-                panel.classList.add("open");
-                panel.style.opacity = "1";
-                // set explicit maxHeight so the transition can run and the panel remains open
-                panel.style.maxHeight = panel.scrollHeight
-                  ? `${panel.scrollHeight}px`
-                  : "none";
-              } else {
-                panel.style.maxHeight = "0px";
-                panel.style.opacity = "0";
-                panel.classList.remove("open");
-              }
-            }
-          }
-        } catch (e) {
-          /* ignore */
-        }
-      } catch (e) {
-        /* ignore */
-      }
-    });
-  } catch (e) {
-    /* ignore */
+function renderPermitsPagination(totalPages) {
+  const container = document.getElementById("permitsPagination");
+  if (!container) return;
+
+  if (totalPages <= 1) {
+    container.innerHTML = "";
+    return;
   }
-})();
-window.toggleDetails = toggleDetails;
 
-// Delegated toggleSection handler (profile-style)
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest('[data-action="toggleSection"]');
-  if (!btn) return;
-  e.preventDefault();
-  const section = btn.dataset.section;
-  if (section) toggleSection(section);
-});
+  let html = [];
 
-function toggleSection(sectionId) {
-  try {
-    const content = document.getElementById(`${sectionId}Content`);
-    const icon = document.getElementById(`${sectionId}Icon`);
-    if (!content) return;
+  // Previous button
+  html.push(`
+    <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium transition-colors ${
+      _permitsCurrentPage === 1
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-[var(--input-bg)]"
+    }" 
+      ${_permitsCurrentPage === 1 ? "disabled" : ""} 
+      onclick="changePermitsPage(${_permitsCurrentPage - 1})">
+      <i class="fas fa-chevron-left text-xs"></i>
+    </button>
+  `);
 
-    const isCollapsed =
-      content.classList.contains("hidden") ||
-      getComputedStyle(content).display === "none" ||
-      content.style.maxHeight === "0px";
+  // Page numbers
+  const maxVisible = 5;
+  let startPage = Math.max(1, _permitsCurrentPage - Math.floor(maxVisible / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
 
-    // Update aria-expanded on the control (if any)
-    const controller = document.querySelector(
-      `[data-action="toggleSection"][data-section="${sectionId}"]`
-    );
-    if (controller)
-      controller.setAttribute("aria-expanded", isCollapsed ? "true" : "false");
+  if (endPage - startPage + 1 < maxVisible) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
 
-    // Toggle a `.collapsed` helper on the containing card so CSS can
-    // completely hide the panel area (removes leftover spacing when
-    // collapsed). The controller sits inside the header which is inside
-    // the card element we annotated with `.section-card` in the HTML.
-    try {
-      const card = controller ? controller.closest(".section-card") : null;
-      if (card) card.classList.toggle("collapsed", !isCollapsed);
-    } catch (e) {
-      /* ignore */
+  if (startPage > 1) {
+    html.push(`
+      <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium hover:bg-[var(--input-bg)] transition-colors" 
+        onclick="changePermitsPage(1)">1</button>
+    `);
+    if (startPage > 2) {
+      html.push('<span class="px-2 text-[var(--text-secondary)]">...</span>');
     }
+  }
 
-    // animate chevron
-    if (icon) {
-      icon.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
-      if (isCollapsed) {
-        icon.classList.remove("fa-chevron-down");
-        icon.classList.add("fa-chevron-up");
-        icon.style.transform = "rotate(180deg)";
+  for (let i = startPage; i <= endPage; i++) {
+    html.push(`
+      <button class="px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+        i === _permitsCurrentPage
+          ? "bg-hia-blue text-white border-hia-blue"
+          : "border-[var(--input-border)] hover:bg-[var(--input-bg)]"
+      }" 
+        onclick="changePermitsPage(${i})">${i}</button>
+    `);
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      html.push('<span class="px-2 text-[var(--text-secondary)]">...</span>');
+    }
+    html.push(`
+      <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium hover:bg-[var(--input-bg)] transition-colors" 
+        onclick="changePermitsPage(${totalPages})">${totalPages}</button>
+    `);
+  }
+
+  // Next button
+  html.push(`
+    <button class="px-3 py-1.5 rounded-lg border border-[var(--input-border)] text-sm font-medium transition-colors ${
+      _permitsCurrentPage === totalPages
+        ? "opacity-50 cursor-not-allowed"
+        : "hover:bg-[var(--input-bg)]"
+    }" 
+      ${_permitsCurrentPage === totalPages ? "disabled" : ""} 
+      onclick="changePermitsPage(${_permitsCurrentPage + 1})">
+      <i class="fas fa-chevron-right text-xs"></i>
+    </button>
+  `);
+
+  container.innerHTML = html.join("");
+}
+
+function changePermitsPage(page) {
+  _permitsCurrentPage = page;
+  renderPermitsTable();
+}
+
+function setupPermitsFilters() {
+  // Search input
+  const searchInput = document.getElementById("permitsSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      _permitsCurrentPage = 1;
+      renderPermitsTable();
+    });
+  }
+
+  // Status filter
+  const statusFilter = document.getElementById("permitsStatusFilter");
+  if (statusFilter) {
+    statusFilter.addEventListener("change", () => {
+      _permitsCurrentPage = 1;
+      renderPermitsTable();
+    });
+  }
+
+  // Sortable headers
+  document.querySelectorAll("#permitsTable th[data-sort]").forEach((th) => {
+    th.addEventListener("click", () => {
+      const field = th.dataset.sort;
+      if (_permitsSortField === field) {
+        _permitsSortOrder = _permitsSortOrder === "asc" ? "desc" : "asc";
       } else {
-        icon.classList.remove("fa-chevron-up");
-        icon.classList.add("fa-chevron-down");
-        icon.style.transform = "rotate(0deg)";
-      }
-    }
-
-    // animate content (use maxHeight to match other panel behavior)
-    if (isCollapsed) {
-      content.classList.remove("hidden");
-      content.style.opacity = "1";
-      content.style.maxHeight = "0px";
-      // force reflow
-      content.offsetHeight;
-      content.style.maxHeight = `${content.scrollHeight}px`;
-      content.addEventListener("transitionend", function onEnd(e) {
-        if (e.propertyName === "max-height") {
-          content.style.maxHeight = "none";
-          content.removeEventListener("transitionend", onEnd);
-        }
-      });
-
-      // lazy loaders
-      try {
-        if (sectionId === "users" && typeof loadUsers === "function")
-          loadUsers();
-        if (sectionId === "permits" && typeof loadPermits === "function")
-          loadPermits();
-        if (
-          (sectionId === "userStats" || sectionId === "permitStats") &&
-          typeof loadStats === "function"
-        )
-          loadStats();
-      } catch (err) {
-        console.debug("loader error", err);
+        _permitsSortField = field;
+        _permitsSortOrder = "asc";
       }
 
-      // Give Chart.js a moment to initialize when panels open; some charts are
-      // created while hidden which can lead to clipped legends. Resize/refresh
-      // charts after the panel is visible.
-      try {
-        setTimeout(() => {
-          try {
-            Object.values(charts).forEach((c) => {
-              if (!c) return;
-              if (typeof c.resize === "function")
-                try {
-                  c.resize();
-                } catch (e) {
-                  /* ignore */
-                }
-              else if (typeof c.update === "function")
-                try {
-                  c.update();
-                } catch (e) {
-                  /* ignore */
-                }
-            });
-          } catch (e) {
-            /* ignore */
-          }
-        }, 350);
-      } catch (e) {
-        /* ignore */
+      // Update sort icons
+      document
+        .querySelectorAll("#permitsTable th[data-sort] i")
+        .forEach((icon) => {
+          icon.className = "fas fa-sort text-[var(--text-secondary)] text-xs";
+        });
+
+      const icon = th.querySelector("i");
+      if (icon) {
+        icon.className = `fas fa-sort-${
+          _permitsSortOrder === "asc" ? "up" : "down"
+        } text-hia-blue text-xs`;
       }
-    } else {
-      if (getComputedStyle(content).maxHeight === "none")
-        content.style.maxHeight = `${content.scrollHeight}px`;
-      // force reflow
-      content.offsetHeight;
-      content.style.maxHeight = "0px";
-      content.style.opacity = "0";
-      content.addEventListener("transitionend", function onEnd(e) {
-        if (e.propertyName === "max-height") {
-          content.classList.add("hidden");
-          content.removeEventListener("transitionend", onEnd);
-        }
-      });
-    }
-  } catch (err) {
-    console.debug("toggleSection error", err);
-  }
-}
 
-/* ===== Actions ===== */
-function viewProfile(userId) {
-  // Keep backward-compatible: open modal view in admin dashboard
-  if (!userId) return;
-  openViewUserModal(userId);
-}
-
-// Fetch a single user by id by requesting /admin/users and filtering (server returns arrays)
-async function getUserById(userId) {
-  // prefer cache
-  if (usersCache && usersCache.length) {
-    const found = usersCache.find(
-      (x) => String(x.id) === String(userId) || String(x._id) === String(userId)
-    );
-    if (found) return found;
-  }
-  try {
-    const res = await fetch(`${API_BASE}/admin/users`, {
-      credentials: "include",
+      renderPermitsTable();
     });
-    if (!res.ok) {
-      console.error("getUserById: failed to fetch users", res.status);
-      return null;
-    }
-    const users = await res.json();
-    usersCache = Array.isArray(users) ? users : [];
-    const u = usersCache.find(
-      (x) => String(x.id) === String(userId) || String(x._id) === String(userId)
-    );
-    return u || null;
-  } catch (err) {
-    console.error("getUserById error", err);
-    return null;
-  }
-}
-
-function populateViewModal(user) {
-  if (!user) return;
-  // keep a snapshot for cancel
-  modalOriginalUser = JSON.parse(JSON.stringify(user));
-  const el_userId = document.getElementById("view_userId");
-  const el_fullName = document.getElementById("view_fullName");
-  const el_displayName = document.getElementById("view_displayName");
-  const el_email = document.getElementById("view_email");
-  const el_displayEmail = document.getElementById("view_displayEmail");
-  const el_mobile = document.getElementById("view_mobile");
-  const el_company = document.getElementById("view_company");
-  const el_department = document.getElementById("view_department");
-  const el_designation = document.getElementById("view_designation");
-  if (el_userId) el_userId.value = user.id || user._id || "";
-  if (el_fullName) el_fullName.value = user.fullName || user.username || "";
-  if (el_displayName)
-    el_displayName.textContent = user.fullName || user.username || "—";
-  if (el_email) el_email.value = user.email || "";
-  if (el_displayEmail) el_displayEmail.textContent = user.email || "";
-  if (el_mobile) el_mobile.value = user.phone || user.mobile || "";
-  if (el_company) el_company.value = user.company || "";
-  if (el_department) el_department.value = user.department || "";
-  if (el_designation) el_designation.value = user.designation || "";
-  // normalize role
-  const r = (user.role || "").toString().toLowerCase();
-  const el_role = document.getElementById("view_role");
-  if (el_role) {
-    if (r.includes("admin")) el_role.value = "admin";
-    else if (r.includes("pre")) el_role.value = "pre-approver";
-    else if (r.includes("approver")) el_role.value = "approver";
-    else el_role.value = "requester";
-  }
-
-  const status = user.status || user.userStatus || "";
-  const statusEl = document.getElementById("view_status");
-  if (statusEl) statusEl.value = status;
-  // status badge (primary visual)
-  const badge = document.getElementById("view_statusBadge");
-  if (badge) badge.innerHTML = statusChip(status) || "";
-  // update toggle/status button label + tooltip
-  const toggleBtn = document.getElementById("viewToggleBtn");
-  const tooltip = document.getElementById("viewToggleTooltip");
-  if (toggleBtn) {
-    const enabled =
-      String(status).toLowerCase() === "active" ||
-      String(status).toLowerCase() === "enabled";
-    toggleBtn.textContent = enabled ? "Enabled" : "Disabled";
-    toggleBtn.setAttribute("aria-pressed", enabled ? "true" : "false");
-    // adjust subtle style for disabled state
-    toggleBtn.style.opacity = enabled ? "1" : "0.9";
-  }
-  if (tooltip) {
-    const enabled =
-      String(status).toLowerCase() === "active" ||
-      String(status).toLowerCase() === "enabled";
-    tooltip.textContent = enabled
-      ? "Account is active — click to disable"
-      : "Account is disabled — click to enable";
-  }
-
-  // format dates using helpers if available
-  const reg = user.registered || user.createdAt || "";
-  const last = user.lastLogin || user.last_login || "";
-  // Helper: validate and format date input safely into local timezone
-  function isValidDate(value) {
-    if (!value) return false;
-    const d = value instanceof Date ? value : new Date(value);
-    return !isNaN(d.getTime());
-  }
-  function safeFormatDate(value) {
-    if (!value) return "—";
-    try {
-      if (!isValidDate(value)) return "—";
-      return formatDate24(value);
-    } catch (err) {
-      return "—";
-    }
-  }
-
-  const regEl = document.getElementById("view_registered");
-  const lastEl = document.getElementById("view_lastLogin");
-  if (regEl) regEl.textContent = safeFormatDate(reg);
-  if (lastEl) lastEl.textContent = safeFormatDate(last);
-}
-
-function openViewUserModal(userId) {
-  const modal = document.getElementById("viewUserModal");
-  if (!modal) return;
-  // show modal and a temporary loading state
-  modal.classList.remove("hidden");
-  modal.style.display = "flex";
-  // put placeholders
-  const nameEl = document.getElementById("view_displayName");
-  const emailEl = document.getElementById("view_displayEmail");
-  if (nameEl) nameEl.textContent = "Loading…";
-  if (emailEl) emailEl.textContent = "";
-
-  // fetch user details and populate; don't auto-close modal on failure
-  getUserById(userId)
-    .then((user) => {
-      if (!user) {
-        showToast("User not found (check server / permissions)", "error");
-        console.error("openViewUserModal: user not found for id", userId);
-        if (nameEl) nameEl.textContent = "User not found";
-        return;
-      }
-      populateViewModal(user);
-    })
-    .catch((err) => {
-      console.error("openViewUserModal error", err);
-      showToast("Failed to load user (see console)", "error");
-      if (nameEl) nameEl.textContent = "Failed to load";
-    });
-}
-
-function closeViewUserModal() {
-  const modal = document.getElementById("viewUserModal");
-  if (!modal) return;
-  modal.classList.add("hidden");
-  modal.style.display = "none";
-}
-
-// Save updates - backend currently exposes POST /admin/register-user for creation; no explicit update route
-// We'll attempt PATCH /admin/users/:id and fallback to POST /admin/register-user if not available.
-async function updateUserProfile() {
-  const id = document.getElementById("view_userId").value;
-  if (!id) return showToast("Missing user id", "error");
-  const payload = {
-    fullName: document.getElementById("view_fullName").value,
-    email: document.getElementById("view_email").value,
-    mobile: document.getElementById("view_mobile").value,
-    company: document.getElementById("view_company").value,
-    department: document.getElementById("view_department").value,
-    designation: document.getElementById("view_designation").value,
-    role: document.getElementById("view_role").value,
-  };
-  try {
-    // Try PATCH first
-    let res = await fetch(`${API_BASE}/admin/users/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      showToast("User updated", "success");
-      await loadUsers();
-      closeViewUserModal();
-      return;
-    }
-    // Fallback: server may not support PATCH; notify user
-    const txt = await res.text().catch(() => "");
-    showToast(
-      txt || "Failed to update user (server does not support inline update)",
-      "warning"
-    );
-  } catch (err) {
-    console.error(err);
-    showToast("Error updating user", "error");
-  }
-}
-
-async function deleteUser() {
-  const id = document.getElementById("view_userId").value;
-  if (!id) return showToast("Missing user id", "error");
-  // Use shared confirm modal instead of native confirm
-  const resp = await showConfirmModal({
-    title: "Confirm delete",
-    message: "Are you sure you want to permanently delete this user?",
-    confirmText: "Delete",
-    cancelText: "Cancel",
   });
-  if (!resp || !resp.confirmed) return;
-  try {
-    const res = await fetch(
-      `${API_BASE}/admin/users/${encodeURIComponent(id)}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      }
-    );
-    if (res.ok) {
-      showToast("User deleted", "success");
-      await loadUsers();
-      closeViewUserModal();
-      return;
+}
+
+// View permit details (placeholder function)
+function viewPermitDetails(permitId) {
+  const permit = _lastPermits.find((p) => String(p._id) === String(permitId));
+  if (!permit) {
+    if (typeof window.showToast === "function") {
+      window.showToast("error", "Permit not found");
     }
-    const txt = await res.text().catch(() => "");
-    showToast(txt || "Failed to delete user", "error");
-  } catch (err) {
-    console.error(err);
-    showToast("Error deleting user", "error");
+    return;
   }
-}
 
-async function resetUserPassword() {
-  const id = document.getElementById("view_userId").value;
-  if (!id) return showToast("Missing user id", "error");
-  // Use shared modal to collect new password instead of native prompt
-  const resp = await showConfirmModal({
-    title: "Reset password",
-    message: "Enter new password for this user:",
-    confirmText: "Reset",
-    cancelText: "Cancel",
-    input: { type: "password", placeholder: "New password" },
-  });
-  if (!resp || !resp.confirmed) return;
-  const newPassword = (resp.value || "").trim();
-  if (!newPassword) return showToast("Password cannot be empty", "error");
-  try {
-    const res = await fetch(
-      `${API_BASE}/admin/reset-password/${encodeURIComponent(id)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ newPassword }),
-      }
-    );
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      showToast(data.message || "Password reset", "success");
-      return;
-    }
-    showToast(data.error || "Failed to reset password", "error");
-  } catch (err) {
-    console.error(err);
-    showToast("Error resetting password", "error");
-  }
-}
+  const modal = document.getElementById("permit-detail-modal");
+  if (!modal) return;
 
-async function toggleUserFromModal() {
-  const id = document.getElementById("view_userId").value;
-  if (!id) return showToast("Missing user id", "error");
-  try {
-    const res = await fetch(
-      `${API_BASE}/admin/toggle-status/${encodeURIComponent(id)}`,
-      {
-        method: "POST",
-        credentials: "include",
-      }
-    );
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      showToast(data.message || "Status updated", "success");
-      await loadUsers();
-      // update status field in modal (if present) and badge
-      const statusEl = document.getElementById("view_status");
-      if (statusEl) statusEl.value = data.status || statusEl.value;
-      const badgeEl = document.getElementById("view_statusBadge");
-      if (badgeEl) badgeEl.innerHTML = statusChip(data.status || "") || "";
-      return;
-    }
-    showToast("Failed to toggle status", "error");
-  } catch (err) {
-    console.error(err);
-    showToast("Error toggling status", "error");
-  }
-}
-
-// wire modal buttons when DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  const close = document.getElementById("viewUserClose");
-  if (close) close.addEventListener("click", closeViewUserModal);
-  // Update Profile button doubles as edit trigger and save action when in edit mode
-  const edit = document.getElementById("viewEditBtn");
-  if (edit) edit.addEventListener("click", toggleEditMode);
-  const up = document.getElementById("viewUpdateProfileBtn");
-  if (up)
-    up.addEventListener("click", () => {
-      if (!modalEditMode) {
-        showToast(
-          "Click Edit to enable changes, then click Update Profile to save.",
-          "warning"
-        );
-        return;
-      }
-      updateUserProfile();
-    });
-  const del = document.getElementById("viewDeleteBtn");
-  if (del) del.addEventListener("click", deleteUser);
-  const rst = document.getElementById("viewResetBtn");
-  if (rst) rst.addEventListener("click", resetUserPassword);
-  const tog = document.getElementById("viewToggleBtn");
-  if (tog) tog.addEventListener("click", toggleUserFromModal);
-});
-
-// expose for inline use if necessary
-window.openViewUserModal = openViewUserModal;
-window.closeViewUserModal = closeViewUserModal;
-function viewPermit(permitId) {
-  if (!permitId) return;
-  openViewPermitModal(permitId);
-}
-
-// Fetch a single permit by id (with approval chain, files, comments)
-async function getPermitById(permitId) {
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/permits/${encodeURIComponent(permitId)}`,
-      { credentials: "include" }
-    );
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (err) {
-    console.error("getPermitById error", err);
-    return null;
-  }
-}
-
-function populatePermitModal(permit) {
-  if (!permit) return;
-  // Defensive: support both flat and nested shapes, fallback to '—' for missing
-  const get = (...paths) => {
-    for (const path of paths) {
-      let val = permit;
-      for (const key of path.split(".")) {
-        if (val && typeof val === "object" && key in val) val = val[key];
-        else {
-          val = undefined;
-          break;
-        }
-      }
-      if (val !== undefined && val !== null && val !== "") return val;
-    }
-    return undefined;
-  };
-  document.getElementById("permit_id").value = get("id", "_id") || "";
-  document.getElementById("permit_title").textContent =
-    get("title", "permitTitle") || "—";
-  document.getElementById("permit_number").textContent =
-    get("permitNumber", "number") || "—";
-  document.getElementById("permit_status").textContent = get("status") || "—";
-  // Submitted: prefer submitted, then createdAt
-  const submitted = get("submitted", "createdAt");
-  document.getElementById("permit_submitted").textContent = submitted
-    ? formatDate24(submitted)
+  // Core fields
+  const title = permit.permitTitle || "—";
+  const number = permit.permitNumber || "—";
+  const status = permit.status || "—";
+  const requesterName =
+    permit.requester?.fullName || permit.requester?.username || "—";
+  const location = permit.location || permit.workLocation || "—";
+  const createdAt = permit.createdAt
+    ? new Date(permit.createdAt).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "—";
 
-  // Requester details
-  const requesterName = get(
-    "requesterName",
-    "requester.fullName",
-    "requester.username",
-    "requester.name"
-  );
-  document.getElementById("permit_requester_name").textContent =
-    requesterName || "—";
-  // Requester submitted time: prefer submitted, then requester.submitted, then createdAt
-  const requesterTime = get("submitted", "requester.submitted", "createdAt");
-  document.getElementById("permit_requester_time").textContent = requesterTime
-    ? formatDate24(requesterTime)
-    : "—";
-  // Requester comments
-  document.getElementById("permit_requester_comments").textContent =
-    get("requesterComments", "requester.comments", "requester.comment") || "—";
+  // Header
+  const titleEl = document.getElementById("permitModalTitle");
+  if (titleEl) titleEl.textContent = title || "Permit Details";
 
-  // Pre-Approver details
-  const preApproverName = get(
-    "preApproverName",
-    "preApprover.fullName",
-    "preApprover.username",
-    "preApprover.name"
-  );
-  document.getElementById("permit_preapprover_name").textContent =
-    preApproverName || "—";
-  const preApproverTime = get(
-    "preApproverTime",
-    "preApprover.date",
-    "preApprover.time"
-  );
-  document.getElementById("permit_preapprover_time").textContent =
-    preApproverTime ? formatDate24(preApproverTime) : "—";
-  document.getElementById("permit_preapprover_comments").textContent =
-    get("preApproverComments", "preApprover.comments", "preApprover.comment") ||
+  const subtitleEl = document.getElementById("permitModalSubtitle");
+  if (subtitleEl) subtitleEl.textContent = `${number}  b7 ${status}`;
+
+  const idInput = document.getElementById("permitModalId");
+  if (idInput) idInput.value = permit._id || "";
+
+  // Status badge
+  const statusBadgeEl = document.getElementById("permitModalStatusBadge");
+  if (statusBadgeEl) {
+    let badgeClasses =
+      "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+    let icon = "fa-circle";
+    if (status === "Approved") {
+      badgeClasses =
+        "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+      icon = "fa-check-circle";
+    } else if (status === "Rejected") {
+      badgeClasses =
+        "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+      icon = "fa-times-circle";
+    } else if (status === "Pending") {
+      badgeClasses =
+        "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+      icon = "fa-clock";
+    } else if (status === "In Progress") {
+      badgeClasses =
+        "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
+      icon = "fa-spinner";
+    }
+    statusBadgeEl.className = `inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badgeClasses}`;
+    statusBadgeEl.innerHTML = `<i class="fas ${icon} text-xs"></i><span>${escapeHtml(
+      status
+    )}</span>`;
+  }
+
+  // Core detail fields
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value || "—";
+  };
+
+  setText("permitField_title", title);
+  setText("permitField_number", number);
+  setText("permitField_status", status);
+  setText("permitField_submitted", createdAt);
+  setText("permitField_requester", requesterName);
+  setText("permitField_location", location);
+
+  // Pre-approver details (structure depends on backend; using common fields if present)
+  const preName =
+    permit.preApprover?.fullName ||
+    permit.preApprover?.username ||
+    permit.preApproverName ||
     "—";
+  const preDateRaw =
+    permit.preApprovedAt || permit.preApprover?.approvedAt || null;
+  const preDate = preDateRaw
+    ? new Date(preDateRaw).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+  const preComments =
+    permit.preApproverComments || permit.preApprover?.comments || "—";
+
+  setText("permitField_preName", preName);
+  setText("permitField_preDate", preDate);
+  setText("permitField_preComments", preComments);
 
   // Approver details
-  const approverName = get(
-    "approverName",
-    "approver.fullName",
-    "approver.username",
-    "approver.name"
-  );
-  document.getElementById("permit_approver_name").textContent =
-    approverName || "—";
-  const approverTime = get("approverTime", "approver.date", "approver.time");
-  document.getElementById("permit_approver_time").textContent = approverTime
-    ? formatDate24(approverTime)
+  const appName =
+    permit.approver?.fullName ||
+    permit.approver?.username ||
+    permit.approverName ||
+    "—";
+  const appDateRaw = permit.approvedAt || permit.approver?.approvedAt || null;
+  const appDate = appDateRaw
+    ? new Date(appDateRaw).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "—";
-  document.getElementById("permit_approver_comments").textContent =
-    get("approverComments", "approver.comments", "approver.comment") || "—";
+  const appComments =
+    permit.approverComments || permit.approver?.comments || "—";
 
-  // Files
-  const filesDiv = document.getElementById("permit_files");
-  filesDiv.innerHTML = "";
-  const files = get("files");
-  if (Array.isArray(files) && files.length) {
-    files.forEach((f) => {
-      const a = document.createElement("a");
-      a.href = f.url || f.path || "#";
-      a.textContent = f.name || f.filename || "File";
-      a.target = "_blank";
-      a.className = "underline text-blue-600 hover:text-blue-800";
-      filesDiv.appendChild(a);
-    });
-  } else {
-    filesDiv.textContent = "—";
-  }
+  setText("permitField_appName", appName);
+  setText("permitField_appDate", appDate);
+  setText("permitField_appComments", appComments);
+
+  modal.classList.remove("hidden");
 }
 
-function openViewPermitModal(permitId) {
-  const modal = document.getElementById("viewPermitModal");
-  if (!modal) return;
-  modal.classList.remove("hidden");
-  modal.style.display = "flex";
-  // Clear all fields and disable action buttons
-  document.getElementById("permit_id").value = "";
-  document.getElementById("permit_title").textContent = "Loading…";
-  document.getElementById("permit_number").textContent = "";
-  document.getElementById("permit_status").textContent = "";
-  document.getElementById("permit_submitted").textContent = "";
-  document.getElementById("permit_requester_name").textContent = "";
-  document.getElementById("permit_requester_time").textContent = "";
-  document.getElementById("permit_preapprover_name").textContent = "";
-  document.getElementById("permit_preapprover_time").textContent = "";
-  document.getElementById("permit_preapprover_comments").textContent = "";
-  document.getElementById("permit_approver_name").textContent = "";
-  document.getElementById("permit_approver_time").textContent = "";
-  document.getElementById("permit_approver_comments").textContent = "";
-  const filesDiv = document.getElementById("permit_files");
-  if (filesDiv) filesDiv.innerHTML = "";
-  // Disable action buttons until loaded
-  ["permitApproveBtn", "permitRejectBtn", "permitUpdateBtn"].forEach((id) => {
-    const btn = document.getElementById(id);
-    if (btn) btn.setAttribute("disabled", "");
-  });
-  getPermitById(permitId)
-    .then((permit) => {
-      if (!permit) {
-        document.getElementById("permit_title").textContent =
-          "Permit not found";
-        showToast("Permit not found", "error");
+// Expose to global so shared/layout.js and other modules can call it
+window.loadUsers = loadUsers;
+window.loadPermits = loadPermits;
+window.viewPermitDetails = viewPermitDetails;
+
+// Close permit modal on X or backdrop click
+document.addEventListener("click", (e) => {
+  const closeBtn = e.target.closest("#permitModalClose");
+  const isOverlay = e.target.hasAttribute("data-permit-modal-overlay");
+  if (!closeBtn && !isOverlay) return;
+
+  const modal = document.getElementById("permit-detail-modal");
+  if (modal) modal.classList.add("hidden");
+});
+
+// Apply admin marker on load and also when the shared layout mounts
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", markAsAdminPage);
+} else {
+  markAsAdminPage();
+}
+
+// Layout may mount asynchronously; ensure we re-apply when it does
+window.addEventListener("layout:mounted", markAsAdminPage);
+
+// Section toggle functionality for accordion sections
+document.addEventListener("click", function (e) {
+  const button = e.target.closest('[data-action="toggleSection"]');
+  if (!button) return;
+
+  const section = button.getAttribute("data-section");
+  const content = document.getElementById(`${section}Content`);
+  const icon = document.getElementById(`${section}Icon`);
+
+  if (!content || !icon) return;
+
+  // Toggle content visibility
+  content.classList.toggle("hidden");
+
+  // Smooth rotate the chevron using Tailwind rotate utility
+  const expanded = !content.classList.contains("hidden");
+  button.setAttribute("aria-expanded", expanded ? "true" : "false");
+  icon.classList.add(
+    "transform",
+    "transition-transform",
+    "duration-300",
+    "ease-in-out"
+  );
+  if (expanded) {
+    icon.classList.add("rotate-180");
+  } else {
+    icon.classList.remove("rotate-180");
+  }
+});
+
+// Prevent double submissions on permit action buttons
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(
+    "#permitApproveBtn, #permitRejectBtn, #permitUpdateBtn"
+  );
+  if (!btn) return;
+
+  // If already submitting, ignore further clicks
+  if (btn.dataset.__submitting === "1") {
+    e.preventDefault();
+    return;
+  }
+
+  // Mark as submitting and apply visual state
+  try {
+    btn.dataset.__submitting = "1";
+    btn.disabled = true;
+    btn.classList.add("loading");
+  } catch (err) {
+    /* ignore UI failures */
+  }
+
+  // Fallback: if action doesn't clear state, reset after 6s to avoid permanently disabled buttons
+  setTimeout(() => {
+    try {
+      btn.dataset.__submitting = "0";
+      btn.disabled = false;
+      btn.classList.remove("loading");
+    } catch (e) {}
+  }, 6000);
+});
+
+// --- Announcement Modal Management ---
+(function initAnnouncementModal() {
+  // Function to set up modal once it exists
+  function setupModal() {
+    const modal = document.getElementById("announcement-modal");
+    const closeBtn = document.getElementById("announcementModalClose");
+    const saveBtn = document.getElementById("announcementSaveBtn");
+    const newBtn = document.getElementById("announcementNewBtn");
+
+    if (!modal) {
+      console.warn("Announcement modal not found, will retry...");
+      return false;
+    }
+
+    console.log("Setting up announcement modal...");
+
+    // Close modal
+    function closeModal() {
+      modal.classList.add("hidden");
+      // Remove body-level overlay if present
+      try {
+        const bodyOv = document.querySelector(
+          "[data-announcement-body-overlay]"
+        );
+        if (bodyOv) bodyOv.remove();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    // Close button
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeModal);
+    }
+
+    // Close on overlay click
+    modal.addEventListener("click", (e) => {
+      if (
+        e.target === modal ||
+        e.target.classList.contains("bg-[var(--overlay-bg)]")
+      ) {
+        closeModal();
+      }
+    });
+
+    // ESC key to close
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+        closeModal();
+      }
+    });
+
+    // New button - clear form
+    if (newBtn) {
+      newBtn.addEventListener("click", () => {
+        document.getElementById("announcement_id").value = "";
+        document.getElementById("announcement_title").value = "";
+        document.getElementById("announcement_editor").textContent = "";
+        document.getElementById("announcement_message").value = "";
+
+        // Clear flatpickr dates
+        const startInput = document.getElementById("announcement_start");
+        const endInput = document.getElementById("announcement_end");
+        if (startInput?._flatpickr) startInput._flatpickr.clear();
+        if (endInput?._flatpickr) endInput._flatpickr.clear();
+
+        document.getElementById("announcement_active").checked = true;
+      });
+    }
+
+    // Save button - create or update announcement
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        try {
+          const id = document.getElementById("announcement_id").value;
+          const title = document.getElementById("announcement_title").value;
+          const editor = document.getElementById("announcement_editor");
+          const message = editor.textContent || editor.innerText;
+          const start = document.getElementById("announcement_start").value;
+          const end = document.getElementById("announcement_end").value;
+          const active = document.getElementById("announcement_active").checked;
+
+          // Validate
+          if (!message.trim()) {
+            if (typeof window.showToast === "function") {
+              window.showToast("error", "Message is required");
+            } else {
+              alert("Message is required");
+            }
+            return;
+          }
+
+          const payload = {
+            title: title || "Announcement",
+            message: message.trim(),
+            icon: "fa-bullhorn",
+            isActive: active,
+          };
+
+          if (start) payload.startAt = start;
+          if (end) payload.endAt = end;
+
+          let response;
+          if (id) {
+            // Update existing
+            response = await fetch(`${getApiBase()}/api/system-message/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(payload),
+            });
+          } else {
+            // Create new
+            response = await fetch(`${getApiBase()}/api/system-message`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(payload),
+            });
+          }
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          if (typeof window.showToast === "function") {
+            window.showToast(
+              "success",
+              id
+                ? "Announcement updated successfully"
+                : "Announcement created successfully"
+            );
+          }
+
+          // Reload list
+          await loadAnnouncements();
+
+          // Clear form
+          document.getElementById("announcement_id").value = "";
+          document.getElementById("announcement_title").value = "";
+          document.getElementById("announcement_editor").textContent = "";
+          document.getElementById("announcement_message").value = "";
+
+          // Clear flatpickr dates
+          const startInput = document.getElementById("announcement_start");
+          const endInput = document.getElementById("announcement_end");
+          if (startInput?._flatpickr) startInput._flatpickr.clear();
+          if (endInput?._flatpickr) endInput._flatpickr.clear();
+
+          document.getElementById("announcement_active").checked = true;
+
+          // Close modal after save
+          closeModal();
+        } catch (err) {
+          console.error("Failed to save announcement:", err);
+          if (typeof window.showToast === "function") {
+            window.showToast("error", "Failed to save announcement");
+          }
+        }
+      });
+    }
+
+    return true;
+  }
+
+  // Try to set up immediately
+  if (!setupModal()) {
+    // If modal doesn't exist yet, wait for layout to load
+    window.addEventListener("layout:mounted", setupModal);
+    // Fallback: try again after delay
+    setTimeout(setupModal, 1000);
+  }
+
+  // Initialize flatpickr for date/time inputs
+  function initDatePickers() {
+    if (!window.flatpickr) {
+      console.warn("Flatpickr library not loaded");
+      return;
+    }
+
+    const startInput = document.getElementById("announcement_start");
+    const endInput = document.getElementById("announcement_end");
+
+    if (startInput && !startInput._flatpickr) {
+      const startPicker = window.flatpickr(startInput, {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        allowInput: false,
+        minDate: "today",
+        minuteIncrement: 1,
+        onOpen: function (selectedDates, dateStr, instance) {
+          // Always set minDate to current time when opening
+          instance.set("minDate", new Date());
+        },
+        onChange: function (selectedDates) {
+          if (endInput._flatpickr && selectedDates[0]) {
+            const startDate = selectedDates[0];
+            // Set end date minimum to start date
+            endInput._flatpickr.set("minDate", startDate);
+
+            // If end date is before start date, clear it
+            const endDate = endInput._flatpickr.selectedDates[0];
+            if (endDate && endDate < startDate) {
+              endInput._flatpickr.clear();
+            }
+          }
+        },
+      });
+    }
+
+    if (endInput && !endInput._flatpickr) {
+      const endPicker = window.flatpickr(endInput, {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        allowInput: false,
+        minDate: "today",
+        minuteIncrement: 1,
+        onOpen: function (selectedDates, dateStr, instance) {
+          // Set minDate based on start date if available
+          const startDate = startInput._flatpickr?.selectedDates[0];
+          if (startDate) {
+            instance.set("minDate", startDate);
+          } else {
+            instance.set("minDate", new Date());
+          }
+        },
+      });
+    }
+  }
+
+  // Load announcements list
+  async function loadAnnouncements() {
+    const list = document.getElementById("announcementList");
+    if (!list) return;
+
+    try {
+      list.innerHTML =
+        '<div class="text-sm text-[var(--text-secondary)] p-4">Loading...</div>';
+
+      // Use dev-aware base to avoid 5500 -> 404; map to 5000 locally
+      const apiUrl = `${getApiBase()}/api/admin/system-messages`;
+      console.log("Fetching announcements from:", apiUrl);
+
+      const response = await fetch(apiUrl, {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const announcements = await response.json();
+      console.log("Loaded announcements:", announcements.length);
+
+      if (!announcements || announcements.length === 0) {
+        list.innerHTML =
+          '<div class="flex flex-col items-center justify-center py-12 text-center"><i class="fas fa-inbox text-4xl text-[var(--text-secondary)] opacity-50 mb-3"></i><p class="text-sm text-[var(--text-secondary)]">No announcements yet</p></div>';
         return;
       }
-      populatePermitModal(permit);
-      // Enable action buttons if permit loaded and has id
-      if (permit.id || permit._id) {
-        ["permitApproveBtn", "permitRejectBtn", "permitUpdateBtn"].forEach(
-          (id) => {
-            const btn = document.getElementById(id);
-            if (btn) btn.removeAttribute("disabled");
+
+      // Render announcements
+      list.innerHTML = announcements
+        .map(
+          (ann) => `
+        <div class="announcement-item group rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer" data-id="${
+          ann.id
+        }">
+          <!-- Header -->
+          <div class="px-4 py-3 border-b border-[var(--input-border)] section-header-gradient">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <div class="w-8 h-8 rounded-full bg-hia-blue-10 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-bullhorn text-hia-blue text-xs"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-[var(--text-primary)] truncate">
+                  ${ann.title || "Announcement"}
+                </h4>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${
+                ann.isActive
+                  ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30"
+                  : "bg-gray-500/20 text-gray-600 dark:text-gray-400 border border-gray-500/30"
+              }">
+                ${ann.isActive ? "● Published" : "○ Draft"}
+              </span>
+            </div>
+          </div>
+          
+          <!-- Content -->
+          <div class="px-4 py-3">
+            <p class="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2 mb-3">
+              ${ann.message ? ann.message.substring(0, 120) : "No message"}${
+            ann.message && ann.message.length > 120 ? "..." : ""
           }
-        );
-      }
-    })
-    .catch((err) => {
-      document.getElementById("permit_title").textContent = "Failed to load";
-      showToast("Failed to load permit", "error");
-    });
-}
+            </p>
+            
+            <!-- Meta Information -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                <i class="far fa-calendar text-indigo-500"></i>
+                <span>Created: ${new Date(ann.createdAt).toLocaleDateString(
+                  "en-US",
+                  {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  }
+                )}</span>
+              </div>
+              ${
+                ann.startAt || ann.endAt
+                  ? `
+              <div class="text-xs text-[var(--text-secondary)] bg-indigo-500/5 rounded-lg px-3 py-2 border border-indigo-500/20">
+                <div class="flex items-start gap-2">
+                  <i class="far fa-clock text-indigo-500 mt-0.5"></i>
+                  <div class="flex-1 space-y-1">
+                    ${
+                      ann.startAt
+                        ? `<div><span class="font-medium text-[var(--text-primary)]">Start:</span> ${new Date(
+                            ann.startAt
+                          ).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}</div>`
+                        : ""
+                    }
+                    ${
+                      ann.endAt
+                        ? `<div><span class="font-medium text-[var(--text-primary)]">End:</span> ${new Date(
+                            ann.endAt
+                          ).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}</div>`
+                        : ""
+                    }
+                  </div>
+                </div>
+              </div>
+              `
+                  : ""
+              }
+            </div>
+          </div>
+          
+          <!-- Actions -->
+          <div class="px-4 py-3 border-t border-[var(--input-border)] bg-[var(--input-bg)]/50">
+            <div class="flex items-center gap-2">
+              <button class="toggle-publish flex-1 text-xs px-4 py-2 rounded-lg font-semibold transition-all ${
+                ann.isActive
+                  ? "bg-gray-500/10 text-gray-600 hover:bg-gray-500/20 dark:text-gray-400 border border-gray-500/30"
+                  : "bg-green-500/10 text-green-600 hover:bg-green-500/20 dark:text-green-400 border border-green-500/30"
+              }" data-id="${ann.id}" data-active="${ann.isActive}">
+                <i class="fas ${
+                  ann.isActive ? "fa-eye-slash" : "fa-eye"
+                } mr-1.5"></i>${ann.isActive ? "Unpublish" : "Publish"}
+              </button>
+              <button class="delete-announcement text-xs px-4 py-2 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400 font-semibold transition-all border border-red-500/30" data-id="${
+                ann.id
+              }">
+                <i class="fas fa-trash mr-1.5"></i>Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      `
+        )
+        .join("");
 
-function closeViewPermitModal() {
-  const modal = document.getElementById("viewPermitModal");
-  if (!modal) return;
-  modal.classList.add("hidden");
-  modal.style.display = "none";
-}
+      // Add click handlers for editing
+      list.querySelectorAll(".announcement-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          if (e.target.closest(".delete-announcement")) return;
+          const id = item.dataset.id;
+          const announcement = announcements.find((a) => a.id === id);
+          if (announcement) {
+            loadAnnouncementIntoForm(announcement);
+          }
+        });
+      });
 
-// Approve/Reject/Update Permit handlers (stubbed, to be implemented)
-async function approvePermit() {
-  const id = document.getElementById("permit_id").value;
-  if (!id) {
-    showToast("Permit ID missing. Please reload the permit details.", "error");
-    return;
+      // Add click handlers for publish/unpublish
+      list.querySelectorAll(".toggle-publish").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const isActive = btn.dataset.active === "true";
+          openPublishConfirm(id, !isActive);
+        });
+      });
+
+      // Add click handlers for delete buttons
+      list.querySelectorAll(".delete-announcement").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          if (confirm("Are you sure you want to delete this announcement?")) {
+            await deleteAnnouncement(id);
+          }
+        });
+      });
+    } catch (err) {
+      console.error("Failed to load announcements:", err);
+      list.innerHTML =
+        '<div class="text-sm text-red-500 p-4">Failed to load announcements</div>';
+    }
   }
-  // TODO: Implement API call to approve permit
-  showToast("Approve Permit: Not yet implemented", "warning");
-}
-async function rejectPermit() {
-  const id = document.getElementById("permit_id").value;
-  if (!id) {
-    showToast("Permit ID missing. Please reload the permit details.", "error");
-    return;
-  }
-  // TODO: Implement API call to reject permit
-  showToast("Reject Permit: Not yet implemented", "warning");
-}
-async function updatePermit() {
-  const id = document.getElementById("permit_id").value;
-  if (!id) {
-    showToast("Permit ID missing. Please reload the permit details.", "error");
-    return;
-  }
-  // TODO: Implement API call to update permit
-  showToast("Update Permit: Not yet implemented", "warning");
-}
 
-// Wire permit modal buttons
-(function () {
-  document.addEventListener("DOMContentLoaded", () => {
-    const permitClose = document.getElementById("viewPermitClose");
-    if (permitClose)
-      permitClose.addEventListener("click", closeViewPermitModal);
-    const approveBtn = document.getElementById("permitApproveBtn");
-    if (approveBtn) approveBtn.addEventListener("click", approvePermit);
-    const rejectBtn = document.getElementById("permitRejectBtn");
-    if (rejectBtn) rejectBtn.addEventListener("click", rejectPermit);
-    const updateBtn = document.getElementById("permitUpdateBtn");
-    if (updateBtn) updateBtn.addEventListener("click", updatePermit);
-  });
-})();
+  // Load announcement into form for editing
+  function loadAnnouncementIntoForm(announcement) {
+    document.getElementById("announcement_id").value = announcement.id;
+    document.getElementById("announcement_title").value =
+      announcement.title || "";
+    document.getElementById("announcement_editor").textContent =
+      announcement.message || "";
+    document.getElementById("announcement_message").value =
+      announcement.message || "";
 
-// Expose for inline use if necessary
-window.openViewPermitModal = openViewPermitModal;
-window.closeViewPermitModal = closeViewPermitModal;
+    // Format dates for flatpickr (convert ISO to local datetime string)
+    const startInput = document.getElementById("announcement_start");
+    const endInput = document.getElementById("announcement_end");
 
-/* ===== Run main initialization after shared layout is mounted ===== */
-async function mainInit() {
-  try {
-    // header buttons and UI require the layout to be present; bind them now
-    const addUserBtn = document.getElementById("addUserBtn");
-    if (addUserBtn) addUserBtn.addEventListener("click", () => openUserModal());
-    const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) logoutBtn.addEventListener("click", () => logoutUser());
-
-    // Theme toggle initialization (round icon in header)
-    const themeToggle = document.getElementById("themeToggle");
-    const themeIcon = document.getElementById("themeIcon");
-    function applyTheme(theme) {
-      if (theme === "dark") {
-        document.documentElement.setAttribute("data-theme", "dark");
-        if (themeIcon) {
-          themeIcon.className = "fa-solid fa-sun";
-        }
-        if (themeToggle) {
-          themeToggle.setAttribute("aria-pressed", "true");
-          themeToggle.classList.remove("light");
-        }
-        updateChartTheme();
+    if (announcement.startAt) {
+      const startDate = new Date(announcement.startAt);
+      if (startInput._flatpickr) {
+        startInput._flatpickr.setDate(startDate, false);
       } else {
-        document.documentElement.setAttribute("data-theme", "light");
-        if (themeIcon) {
-          themeIcon.className = "fa-solid fa-moon";
-        }
-        if (themeToggle) {
-          themeToggle.setAttribute("aria-pressed", "false");
-          themeToggle.classList.add("light");
-        }
-        updateChartTheme();
+        startInput.value = formatDateTimeLocal(startDate);
+      }
+    } else {
+      if (startInput._flatpickr) {
+        startInput._flatpickr.clear();
+      } else {
+        startInput.value = "";
       }
     }
-    const saved = localStorage.getItem("ptw_theme");
-    if (saved) applyTheme(saved);
-    else {
-      const prefersDark =
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
-      applyTheme(prefersDark ? "dark" : "light");
+
+    if (announcement.endAt) {
+      const endDate = new Date(announcement.endAt);
+      if (endInput._flatpickr) {
+        endInput._flatpickr.setDate(endDate, false);
+      } else {
+        endInput.value = formatDateTimeLocal(endDate);
+      }
+    } else {
+      if (endInput._flatpickr) {
+        endInput._flatpickr.clear();
+      } else {
+        endInput.value = "";
+      }
     }
-    if (themeToggle)
-      themeToggle.addEventListener("click", () => {
-        const current =
-          document.documentElement.getAttribute("data-theme") || "light";
-        const next = current === "dark" ? "light" : "dark";
-        applyTheme(next);
-        localStorage.setItem("ptw_theme", next);
-      });
 
-    // wire modal close handlers
-    document
-      .querySelectorAll("#userModal .close")
-      .forEach((b) => b.addEventListener("click", closeUserModal));
-    const modal = document.getElementById("userModal");
-    if (modal)
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeUserModal();
-      });
-
-    const viewModal = document.getElementById("viewUserModal");
-    if (viewModal)
-      viewModal.addEventListener("click", (e) => {
-        if (e.target === viewModal) closeViewUserModal();
-      });
-
-    // initialize data (loadUsers, loadPermits, loadStats are function declarations below)
-    await loadUsers();
-    // start live polling to fetch fresh data from DB periodically while
-    // preserving security (global fetch wrapper handles Authorization + refresh)
-    try {
-      startLiveUsersPolling();
-    } catch (e) {
-      console.debug("startLiveUsersPolling failed", e);
-    }
-    await loadPermits();
-    await loadStats();
-  } catch (err) {
-    console.debug("Initialization error (non-fatal):", err?.message || err);
+    document.getElementById("announcement_active").checked =
+      announcement.isActive;
   }
-}
 
-if (document.querySelector("[data-layout-wrapper]")) {
-  window.requestAnimationFrame(() => {
-    mainInit();
-  });
-} else {
-  window.addEventListener("layout:mounted", mainInit, { once: true });
-}
+  // Helper function to format date to "YYYY-MM-DD HH:mm" format
+  function formatDateTimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  }
 
-// Clean up polling when the page unloads to avoid timers running in background
-try {
-  window.addEventListener("beforeunload", () => {
+  // Open publish/unpublish confirmation modal (from shared layout)
+  function openPublishConfirm(id, newState) {
+    const modal = document.getElementById("publish-confirm-modal");
+    const msgEl = document.getElementById("publish-confirm-message");
+    const confirmBtn = document.getElementById("publishConfirmBtn");
+    const cancelBtn = document.getElementById("publishCancelBtn");
+
+    // Fallback if modal not present
+    if (!modal || !confirmBtn || !cancelBtn) {
+      togglePublish(id, newState);
+      return;
+    }
+
+    if (msgEl) {
+      msgEl.textContent = newState
+        ? "Publish this announcement?"
+        : "Unpublish this announcement?";
+    }
+
+    const cleanup = () => {
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      modal.classList.add("hidden");
+    };
+
+    cancelBtn.onclick = cleanup;
+    confirmBtn.onclick = async () => {
+      try {
+        await togglePublish(id, newState);
+      } finally {
+        cleanup();
+      }
+    };
+
+    modal.classList.remove("hidden");
+  }
+
+  // Toggle publish state via API
+  async function togglePublish(id, isActive) {
     try {
-      stopLiveUsersPolling();
-    } catch (_) {}
+      const response = await fetch(`${getApiBase()}/api/system-message/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isActive }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (typeof window.showToast === "function") {
+        window.showToast("success", isActive ? "Published" : "Unpublished");
+      }
+      await loadAnnouncements();
+    } catch (err) {
+      console.error("Failed to change publish state:", err);
+      if (typeof window.showToast === "function") {
+        window.showToast("error", "Failed to update publish state");
+      }
+    }
+  }
+
+  // Delete announcement
+  async function deleteAnnouncement(id) {
+    try {
+      const response = await fetch(`${getApiBase()}/api/system-message/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      if (typeof window.showToast === "function") {
+        window.showToast("success", "Announcement deleted successfully");
+      }
+
+      // Reload list
+      await loadAnnouncements();
+    } catch (err) {
+      console.error("Failed to delete announcement:", err);
+      if (typeof window.showToast === "function") {
+        window.showToast("error", "Failed to delete announcement");
+      }
+    }
+  }
+
+  // Load on init
+  loadAnnouncements();
+
+  // Also load users list on init
+  try {
+    if (typeof window.loadUsers === "function") window.loadUsers();
+  } catch (e) {}
+
+  // Load permits list on init
+  try {
+    if (typeof window.loadPermits === "function") window.loadPermits();
+  } catch (e) {}
+
+  // Wait for layout to be mounted before initializing date pickers
+  // Listen for the custom event that layout.mount.js dispatches
+  window.addEventListener("layout:mounted", () => {
+    console.log("Layout mounted, initializing date pickers...");
+    initDatePickers();
+    try {
+      if (typeof window.loadUsers === "function") window.loadUsers();
+    } catch (e) {}
+    try {
+      if (typeof window.loadPermits === "function") window.loadPermits();
+    } catch (e) {}
   });
-} catch (_) {}
+
+  // Also try to initialize after a short delay as fallback
+  setTimeout(() => {
+    if (!document.getElementById("announcement_start")?._flatpickr) {
+      console.log("Fallback: initializing date pickers...");
+      initDatePickers();
+    }
+    try {
+      if (typeof window.loadUsers === "function") window.loadUsers();
+    } catch (e) {}
+    try {
+      if (typeof window.loadPermits === "function") window.loadPermits();
+    } catch (e) {}
+  }, 1000);
+
+  // Compute API base similar to shared/layout.js so dev ports map to 5000
+  function getApiBase() {
+    try {
+      if (
+        window.__API_BASE__ &&
+        typeof window.__API_BASE__ === "string" &&
+        window.__API_BASE__.trim()
+      ) {
+        return window.__API_BASE__.trim();
+      }
+      try {
+        const ls = localStorage.getItem("API_BASE");
+        if (ls && ls.trim()) return ls.trim();
+      } catch (_) {}
+      try {
+        const meta = document.querySelector('meta[name="api-base"]');
+        if (meta && meta.content && meta.content.trim())
+          return meta.content.trim();
+      } catch (_) {}
+
+      const DEFAULT_PROD = "https://ptw-yu8u.onrender.com";
+      const { protocol, hostname, port } = window.location;
+      if (hostname === "127.0.0.1" || hostname === "localhost") {
+        const devToBackend = new Set(["5500", "3000", "8080"]);
+        if (port && devToBackend.has(port))
+          return `${protocol}//${hostname}:5000`;
+        return `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+      }
+      if (!hostname || window.location.protocol === "file:")
+        return DEFAULT_PROD;
+      try {
+        const origin = `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+        if (origin === DEFAULT_PROD) return origin;
+      } catch (_) {}
+      return DEFAULT_PROD;
+    } catch (_) {
+      return "";
+    }
+  }
+})();

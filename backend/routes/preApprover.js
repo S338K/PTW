@@ -73,7 +73,7 @@ router.post('/approve/:id', requireAuth, requirePreApprover, async (req, res) =>
           permitNumber: updated.permitNumber,
           status: 'In Progress',
           approverName: preApproverName,
-          comments: comments || ''
+          comments: comments || '',
         }
       );
     } catch (notifErr) {
@@ -126,7 +126,7 @@ router.post('/reject/:id', requireAuth, requirePreApprover, async (req, res) => 
           permitNumber: updated.permitNumber,
           status: 'Rejected',
           approverName: preApproverName,
-          comments: comments || ''
+          comments: comments || '',
         }
       );
     } catch (notifErr) {

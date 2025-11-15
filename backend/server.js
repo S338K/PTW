@@ -24,19 +24,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // parse cookies so routes that check refreshToken can read the cookie
 app.use(cookieParser());
-// Serve frontend folder
-app.use(express.static(path.join(__dirname, '../frontend')));
+
+// ===== Serve Frontend Static Files =====
+// In development, serve the entire parent directory so all pages
+// (login, admin, approver, etc.) are same-origin with the API on :5000
+// This ensures session cookies work correctly without cross-origin issues
+const frontendRoot = path.join(__dirname, '..');
+logger.info('Serving frontend static files from:', frontendRoot);
+app.use(express.static(frontendRoot));
 
 // Use Helmet for sensible security headers
 app.use(helmet());
 
 // ===== CORS Setup =====
-const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || 'http://127.0.0.1:5000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+logger.info('CORS allowed for origins:', allowedOrigins.join(', '));
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -45,10 +59,6 @@ app.use(
     credentials: true, // allow cookies
   })
 );
-
-// NOTE: CORS preflight is handled by the `cors` middleware above. Avoid a manual
-// OPTIONS handler that sets Access-Control-Allow-Origin to '*' because that
-// conflicts with credentialed requests (Access-Control-Allow-Credentials).
 
 // ===== Security & Cache Headers ===== //
 app.use((req, res, next) => {
@@ -76,7 +86,6 @@ app.use((req, res, next) => {
 });
 
 // ===== SESSION SETUP ===== //
-// Only set trust proxy when in production (e.g., behind a proxy like Render)
 if (isProd) app.set('trust proxy', 1);
 
 // Use environment-specific session secrets
@@ -109,18 +118,13 @@ app.use(
     cookie: {
       maxAge: 2 * 60 * 60 * 1000, // 2 hours
       httpOnly: true,
-      // Use permissive sameSite in development to allow local dev over HTTP.
       sameSite: isProd ? 'none' : 'lax',
-      // Only require secure cookies in production (HTTPS). In dev we allow insecure for localhost.
       secure: isProd,
     },
   })
 );
 
-// Token middleware: accept Authorization: Bearer <accessToken> and map to
-// req.session.userId / req.session.userRole for backward compatibility with
-// handlers that expect session data. tokenAuth requests are marked with
-// req.tokenAuth = true so other middleware can skip single-session enforcement.
+// ===== Token Authentication Middleware ===== //
 app.use((req, res, next) => {
   try {
     const authHeader = req.headers && req.headers.authorization;
@@ -149,16 +153,6 @@ app.use((req, res, next) => {
   }
   return next();
 });
-
-// DEVELOPMENT: serve the top-level `admin` folder under /admin so local dev pages
-// are same-origin with the backend and will send session cookies correctly.
-// This is intentionally conservative: only the `admin` path is exposed here.
-const fs = require('fs');
-const adminStaticPath = path.join(__dirname, '../admin');
-if (fs.existsSync(adminStaticPath)) {
-  app.use('/admin', express.static(adminStaticPath));
-  logger.info('Serving admin static files from', adminStaticPath);
-}
 
 // 🔎 Debug middleware: log session on every request in non-production only
 if (!isProd) {

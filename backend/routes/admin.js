@@ -88,6 +88,13 @@ router.post('/register-user', async (req, res) => {
       const exists = await Admin.findOne({ email });
       if (exists) return res.status(409).json({ error: 'Email already exists' });
 
+      // Ensure mobile is unique across Admin, Approver and User
+      const mobileExists =
+        (await Admin.findOne({ mobile: cleanMobile })) ||
+        (await Approver.findOne({ mobile: cleanMobile })) ||
+        (await User.findOne({ $or: [{ phone: cleanMobile }, { mobile: cleanMobile }] }));
+      if (mobileExists) return res.status(409).json({ error: 'Phone number already exists' });
+
       const admin = new Admin({
         fullName,
         email,
@@ -102,6 +109,13 @@ router.post('/register-user', async (req, res) => {
     } else if (normalizedRole === 'PreApprover' || normalizedRole === 'Approver') {
       const exists = await Approver.findOne({ email });
       if (exists) return res.status(409).json({ error: 'Email already exists' });
+
+      // Ensure mobile is unique across Admin, Approver and User
+      const mobileExists =
+        (await Admin.findOne({ mobile: cleanMobile })) ||
+        (await Approver.findOne({ mobile: cleanMobile })) ||
+        (await User.findOne({ $or: [{ phone: cleanMobile }, { mobile: cleanMobile }] }));
+      if (mobileExists) return res.status(409).json({ error: 'Phone number already exists' });
 
       const approver = new Approver({
         fullName,
@@ -126,6 +140,12 @@ router.post('/register-user', async (req, res) => {
           (await Approver.findOne({ email })) ||
           (await User.findOne({ email }));
         if (existsAny) return res.status(409).json({ error: 'Email already exists' });
+        // Ensure mobile is unique across Admin, Approver and User
+        const mobileExistsAny =
+          (await Admin.findOne({ mobile: cleanMobile })) ||
+          (await Approver.findOne({ mobile: cleanMobile })) ||
+          (await User.findOne({ $or: [{ phone: cleanMobile }, { mobile: cleanMobile }] }));
+        if (mobileExistsAny) return res.status(409).json({ error: 'Phone number already exists' });
         const user = new User({
           fullName,
           username: fullName,

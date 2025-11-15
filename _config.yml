@@ -8,7 +8,6 @@ exclude:
   - "vendor"
   - "Gemfile"
   - "Gemfile.lock"
-
 # Optional: If you want to serve only specific directories, you can set
 # `include` instead. For GitHub Pages builds, excluding node_modules is the
 # minimal and safest fix to avoid Liquid parse errors coming from third-party

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
-const systemMessageSchema = new mongoose.Schema({
+const systemMessageSchema = new mongoose.Schema(
+  {
     // Primary (fallback) title/message for older clients
     title: { type: String, default: 'Announcement' },
     message: { type: String },
@@ -11,13 +12,15 @@ const systemMessageSchema = new mongoose.Schema({
     endAt: { type: Date, default: null },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-}, { collection: 'SystemMessage' });
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { collection: 'SystemMessage' }
+);
 
 // Update the updatedAt field before saving
 systemMessageSchema.pre('save', function (next) {
-    this.updatedAt = new Date();
-    next();
+  this.updatedAt = new Date();
+  next();
 });
 
 module.exports = mongoose.model('SystemMessage', systemMessageSchema, 'SystemMessage');

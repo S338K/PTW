@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
@@ -26,19 +25,19 @@ router.get('/system-messages', async (req, res) => {
       isActive: { $ne: false },
       $and: [
         { $or: [{ startAt: null }, { startAt: { $lte: now } }] },
-        { $or: [{ endAt: null }, { endAt: { $gte: now } }] }
-      ]
+        { $or: [{ endAt: null }, { endAt: { $gte: now } }] },
+      ],
     })
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
 
-    const formattedMessages = messages.map(msg => ({
+    const formattedMessages = messages.map((msg) => ({
       id: msg._id,
       title: msg.title || 'Announcement',
       message: msg.message || '',
       icon: msg.icon || 'fa-bullhorn',
-      isActive: msg.isActive !== false
+      isActive: msg.isActive !== false,
     }));
 
     res.json(formattedMessages);
@@ -57,23 +56,32 @@ router.post('/system-message', async (req, res) => {
     const { title, message, icon, isActive, startAt, endAt } = req.body;
     const errors = [];
     // Validate presence and lengths
-    if (!message || typeof message !== 'string' || !message.trim()) errors.push({ field: 'message', message: 'Message is required' });
-    if (title && title.length > 200) errors.push({ field: 'title', message: 'Title is too long (max 200 chars)' });
-    if (message && message.length > 2000) errors.push({ field: 'message', message: 'Message is too long (max 2000 chars)' });
+    if (!message || typeof message !== 'string' || !message.trim())
+      errors.push({ field: 'message', message: 'Message is required' });
+    if (title && title.length > 200)
+      errors.push({ field: 'title', message: 'Title is too long (max 200 chars)' });
+    if (message && message.length > 2000)
+      errors.push({ field: 'message', message: 'Message is too long (max 2000 chars)' });
     if (icon && icon.length > 100) errors.push({ field: 'icon', message: 'Icon value too long' });
     // Validate dates
-    let s = null, e = null;
+    let s = null,
+      e = null;
     if (startAt) {
       s = new Date(startAt);
-      if (Number.isNaN(s.getTime())) errors.push({ field: 'startAt', message: 'Invalid startAt datetime' });
+      if (Number.isNaN(s.getTime()))
+        errors.push({ field: 'startAt', message: 'Invalid startAt datetime' });
     }
     if (endAt) {
       e = new Date(endAt);
-      if (Number.isNaN(e.getTime())) errors.push({ field: 'endAt', message: 'Invalid endAt datetime' });
+      if (Number.isNaN(e.getTime()))
+        errors.push({ field: 'endAt', message: 'Invalid endAt datetime' });
     }
     if (s && e && s > e) errors.push({ field: 'startAt', message: 'startAt must be before endAt' });
 
-    if (errors.length) return res.status(400).json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
+    if (errors.length)
+      return res
+        .status(400)
+        .json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
 
     const newMsg = new SystemMessage({
       title: title || 'Announcement',
@@ -82,7 +90,7 @@ router.post('/system-message', async (req, res) => {
       isActive: typeof isActive === 'boolean' ? isActive : true,
       startAt: s,
       endAt: e,
-      updatedBy: req.session.userId
+      updatedBy: req.session.userId,
     });
     await newMsg.save();
     res.json({ message: 'System message created', id: newMsg._id });
@@ -99,16 +107,20 @@ router.get('/admin/system-messages', async (req, res) => {
       return res.status(403).json({ message: 'Forbidden: Admins only' });
     }
     const messages = await SystemMessage.find({}).sort({ createdAt: -1 }).lean();
-    res.json(messages.map(m => ({
-      id: m._id,
-      title: m.title,
-      message: m.message,
-      icon: m.icon,
-      isActive: m.isActive,
-      createdAt: m.createdAt,
-      updatedAt: m.updatedAt,
-      updatedBy: m.updatedBy
-    })));
+    res.json(
+      messages.map((m) => ({
+        id: m._id,
+        title: m.title,
+        message: m.message,
+        icon: m.icon,
+        isActive: m.isActive,
+        startAt: m.startAt,
+        endAt: m.endAt,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+        updatedBy: m.updatedBy,
+      }))
+    );
   } catch (err) {
     console.error('Error fetching admin messages:', err);
     res.status(500).json({ message: 'Unable to fetch messages' });
@@ -131,7 +143,8 @@ router.put('/system-message/:id', async (req, res) => {
     }
     if (typeof message === 'string') {
       if (!message.trim()) errors.push({ field: 'message', message: 'Message is required' });
-      else if (message.length > 2000) errors.push({ field: 'message', message: 'Message too long' });
+      else if (message.length > 2000)
+        errors.push({ field: 'message', message: 'Message too long' });
       else update.message = message;
     }
     if (typeof icon === 'string') {
@@ -140,20 +153,26 @@ router.put('/system-message/:id', async (req, res) => {
     }
     if (typeof isActive === 'boolean') update.isActive = isActive;
 
-    let s = null, e = null;
+    let s = null,
+      e = null;
     if (startAt) {
       s = new Date(startAt);
-      if (Number.isNaN(s.getTime())) errors.push({ field: 'startAt', message: 'Invalid startAt datetime' });
+      if (Number.isNaN(s.getTime()))
+        errors.push({ field: 'startAt', message: 'Invalid startAt datetime' });
     }
     if (endAt) {
       e = new Date(endAt);
-      if (Number.isNaN(e.getTime())) errors.push({ field: 'endAt', message: 'Invalid endAt datetime' });
+      if (Number.isNaN(e.getTime()))
+        errors.push({ field: 'endAt', message: 'Invalid endAt datetime' });
     }
     if (s && e && s > e) errors.push({ field: 'startAt', message: 'startAt must be before endAt' });
     if (s) update.startAt = s;
     if (e) update.endAt = e;
 
-    if (errors.length) return res.status(400).json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
+    if (errors.length)
+      return res
+        .status(400)
+        .json({ message: 'Validation failed', code: 'VALIDATION_ERROR', details: errors });
 
     update.updatedAt = new Date();
     update.updatedBy = req.session.userId;
@@ -269,7 +288,7 @@ router.get('/dashboard/stats', async (req, res) => {
       Permit.countDocuments({ status: { $in: ['Pending', 'In Progress'] } }),
       Permit.countDocuments({ status: 'Approved' }),
       Permit.countDocuments({ status: 'Rejected' }),
-      Permit.countDocuments({})
+      Permit.countDocuments({}),
     ]);
 
     res.json({
@@ -277,7 +296,7 @@ router.get('/dashboard/stats', async (req, res) => {
       approved,
       rejected,
       total,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -333,8 +352,8 @@ router.get('/permits', async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
+        pages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     console.error('Permits fetch error:', error);
@@ -375,18 +394,18 @@ router.get('/debug/permits', async (req, res) => {
       total: await Permit.countDocuments({}),
       pending: await Permit.countDocuments({ status: { $in: ['Pending', 'In Progress'] } }),
       approved: await Permit.countDocuments({ status: 'Approved' }),
-      rejected: await Permit.countDocuments({ status: 'Rejected' })
+      rejected: await Permit.countDocuments({ status: 'Rejected' }),
     };
 
     res.json({
       message: 'Debug data (no auth required)',
       stats,
-      samplePermits: permits.slice(0, 3).map(p => ({
+      samplePermits: permits.slice(0, 3).map((p) => ({
         id: p._id,
         title: p.permitTitle,
         status: p.status,
-        createdAt: p.createdAt
-      }))
+        createdAt: p.createdAt,
+      })),
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -402,11 +421,11 @@ router.get('/debug/session', (req, res) => {
   try {
     const safeSession = req.session
       ? {
-        id: req.session.id,
-        userId: req.session.userId || null,
-        userRole: req.session.userRole || null,
-        cookie: req.session.cookie || null,
-      }
+          id: req.session.id,
+          userId: req.session.userId || null,
+          userRole: req.session.userRole || null,
+          cookie: req.session.cookie || null,
+        }
       : null;
     const headers = {
       origin: req.headers.origin || null,
@@ -437,7 +456,7 @@ router.get('/images', (req, res) => {
     const files = fs.readdirSync(imagesDir);
 
     // Filter for image files and exclude logo images
-    const imageFiles = files.filter(file => {
+    const imageFiles = files.filter((file) => {
       const ext = path.extname(file).toLowerCase();
       const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
       const isNotLogo = !file.toLowerCase().includes('logo');
@@ -451,5 +470,46 @@ router.get('/images', (req, res) => {
   }
 });
 
-module.exports = router;
+// ===== Quick uniqueness check endpoints for client-side validation =====
+// GET /api/check-email?email=...
+router.get('/check-email', async (req, res) => {
+  try {
+    const Admin = require('../models/admin');
+    const Approver = require('../models/approver');
+    const User = require('../models/user');
+    const email = String(req.query.email || '')
+      .trim()
+      .toLowerCase();
+    if (!email) return res.status(400).json({ message: 'Email required' });
+    const exists =
+      (await Admin.findOne({ email })) ||
+      (await Approver.findOne({ email })) ||
+      (await User.findOne({ email }));
+    return res.json({ exists: !!exists });
+  } catch (err) {
+    console.error('check-email error', err);
+    return res.status(500).json({ message: 'Error checking email' });
+  }
+});
 
+// GET /api/check-phone?phone=...
+router.get('/check-phone', async (req, res) => {
+  try {
+    const Admin = require('../models/admin');
+    const Approver = require('../models/approver');
+    const User = require('../models/user');
+    let phone = String(req.query.phone || '').trim();
+    if (!phone) return res.status(400).json({ message: 'Phone required' });
+    phone = phone.replace(/[\s\-()]/g, '');
+    const exists =
+      (await Admin.findOne({ mobile: phone })) ||
+      (await Approver.findOne({ mobile: phone })) ||
+      (await User.findOne({ $or: [{ phone: phone }, { mobile: phone }] }));
+    return res.json({ exists: !!exists });
+  } catch (err) {
+    console.error('check-phone error', err);
+    return res.status(500).json({ message: 'Error checking phone' });
+  }
+});
+
+module.exports = router;
